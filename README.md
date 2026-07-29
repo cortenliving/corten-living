@@ -12,6 +12,17 @@ Live site: [corten-living.pages.dev](https://corten-living.pages.dev/)
 - Custom DXF quote form + quick price estimator
 - Contact form (Forminit)
 
+## Admin (add products, photos, prices)
+
+Open **[/admin](https://corten-living.pages.dev/admin)** (not linked from the public menu).
+
+- Default password: `CortenAdmin!` (change under Settings)
+- Add / edit products, upload photos, set prices, mark featured
+- **Publish on this browser** — Shop & Home update immediately on your device
+- **Download products.js** — replace `js/products.js` and push to GitHub so everyone sees changes
+- **Download new photos** — put files into the `images/` folder before pushing
+- House number configurator pricing is under the **Number pricing** tab
+
 ## Local preview
 
 Absolute paths (`/js/...`, `/images/...`) need a local server:
@@ -21,7 +32,7 @@ cd corten-living
 python -m http.server 8080
 ```
 
-Then open http://localhost:8080
+Then open http://localhost:8080 and http://localhost:8080/admin
 
 ## Deploy to Cloudflare Pages
 

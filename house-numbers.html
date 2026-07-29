@@ -210,7 +210,7 @@ tailwind.config = {
 let selectedSize = 200;
 let selectedMount = 'clean';
 
-const prices = {
+const DEFAULT_PRICES = {
   100: {
     clean: { 1: 8, 2: 15, 3: 21 },
     holes: { 1: 10, 2: 17, 3: 24 }
@@ -220,6 +220,16 @@ const prices = {
     holes: { 1: 17, 2: 32, 3: 46 }
   }
 };
+
+// Admin can override via /admin → Number pricing (stored on this browser)
+let prices = DEFAULT_PRICES;
+try {
+  const stored = localStorage.getItem('cortenHouseNumberPrices');
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    if (parsed && typeof parsed === 'object') prices = parsed;
+  }
+} catch (e) {}
 
 function getCharCount(str) {
   return (str || '').replace(/[^0-9A-Za-z]/g, '').length;

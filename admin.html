@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin | Corten Living</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen">
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-metal-850 border border-corten-700 text-sm text-white rounded-sm shadow-lg opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-metal-850 border border-corten-900/50 rounded-sm p-8">
+    <div class="flex items-center gap-3 mb-6">
+      <img src="/images/logo.svg" alt="" class="w-10 h-10">
+      <div>
+        <p class="font-display text-xl text-white tracking-wide">CORTEN LIVING</p>
+        <p class="text-xs text-gray-500">Admin · private</p>
+      </div>
+    </div>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5" for="login-pass">Password</label>
+        <input type="password" id="login-pass" required autocomplete="current-password"
+          class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none"
+          placeholder="Enter admin password">
+      </div>
+      <p id="login-error" class="hidden text-sm text-red-400">Incorrect password</p>
+      <button type="submit" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Sign in</button>
+    </form>
+    <p class="mt-6 text-xs text-gray-600 leading-relaxed">
+      Default password is <code class="text-corten-500">CortenAdmin!</code> — change it under Settings after login.
+      This admin is not linked from the public site.
+    </p>
+    <a href="/" class="inline-block mt-4 text-sm text-corten-500 hover:underline">← Back to site</a>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="admin-app" class="hidden min-h-screen">
+  <header class="sticky top-0 z-40 bg-metal-950/95 backdrop-blur border-b border-corten-900/40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <img src="/images/logo.svg" alt="" class="w-8 h-8">
+        <span class="font-display text-lg text-white tracking-wide">Admin</span>
+      </div>
+      <nav class="flex flex-wrap gap-1 text-sm">
+        <button type="button" data-tab="products" class="px-3 py-1.5 border-b-2 border-corten-600 text-corten-400 font-medium">Products</button>
+        <button type="button" data-tab="pricing" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Number pricing</button>
+        <button type="button" data-tab="deploy" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Save & deploy</button>
+        <button type="button" data-tab="settings" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Settings</button>
+      </nav>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="/shop" target="_blank" class="text-gray-400 hover:text-corten-400">View shop ↗</a>
+        <button type="button" id="btn-logout" class="text-gray-500 hover:text-white">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+
+    <!-- PRODUCTS TAB -->
+    <div data-tab-panel="products">
+      <div id="list-panel">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div>
+            <h1 class="font-display text-2xl font-bold text-white">Products</h1>
+            <p class="text-sm text-gray-500 mt-1">Add pieces, photos, prices and featured flags.</p>
+          </div>
+          <button type="button" id="btn-add" class="px-4 py-2 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">+ Add product</button>
+        </div>
+        <div id="product-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Editor -->
+      <div id="editor-panel" class="hidden">
+        <div class="flex items-center justify-between mb-6">
+          <h1 id="editor-title" class="font-display text-2xl font-bold text-white">Edit product</h1>
+          <button type="button" id="btn-cancel-edit" class="text-sm text-gray-400 hover:text-white">← Back to list</button>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-8">
+          <div class="space-y-4 bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+            <input type="hidden" id="f-id">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Name *</label>
+              <input id="f-name" type="text" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Category</label>
+                <select id="f-category" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+                  <option value="sculpture">Sculpture</option>
+                  <option value="signage">Signage</option>
+                  <option value="numbers">Numbers</option>
+                  <option value="planter">Planter</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Size label</label>
+                <input id="f-size" type="text" placeholder="e.g. 500 × 600 mm" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Price (number)</label>
+                <input id="f-price" type="number" min="0" step="1" placeholder="99" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Price label (display)</label>
+                <input id="f-priceLabel" type="text" placeholder="From $99 or $99" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Tag (optional badge)</label>
+              <input id="f-tag" type="text" placeholder="Bestseller, With stake…" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Description</label>
+              <textarea id="f-desc" rows="4" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1">Link (page when clicked)</label>
+              <input id="f-link" type="text" placeholder="/quote?product=… or /house-numbers" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+              <p class="text-[10px] text-gray-600 mt-1">Leave blank to auto-link to quote form with product name.</p>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input type="checkbox" id="f-featured" class="rounded border-gray-600 text-corten-600 focus:ring-corten-500">
+              Show on homepage (Featured)
+            </label>
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+              <p class="font-display text-white mb-1">Photos</p>
+              <p class="text-xs text-gray-500 mb-4">Upload photos — they are compressed automatically. First photo is the main image.</p>
+              <div id="slide-previews" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4"></div>
+              <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 hover:border-corten-600 rounded-sm p-6 cursor-pointer transition">
+                <span class="text-sm text-gray-400">Click or drop images</span>
+                <span class="text-xs text-gray-600 mt-1">JPG / PNG · auto-resized</span>
+                <input type="file" id="photo-input" accept="image/*" multiple class="hidden">
+              </label>
+              <div class="mt-4">
+                <label class="block text-xs text-gray-400 mb-1">Or image path / URL</label>
+                <input id="f-image" type="text" placeholder="/images/my-product.jpg" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+              </div>
+            </div>
+            <button type="button" id="btn-save-product" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm hover:opacity-90">Save product</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NUMBER PRICING TAB -->
+    <div data-tab-panel="pricing" class="hidden">
+      <h1 class="font-display text-2xl font-bold text-white mb-2">House number pricing</h1>
+      <p class="text-sm text-gray-500 mb-6">Used by the live configurator on this browser after you save. Export is not required — prices store on this device and the numbers page reads them automatically.</p>
+      <div id="hn-pricing" class="space-y-4"></div>
+      <button type="button" id="btn-save-hn" class="mt-6 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Save number pricing</button>
+    </div>
+
+    <!-- DEPLOY TAB -->
+    <div data-tab-panel="deploy" class="hidden">
+      <h1 class="font-display text-2xl font-bold text-white mb-2">Save & deploy</h1>
+      <p class="text-sm text-gray-500 mb-8 max-w-2xl">
+        This is a static site on Cloudflare Pages — there is no server database.
+        Use <strong class="text-gray-300">Publish on this browser</strong> to preview changes immediately,
+        then <strong class="text-gray-300">Download products.js</strong> and push to GitHub so every visitor sees them.
+      </p>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+          <h2 class="font-display text-lg text-white">1. Preview here</h2>
+          <p class="text-sm text-gray-500 mt-2 mb-4">Updates Shop & Home on <em>this computer/browser only</em>.</p>
+          <button type="button" id="btn-publish" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Publish on this browser</button>
+          <button type="button" id="btn-save-draft" class="w-full mt-2 py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Save draft</button>
+        </div>
+        <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+          <h2 class="font-display text-lg text-white">2. Go live for everyone</h2>
+          <p class="text-sm text-gray-500 mt-2 mb-4">Download the catalogue file, replace it in the project, push to GitHub.</p>
+          <button type="button" id="btn-export-js" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Download products.js</button>
+          <button type="button" id="btn-export-images" class="w-full mt-2 py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Download new photos</button>
+        </div>
+      </div>
+
+      <div class="mt-8 bg-metal-900/50 border border-corten-900/30 rounded-sm p-6 text-sm text-gray-400 space-y-2">
+        <p class="font-display text-corten-400 text-base">Deploy steps</p>
+        <ol class="list-decimal list-inside space-y-1.5 leading-relaxed">
+          <li>Click <strong class="text-gray-300">Download products.js</strong></li>
+          <li>If you uploaded new photos, click <strong class="text-gray-300">Download new photos</strong> and put them in the <code class="text-corten-500">images/</code> folder</li>
+          <li>Copy <code class="text-corten-500">products.js</code> into <code class="text-corten-500">js/products.js</code> (overwrite)</li>
+          <li>Push the <code class="text-corten-500">corten-living</code> repo to GitHub — Cloudflare Pages updates automatically</li>
+        </ol>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-3 items-center">
+        <label class="px-4 py-2 border border-gray-700 text-sm text-gray-300 rounded-sm cursor-pointer hover:border-corten-600">
+          Import products.js / JSON
+          <input type="file" id="import-file" accept=".js,.json,text/*" class="hidden">
+        </label>
+        <button type="button" id="btn-reset-seed" class="text-sm text-gray-500 hover:text-red-400">Reset to site seed…</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div data-tab-panel="settings" class="hidden">
+      <h1 class="font-display text-2xl font-bold text-white mb-2">Settings</h1>
+      <p class="text-sm text-gray-500 mb-6">Password is stored only in this browser (hashed). Other devices still use the default until you set them.</p>
+      <div class="max-w-md bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">New password</label>
+          <input type="password" id="new-pass" minlength="8" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Confirm password</label>
+          <input type="password" id="new-pass-conf" minlength="8" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+        </div>
+        <button type="button" id="btn-change-pass" class="px-4 py-2 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Update password</button>
+      </div>
+      <p class="mt-8 text-xs text-gray-600">Admin URL: <a href="/admin" class="text-corten-500">/admin</a> · Not listed in the public menu.</p>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/products.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

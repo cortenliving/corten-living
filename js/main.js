@@ -1,6 +1,23 @@
 /* Corten Living — shared site logic */
 
 const CART_KEY = 'cortenCart';
+const PUBLISHED_PRODUCTS_KEY = 'cortenProductsPublished';
+const HN_PRICES_KEY = 'cortenHouseNumberPrices';
+
+/** Prefer admin-published catalogue (this browser) over products.js seed */
+function loadActiveProducts() {
+  try {
+    const raw = localStorage.getItem(PUBLISHED_PRODUCTS_KEY);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length) {
+        window.products = list;
+        return list;
+      }
+    }
+  } catch (_) {}
+  return typeof products !== 'undefined' ? products : [];
+}
 
 function getCart() {
   try {
@@ -111,11 +128,12 @@ function productCardHTML(p, options = {}) {
 
 function renderProducts(filter = 'all') {
   const grid = document.getElementById('product-grid');
-  if (!grid || typeof products === 'undefined') return;
+  const list = loadActiveProducts();
+  if (!grid) return;
 
   const filtered = filter === 'all'
-    ? products
-    : products.filter((p) => p.category === filter);
+    ? list
+    : list.filter((p) => p.category === filter);
 
   if (filtered.length === 0) {
     grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">No products in this category yet. <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers</a> or <a href="/quote" class="text-corten-500 hover:underline">request a custom cut</a>.</p>`;
@@ -140,9 +158,10 @@ function filterProducts(cat) {
 
 function renderFeatured() {
   const grid = document.getElementById('featured-grid');
-  if (!grid || typeof products === 'undefined') return;
-  const featured = products.filter((p) => p.featured).slice(0, 4);
-  const list = featured.length ? featured : products.slice(0, 4);
+  if (!grid) return;
+  const all = loadActiveProducts();
+  const featured = all.filter((p) => p.featured).slice(0, 4);
+  const list = featured.length ? featured : all.slice(0, 4);
   grid.innerHTML = list.map((p) => productCardHTML(p, { compact: true })).join('');
   grid.querySelectorAll('.product-slides').forEach(startSlideShow);
 }
@@ -250,10 +269,9 @@ function initQuotePrefill() {
 document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   updateCartCount();
-  if (typeof products !== 'undefined') {
-    renderProducts('all');
-    renderFeatured();
-  }
+  loadActiveProducts();
+  renderProducts('all');
+  renderFeatured();
   initEstimator();
   initFileDrop();
   initQuotePrefill();
