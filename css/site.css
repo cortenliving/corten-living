@@ -1,0 +1,52 @@
+/* Corten Living shared styles */
+body { background: #050505; }
+.corten-gradient {
+  background: linear-gradient(135deg, #b7410e 0%, #d56f3d 50%, #9c340b 100%);
+}
+.metal-texture {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(183, 65, 14, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(213, 111, 61, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, #0a0a0a, #050505);
+}
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(183, 65, 14, 0.35);
+}
+.filter-btn.active {
+  border-color: #b7410e;
+  color: #d56f3d;
+}
+.file-drop.dragover {
+  border-color: #d56f3d;
+  background: rgba(183, 65, 14, 0.1);
+}
+.preview-text {
+  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(180deg, #e07a45 0%, #b7410e 40%, #8a320a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+}
+/* Focus accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #d56f3d;
+  outline-offset: 2px;
+}
+/* Smooth image reveal */
+.product-card img {
+  transition: transform 0.5s ease;
+}
+.product-card:hover img {
+  transform: scale(1.04);
+}

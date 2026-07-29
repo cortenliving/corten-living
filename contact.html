@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact | Corten Living — Gisborne NZ</title>
+<meta name="description" content="Contact Corten Living in Gisborne for custom quotes, sizing questions or NZ delivery. 027 383 8178 · cortenliving@gmail.com" />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
+
+<nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop.html" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers.html" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote.html" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/contact.html" class="text-corten-400">Contact</a>
+        <a href="/cart.html" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote.html" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop.html" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers.html" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote.html" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/contact.html" class="block text-corten-400">Contact</a>
+      <a href="/cart.html" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
+</nav>
+
+<section class="pt-28 pb-20 flex-1">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h1 class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">Get in Touch</h1>
+      <p class="mt-3 text-gray-400 max-w-xl mx-auto">Questions about sizing, stakes, pre-weathering or delivery? Message us below or use the custom quote form for DXF jobs.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-5 gap-8">
+      <div class="lg:col-span-2 space-y-4">
+        <a href="tel:0273838178" class="block bg-metal-850 border border-corten-900/40 p-5 rounded-sm hover:border-corten-700 transition">
+          <p class="text-xs uppercase tracking-widest text-corten-500">Phone</p>
+          <p class="mt-1 font-display text-xl text-white">027 383 8178</p>
+        </a>
+        <a href="mailto:cortenliving@gmail.com" class="block bg-metal-850 border border-corten-900/40 p-5 rounded-sm hover:border-corten-700 transition">
+          <p class="text-xs uppercase tracking-widest text-corten-500">Email</p>
+          <p class="mt-1 font-display text-lg text-white break-all">cortenliving@gmail.com</p>
+        </a>
+        <div class="bg-metal-850 border border-corten-900/40 p-5 rounded-sm">
+          <p class="text-xs uppercase tracking-widest text-corten-500">Workshop</p>
+          <p class="mt-1 text-white">Gisborne, New Zealand</p>
+          <p class="mt-2 text-sm text-gray-500">NZ-wide shipping available</p>
+        </div>
+        <div class="bg-metal-850 border border-corten-900/40 p-5 rounded-sm">
+          <h3 class="font-display text-corten-400 mb-2">Custom work</h3>
+          <p class="text-sm text-gray-400">Need a one-off design or RAPID numbers? Upload a DXF on the <a href="/quote.html" class="text-corten-500 hover:underline">Quote page</a>.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-3 bg-metal-850 border border-corten-900/50 rounded-sm p-6 sm:p-8">
+        <form action="https://forminit.com/f/mwpwiikqjzy" method="POST" class="space-y-5">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Your Name *</label>
+              <input type="text" name="fi-sender-fullName" required class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Email *</label>
+              <input type="email" name="fi-sender-email" required class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Phone (optional)</label>
+            <input type="text" name="fi-text-phone" placeholder="e.g. 027 383 8178" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Message *</label>
+            <textarea name="fi-text-message" rows="5" required placeholder="How can we help?" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+          </div>
+          <button type="submit" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-corten-900/40 bg-metal-950 mt-auto">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <div class="grid md:grid-cols-3 gap-10">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <img src="/images/logo.svg" alt="" class="w-10 h-10">
+          <span class="font-display text-lg text-white tracking-wide">CORTEN LIVING</span>
+        </div>
+        <p class="text-sm text-gray-500 leading-relaxed">Handcrafted Corten steel art, signage and garden pieces from Gisborne, New Zealand.</p>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Quick links</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li><a href="/shop.html" class="hover:text-corten-400 transition">Shop</a></li>
+          <li><a href="/quote.html" class="hover:text-corten-400 transition">Custom Quote</a></li>
+          <li><a href="/house-numbers.html" class="hover:text-corten-400 transition">House Numbers</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li><a href="tel:0273838178" class="hover:text-corten-400 transition">027 383 8178</a></li>
+          <li><a href="mailto:cortenliving@gmail.com" class="hover:text-corten-400 transition">cortenliving@gmail.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 border-t border-gray-800 text-center text-xs text-gray-600">
+      <p>© 2026 Corten Living · Rural New Zealand</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <circle cx="100" cy="100" r="92" stroke="#b7410e" stroke-width="6" fill="none"/>
+  <circle cx="100" cy="100" r="78" stroke="#c45a28" stroke-width="2" fill="none" opacity="0.5"/>
+  <!-- sun rays -->
+  <g stroke="#b7410e" stroke-width="3" stroke-linecap="round">
+    <line x1="100" y1="28" x2="100" y2="42"/>
+    <line x1="130" y1="36" x2="124" y2="48"/>
+    <line x1="155" y1="55" x2="145" y2="63"/>
+    <line x1="70" y1="36" x2="76" y2="48"/>
+    <line x1="45" y1="55" x2="55" y2="63"/>
+    <line x1="160" y1="80" x2="148" y2="84"/>
+    <line x1="40" y1="80" x2="52" y2="84"/>
+  </g>
+  <!-- sun -->
+  <circle cx="100" cy="72" r="18" fill="#b7410e"/>
+  <!-- mountains -->
+  <path d="M35 130 L70 85 L90 105 L100 75 L120 100 L145 80 L165 130 Z" fill="#9c340b"/>
+  <path d="M35 130 L70 95 L95 115 L100 95 L115 110 L145 90 L165 130 Z" fill="#b7410e"/>
+  <!-- river -->
+  <path d="M55 130 Q80 118 100 128 Q120 138 145 125" stroke="#e57a48" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>
