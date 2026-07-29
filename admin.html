@@ -207,18 +207,18 @@ tailwind.config = {
       </div>
 
       <div class="mt-8 bg-metal-900/50 border border-corten-900/30 rounded-sm p-6 text-sm text-gray-400 space-y-3">
-        <p class="font-display text-corten-400 text-base">One-time Cloudflare setup</p>
-        <p>Do this once in the Cloudflare dashboard so admin saves are stored online:</p>
+        <p class="font-display text-corten-400 text-base">One-time setup (no KV)</p>
+        <p>Products are saved into your GitHub repo. You only need two secrets on the page you already have open:</p>
         <ol class="list-decimal list-inside space-y-2 leading-relaxed">
-          <li>Open <strong class="text-gray-300">Workers &amp; Pages</strong> → your <code class="text-corten-500">corten-living</code> project</li>
-          <li><strong class="text-gray-300">Settings → Variables and secrets</strong> → add secret <code class="text-corten-500">ADMIN_PASSWORD</code> = your admin password (e.g. <code class="text-corten-500">CortenAdmin!</code>)</li>
-          <li><strong class="text-gray-300">Settings → Bindings</strong> → add <strong class="text-gray-300">KV namespace</strong> binding:
-            <ul class="list-disc list-inside ml-4 mt-1">
-              <li>Variable name: <code class="text-corten-500">CATALOGUE</code></li>
-              <li>Create a new KV namespace (e.g. <code class="text-corten-500">corten-living-catalogue</code>)</li>
+          <li><strong class="text-gray-300">GitHub</strong> → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token<br>
+            Enable scope <code class="text-corten-500">repo</code> → Generate → <strong class="text-gray-300">copy the token</strong></li>
+          <li>Cloudflare → <strong class="text-gray-300">corten-living</strong> → Settings → <strong class="text-gray-300">Variables and secrets</strong> → <strong class="text-gray-300">+ Add</strong> (Production):
+            <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+              <li>Secret <code class="text-corten-500">ADMIN_PASSWORD</code> = e.g. <code class="text-corten-500">CortenAdmin!</code></li>
+              <li>Secret <code class="text-corten-500">GITHUB_TOKEN</code> = the token you copied</li>
             </ul>
           </li>
-          <li>Save and <strong class="text-gray-300">retry deployment</strong> (or push a small commit) so Functions pick up bindings</li>
+          <li><strong class="text-gray-300">Deployments</strong> → latest → <strong class="text-gray-300">Retry deployment</strong></li>
           <li>Reload <code class="text-corten-500">/admin</code> — badge should say <strong class="text-green-400">Cloud live</strong></li>
         </ol>
       </div>

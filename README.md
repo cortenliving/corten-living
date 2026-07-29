@@ -4,53 +4,37 @@ Handcrafted 3 mm Corten steel garden sculptures, house numbers and custom laser-
 
 Live site: [corten-living.pages.dev](https://corten-living.pages.dev/)
 
-## What’s included
+## Admin (live catalogue — no Cloudflare KV)
 
-- Dark / Corten-themed static site
-- Product catalogue (`js/products.js` seed + **live cloud catalogue**)
-- Admin at `/admin` — products, photos, pricing
-- House number configurator with cloud pricing
-- Custom DXF quote form + quick price estimator
-- Contact form (Forminit)
+Open **[/admin](https://corten-living.pages.dev/admin)**
 
-## Admin (cloud — live for everyone)
+Saves write to your GitHub repo (`data/catalogue.json`, photos under `images/live/`).
 
-Open **[/admin](https://corten-living.pages.dev/admin)** (not linked from the public menu).
+### One-time setup (Variables and secrets only)
 
-### One-time Cloudflare setup
+1. **GitHub** → [Personal access tokens (classic)](https://github.com/settings/tokens)  
+   - Generate new token (classic)  
+   - Scope: **`repo`**  
+   - Copy the token  
 
-1. **Workers & Pages** → `corten-living` project  
-2. **Settings → Variables and secrets** → add secret  
-   - Name: `ADMIN_PASSWORD`  
-   - Value: your password (e.g. `CortenAdmin!`)  
-   - Apply to Production (and Preview if you use it)  
-3. **Settings → Bindings** → **Add** → **KV namespace**  
-   - Variable name: **`CATALOGUE`** (must match exactly)  
-   - Create a new namespace, e.g. `corten-living-catalogue`  
-4. **Deployments** → retry the latest deploy (or push any commit)  
-5. Reload `/admin` — badge should say **Cloud live**
+2. **Cloudflare** → Workers & Pages → **corten-living** → **Settings** → **Variables and secrets** → **+ Add** (Production):
 
-### Day-to-day use
+   | Type | Name | Value |
+   |------|------|--------|
+   | Secret | `ADMIN_PASSWORD` | e.g. `CortenAdmin!` |
+   | Secret | `GITHUB_TOKEN` | the GitHub token |
 
-1. Sign in with `ADMIN_PASSWORD`
-2. Add / edit products, upload photos, set prices, featured flags  
-3. Click **Save product** or **Publish live (everyone)**  
-4. Shop & Home refresh for all visitors within ~30s (API cache)
+3. **Deployments** → latest → **Retry deployment**
 
-House number prices: **Number pricing** tab → Save.
+4. Open `/admin` — badge should say **Cloud live**
 
-### API (Pages Functions)
+Optional secrets: `GITHUB_OWNER` (default `cortenliving`), `GITHUB_REPO` (default `corten-living`), `GITHUB_BRANCH` (default `main`).
 
-| Endpoint | Access |
-|----------|--------|
-| `GET /api/status` | Cloud ready? |
-| `POST /api/auth` | Check admin password |
-| `GET /api/products` | Public catalogue |
-| `PUT /api/products` | Admin save catalogue |
-| `GET /api/pricing` | Public HN prices |
-| `PUT /api/pricing` | Admin |
-| `POST /api/upload` | Admin image → KV |
-| `GET /api/media/:id` | Public image |
+### Using admin
+
+- Sign in with `ADMIN_PASSWORD`
+- Add products / photos / prices → **Save** or **Publish live**
+- Shop & Home load from `GET /api/products` (GitHub-backed)
 
 ## Local preview
 
@@ -59,13 +43,7 @@ cd corten-living
 python -m http.server 8080
 ```
 
-Open http://localhost:8080 — note: `/api/*` only works on Cloudflare (or `wrangler pages dev`).
-
-## Deploy
-
-1. Push to GitHub `cortenliving/corten-living`  
-2. Cloudflare Pages: Framework **None**, build empty, output `/`  
-3. Complete the KV + `ADMIN_PASSWORD` steps above  
+`/api/*` only works on Cloudflare Pages (or `wrangler pages dev` with secrets).
 
 ## Colour palette
 

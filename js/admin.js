@@ -17,7 +17,7 @@ const DEFAULT_HN_PRICES = {
 let catalogue = [];
 let editingId = null;
 let pendingImages = [];
-let cloudStatus = { cloud: false, hasKV: false, hasAdminPassword: false };
+let cloudStatus = { cloud: false, hasGithub: false, hasAdminPassword: false, storage: 'none' };
 
 async function sha256(text) {
   const data = new TextEncoder().encode(text);
@@ -82,22 +82,25 @@ function updateCloudBadge() {
   if (cloudStatus.cloud) {
     el.textContent = 'Cloud live';
     el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-green-900/50 text-green-400 border border-green-800';
-  } else if (cloudStatus.hasKV && !cloudStatus.hasAdminPassword) {
+  } else if (!cloudStatus.hasAdminPassword && !cloudStatus.hasGithub) {
+    el.textContent = 'Setup needed';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
+  } else if (!cloudStatus.hasAdminPassword) {
     el.textContent = 'Set ADMIN_PASSWORD';
     el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
-  } else if (!cloudStatus.hasKV) {
+  } else if (!cloudStatus.hasGithub) {
+    el.textContent = 'Set GITHUB_TOKEN';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
+  } else {
     el.textContent = 'Local only';
     el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700';
-  } else {
-    el.textContent = 'Cloud partial';
-    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
   }
   const hint = document.getElementById('cloud-hint');
   if (hint) {
     if (cloudStatus.cloud) {
-      hint.textContent = 'Saves go live for every visitor instantly via Cloudflare KV.';
+      hint.textContent = 'Saves go live for every visitor (stored in your GitHub repo).';
     } else {
-      hint.innerHTML = 'Cloud not configured yet — saves stay on this device. See <strong class="text-gray-300">Save &amp; deploy</strong> for setup steps.';
+      hint.innerHTML = 'Add two secrets under Cloudflare Pages → Settings → Variables and secrets (see steps below). No KV needed.';
     }
   }
 }
@@ -108,13 +111,14 @@ async function refreshCloudStatus() {
     if (res.ok && data) {
       cloudStatus = {
         cloud: !!data.cloud,
-        hasKV: !!data.hasKV,
+        hasGithub: !!data.hasGithub,
         hasAdminPassword: !!data.hasAdminPassword,
+        storage: data.storage || 'none',
         productCount: data.productCount,
       };
     }
   } catch {
-    cloudStatus = { cloud: false, hasKV: false, hasAdminPassword: false };
+    cloudStatus = { cloud: false, hasGithub: false, hasAdminPassword: false, storage: 'none' };
   }
   updateCloudBadge();
 }
@@ -156,7 +160,7 @@ function compressImage(file, maxW = 1100, quality = 0.82) {
 
 /** Upload data URL to cloud → permanent /api/media/… URL */
 async function uploadToCloud(dataUrl, filename) {
-  if (!cloudStatus.cloud && !cloudStatus.hasKV) {
+  if (!cloudStatus.cloud && !cloudStatus.hasGithub) {
     return dataUrl; // keep local data URL
   }
   const { res, data } = await api('/api/upload', {
@@ -295,15 +299,15 @@ async function publishLive() {
     catalogue = uploaded;
     saveDraftLocal();
 
-    if (cloudStatus.hasKV || cloudStatus.cloud) {
+    if (cloudStatus.hasGithub || cloudStatus.cloud) {
       const { res, data } = await api('/api/products', {
         method: 'PUT',
         body: JSON.stringify({ products: catalogue }),
       });
       if (!res.ok) throw new Error(data?.error || `Save failed (${res.status})`);
-      toast(`Live for everyone — ${catalogue.length} products saved to cloud`);
+      toast(`Live for everyone — ${catalogue.length} products saved`);
     } else {
-      toast('Saved on this browser only (cloud not configured yet)', true);
+      toast('Saved on this browser only (add GITHUB_TOKEN + ADMIN_PASSWORD secrets)', true);
     }
     renderList();
   } catch (e) {
@@ -337,7 +341,7 @@ async function loadHnPrices() {
 
 async function saveHnPricesCloud(prices) {
   localStorage.setItem(STORAGE_HN_PRICES, JSON.stringify(prices));
-  if (cloudStatus.hasKV || cloudStatus.cloud) {
+  if (cloudStatus.hasGithub || cloudStatus.cloud) {
     const { res, data } = await api('/api/pricing', {
       method: 'PUT',
       body: JSON.stringify({ prices }),
@@ -461,15 +465,14 @@ async function saveProductFromForm() {
   try {
     // Upload images now if cloud available
     let finalProduct = product;
-    if (cloudStatus.hasKV || cloudStatus.cloud) {
+    if (cloudStatus.hasGithub || cloudStatus.cloud) {
       finalProduct = await ensureCloudUrls(product);
     }
     const idx = catalogue.findIndex((p) => p.id === (editingId || finalProduct.id));
     if (idx >= 0) catalogue[idx] = finalProduct;
     else catalogue.push(finalProduct);
     saveDraftLocal();
-    // Auto-publish to cloud when connected
-    if (cloudStatus.hasKV || cloudStatus.cloud) {
+    if (cloudStatus.hasGithub || cloudStatus.cloud) {
       const { res, data } = await api('/api/products', {
         method: 'PUT',
         body: JSON.stringify({ products: catalogue }),
@@ -477,7 +480,7 @@ async function saveProductFromForm() {
       if (!res.ok) throw new Error(data?.error || 'Cloud save failed');
       toast('Product saved live for everyone');
     } else {
-      toast('Product saved on this device (cloud not set up)');
+      toast('Product saved on this device (add secrets to go live)');
     }
     closeEditor();
     renderList();
@@ -691,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         let dataUrl = await compressImage(file);
         // Upload immediately when cloud is ready
-        if (cloudStatus.hasKV || cloudStatus.cloud) {
+        if (cloudStatus.hasGithub || cloudStatus.cloud) {
           try {
             dataUrl = await uploadToCloud(dataUrl, file.name);
           } catch (upErr) {
