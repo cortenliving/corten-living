@@ -1,0 +1,14 @@
+# Cloudflare Pages project config (bindings are also set in the dashboard).
+# Docs: https://developers.cloudflare.com/pages/functions/bindings/
+
+name = "corten-living"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "."
+
+# After creating a KV namespace in the dashboard, paste its id here for local wrangler dev:
+# [[kv_namespaces]]
+# binding = "CATALOGUE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Set in dashboard (Production + Preview):
+# ADMIN_PASSWORD = your secret admin password

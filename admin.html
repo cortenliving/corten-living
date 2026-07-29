@@ -51,8 +51,9 @@ tailwind.config = {
       <button type="submit" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Sign in</button>
     </form>
     <p class="mt-6 text-xs text-gray-600 leading-relaxed">
-      Default password is <code class="text-corten-500">CortenAdmin!</code> — change it under Settings after login.
-      This admin is not linked from the public site.
+      Use the same password as Cloudflare secret <code class="text-corten-500">ADMIN_PASSWORD</code>
+      (default if not set yet: <code class="text-corten-500">CortenAdmin!</code>).
+      Not linked from the public site.
     </p>
     <a href="/" class="inline-block mt-4 text-sm text-corten-500 hover:underline">← Back to site</a>
   </div>
@@ -65,6 +66,7 @@ tailwind.config = {
       <div class="flex items-center gap-3">
         <img src="/images/logo.svg" alt="" class="w-8 h-8">
         <span class="font-display text-lg text-white tracking-wide">Admin</span>
+        <span id="cloud-badge" class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700">…</span>
       </div>
       <nav class="flex flex-wrap gap-1 text-sm">
         <button type="button" data-tab="products" class="px-3 py-1.5 border-b-2 border-corten-600 text-corten-400 font-medium">Products</button>
@@ -183,44 +185,46 @@ tailwind.config = {
 
     <!-- DEPLOY TAB -->
     <div data-tab-panel="deploy" class="hidden">
-      <h1 class="font-display text-2xl font-bold text-white mb-2">Save & deploy</h1>
-      <p class="text-sm text-gray-500 mb-8 max-w-2xl">
-        This is a static site on Cloudflare Pages — there is no server database.
-        Use <strong class="text-gray-300">Publish on this browser</strong> to preview changes immediately,
-        then <strong class="text-gray-300">Download products.js</strong> and push to GitHub so every visitor sees them.
-      </p>
+      <h1 class="font-display text-2xl font-bold text-white mb-2">Save &amp; cloud</h1>
+      <p id="cloud-hint" class="text-sm text-gray-500 mb-8 max-w-2xl">Checking cloud status…</p>
 
       <div class="grid sm:grid-cols-2 gap-4">
         <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
-          <h2 class="font-display text-lg text-white">1. Preview here</h2>
-          <p class="text-sm text-gray-500 mt-2 mb-4">Updates Shop & Home on <em>this computer/browser only</em>.</p>
-          <button type="button" id="btn-publish" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Publish on this browser</button>
-          <button type="button" id="btn-save-draft" class="w-full mt-2 py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Save draft</button>
+          <h2 class="font-display text-lg text-white">Publish live</h2>
+          <p class="text-sm text-gray-500 mt-2 mb-4">Push the full catalogue + photos to Cloudflare so every visitor sees them.</p>
+          <button type="button" id="btn-publish" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Publish live (everyone)</button>
+          <button type="button" id="btn-save-draft" class="w-full mt-2 py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Save draft on this device</button>
         </div>
         <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
-          <h2 class="font-display text-lg text-white">2. Go live for everyone</h2>
-          <p class="text-sm text-gray-500 mt-2 mb-4">Download the catalogue file, replace it in the project, push to GitHub.</p>
-          <button type="button" id="btn-export-js" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Download products.js</button>
-          <button type="button" id="btn-export-images" class="w-full mt-2 py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Download new photos</button>
+          <h2 class="font-display text-lg text-white">Backup / import</h2>
+          <p class="text-sm text-gray-500 mt-2 mb-4">Optional: download a products.js file or import a previous export.</p>
+          <button type="button" id="btn-export-js" class="w-full py-2.5 border border-gray-700 text-gray-300 text-sm rounded-sm hover:border-corten-600">Download products.js backup</button>
+          <label class="mt-2 flex w-full justify-center px-4 py-2.5 border border-gray-700 text-sm text-gray-300 rounded-sm cursor-pointer hover:border-corten-600">
+            Import products.js / JSON
+            <input type="file" id="import-file" accept=".js,.json,text/*" class="hidden">
+          </label>
         </div>
       </div>
 
-      <div class="mt-8 bg-metal-900/50 border border-corten-900/30 rounded-sm p-6 text-sm text-gray-400 space-y-2">
-        <p class="font-display text-corten-400 text-base">Deploy steps</p>
-        <ol class="list-decimal list-inside space-y-1.5 leading-relaxed">
-          <li>Click <strong class="text-gray-300">Download products.js</strong></li>
-          <li>If you uploaded new photos, click <strong class="text-gray-300">Download new photos</strong> and put them in the <code class="text-corten-500">images/</code> folder</li>
-          <li>Copy <code class="text-corten-500">products.js</code> into <code class="text-corten-500">js/products.js</code> (overwrite)</li>
-          <li>Push the <code class="text-corten-500">corten-living</code> repo to GitHub — Cloudflare Pages updates automatically</li>
+      <div class="mt-8 bg-metal-900/50 border border-corten-900/30 rounded-sm p-6 text-sm text-gray-400 space-y-3">
+        <p class="font-display text-corten-400 text-base">One-time Cloudflare setup</p>
+        <p>Do this once in the Cloudflare dashboard so admin saves are stored online:</p>
+        <ol class="list-decimal list-inside space-y-2 leading-relaxed">
+          <li>Open <strong class="text-gray-300">Workers &amp; Pages</strong> → your <code class="text-corten-500">corten-living</code> project</li>
+          <li><strong class="text-gray-300">Settings → Variables and secrets</strong> → add secret <code class="text-corten-500">ADMIN_PASSWORD</code> = your admin password (e.g. <code class="text-corten-500">CortenAdmin!</code>)</li>
+          <li><strong class="text-gray-300">Settings → Bindings</strong> → add <strong class="text-gray-300">KV namespace</strong> binding:
+            <ul class="list-disc list-inside ml-4 mt-1">
+              <li>Variable name: <code class="text-corten-500">CATALOGUE</code></li>
+              <li>Create a new KV namespace (e.g. <code class="text-corten-500">corten-living-catalogue</code>)</li>
+            </ul>
+          </li>
+          <li>Save and <strong class="text-gray-300">retry deployment</strong> (or push a small commit) so Functions pick up bindings</li>
+          <li>Reload <code class="text-corten-500">/admin</code> — badge should say <strong class="text-green-400">Cloud live</strong></li>
         </ol>
       </div>
 
-      <div class="mt-6 flex flex-wrap gap-3 items-center">
-        <label class="px-4 py-2 border border-gray-700 text-sm text-gray-300 rounded-sm cursor-pointer hover:border-corten-600">
-          Import products.js / JSON
-          <input type="file" id="import-file" accept=".js,.json,text/*" class="hidden">
-        </label>
-        <button type="button" id="btn-reset-seed" class="text-sm text-gray-500 hover:text-red-400">Reset to site seed…</button>
+      <div class="mt-6">
+        <button type="button" id="btn-reset-seed" class="text-sm text-gray-500 hover:text-red-400">Reset list to site seed…</button>
       </div>
     </div>
 

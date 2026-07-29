@@ -4,7 +4,11 @@ const CART_KEY = 'cortenCart';
 const PUBLISHED_PRODUCTS_KEY = 'cortenProductsPublished';
 const HN_PRICES_KEY = 'cortenHouseNumberPrices';
 
-/** Prefer admin-published catalogue (this browser) over products.js seed */
+function seedProducts() {
+  return typeof products !== 'undefined' && Array.isArray(products) ? products : [];
+}
+
+/** Sync snapshot: localStorage publish or products.js */
 function loadActiveProducts() {
   try {
     const raw = localStorage.getItem(PUBLISHED_PRODUCTS_KEY);
@@ -16,7 +20,29 @@ function loadActiveProducts() {
       }
     }
   } catch (_) {}
-  return typeof products !== 'undefined' ? products : [];
+  const seed = seedProducts();
+  window.products = seed;
+  return seed;
+}
+
+/**
+ * Prefer cloud catalogue (everyone sees admin publishes), then localStorage, then products.js.
+ */
+async function loadActiveProductsAsync() {
+  try {
+    const res = await fetch('/api/products', { headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.products) && data.products.length) {
+        window.products = data.products;
+        try {
+          localStorage.setItem(PUBLISHED_PRODUCTS_KEY, JSON.stringify(data.products));
+        } catch (_) {}
+        return data.products;
+      }
+    }
+  } catch (_) {}
+  return loadActiveProducts();
 }
 
 function getCart() {
@@ -266,10 +292,14 @@ function initQuotePrefill() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initMobileMenu();
   updateCartCount();
+  // Paint seed quickly, then refresh from cloud
   loadActiveProducts();
+  renderProducts('all');
+  renderFeatured();
+  await loadActiveProductsAsync();
   renderProducts('all');
   renderFeatured();
   initEstimator();

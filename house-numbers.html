@@ -221,7 +221,7 @@ const DEFAULT_PRICES = {
   }
 };
 
-// Admin can override via /admin → Number pricing (stored on this browser)
+// Admin overrides: cloud (/api/pricing) then localStorage then defaults
 let prices = DEFAULT_PRICES;
 try {
   const stored = localStorage.getItem('cortenHouseNumberPrices');
@@ -230,6 +230,20 @@ try {
     if (parsed && typeof parsed === 'object') prices = parsed;
   }
 } catch (e) {}
+
+async function loadCloudPrices() {
+  try {
+    const res = await fetch('/api/pricing', { headers: { Accept: 'application/json' } });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.prices && typeof data.prices === 'object') {
+      prices = data.prices;
+      try { localStorage.setItem('cortenHouseNumberPrices', JSON.stringify(prices)); } catch (e) {}
+      if (typeof updateUI === 'function') updateUI();
+    }
+  } catch (e) {}
+}
+loadCloudPrices();
 
 function getCharCount(str) {
   return (str || '').replace(/[^0-9A-Za-z]/g, '').length;

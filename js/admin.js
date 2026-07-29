@@ -1,10 +1,11 @@
-/* Corten Living Admin — product & pricing manager */
+/* Corten Living Admin — products, photos, pricing (cloud + local fallback) */
 
 const STORAGE_PRODUCTS = 'cortenAdminProducts';
 const STORAGE_PUBLISHED = 'cortenProductsPublished';
 const STORAGE_HN_PRICES = 'cortenHouseNumberPrices';
 const STORAGE_SESSION = 'cortenAdminSession';
-// Default password: CortenAdmin!  (change after first login via Settings)
+const STORAGE_PASS = 'cortenAdminPass'; // session-only password for API
+// Local-only fallback password: CortenAdmin!
 const DEFAULT_PASS_HASH = '3c1db5a70bf6cf2ba4ebc27d48cd017c94bc623c3491fe2c2d7dcd4144f765ab';
 const STORAGE_PASS_HASH = 'cortenAdminPassHash';
 
@@ -13,17 +14,10 @@ const DEFAULT_HN_PRICES = {
   200: { clean: { 1: 15, 2: 28, 3: 42 }, holes: { 1: 17, 2: 32, 3: 46 } }
 };
 
-const CATEGORIES = [
-  { value: 'sculpture', label: 'Sculpture' },
-  { value: 'signage', label: 'Signage' },
-  { value: 'numbers', label: 'Numbers' },
-  { value: 'planter', label: 'Planter' },
-  { value: 'other', label: 'Other' }
-];
-
 let catalogue = [];
 let editingId = null;
-let pendingImages = []; // base64 slides being added in form
+let pendingImages = [];
+let cloudStatus = { cloud: false, hasKV: false, hasAdminPassword: false };
 
 async function sha256(text) {
   const data = new TextEncoder().encode(text);
@@ -39,61 +33,90 @@ function isLoggedIn() {
   return sessionStorage.getItem(STORAGE_SESSION) === '1';
 }
 
-function setLoggedIn(v) {
-  if (v) sessionStorage.setItem(STORAGE_SESSION, '1');
-  else sessionStorage.removeItem(STORAGE_SESSION);
+function getAdminPassword() {
+  return sessionStorage.getItem(STORAGE_PASS) || '';
 }
 
-function loadCatalogue() {
-  try {
-    const raw = localStorage.getItem(STORAGE_PRODUCTS);
-    if (raw) {
-      catalogue = JSON.parse(raw);
-      return;
-    }
-  } catch (_) {}
-  // Seed from live site products.js if available
-  if (typeof window.products !== 'undefined' && Array.isArray(window.products)) {
-    catalogue = JSON.parse(JSON.stringify(window.products));
-  } else {
-    catalogue = [];
-  }
+function setLoggedIn(password) {
+  sessionStorage.setItem(STORAGE_SESSION, '1');
+  if (password) sessionStorage.setItem(STORAGE_PASS, password);
 }
 
-function saveCatalogue() {
-  localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(catalogue));
-  toast('Draft saved on this device');
-  renderList();
+function clearSession() {
+  sessionStorage.removeItem(STORAGE_SESSION);
+  sessionStorage.removeItem(STORAGE_PASS);
 }
 
-function publishCatalogue() {
-  localStorage.setItem(STORAGE_PUBLISHED, JSON.stringify(catalogue));
-  localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(catalogue));
-  toast('Published to this browser — Shop & Home will show updates here');
+function adminHeaders(jsonBody = true) {
+  const h = {};
+  if (jsonBody) h['Content-Type'] = 'application/json';
+  const pass = getAdminPassword();
+  if (pass) h['X-Admin-Password'] = pass;
+  return h;
 }
 
-function loadHnPrices() {
-  try {
-    const raw = localStorage.getItem(STORAGE_HN_PRICES);
-    if (raw) return JSON.parse(raw);
-  } catch (_) {}
-  return JSON.parse(JSON.stringify(DEFAULT_HN_PRICES));
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { ...adminHeaders(options.body != null), ...options.headers },
+  });
+  let data = null;
+  try { data = await res.json(); } catch { data = null; }
+  return { res, data, ok: res.ok };
 }
 
-function saveHnPrices(prices) {
-  localStorage.setItem(STORAGE_HN_PRICES, JSON.stringify(prices));
-  toast('House number pricing saved');
-}
-
-function toast(msg) {
+function toast(msg, isError = false) {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
+  el.classList.toggle('border-red-700', isError);
+  el.classList.toggle('border-corten-700', !isError);
   el.classList.remove('opacity-0', 'pointer-events-none');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => {
-    el.classList.add('opacity-0', 'pointer-events-none');
-  }, 2800);
+  toast._t = setTimeout(() => el.classList.add('opacity-0', 'pointer-events-none'), 3200);
+}
+
+function updateCloudBadge() {
+  const el = document.getElementById('cloud-badge');
+  if (!el) return;
+  if (cloudStatus.cloud) {
+    el.textContent = 'Cloud live';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-green-900/50 text-green-400 border border-green-800';
+  } else if (cloudStatus.hasKV && !cloudStatus.hasAdminPassword) {
+    el.textContent = 'Set ADMIN_PASSWORD';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
+  } else if (!cloudStatus.hasKV) {
+    el.textContent = 'Local only';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-gray-800 text-gray-400 border border-gray-700';
+  } else {
+    el.textContent = 'Cloud partial';
+    el.className = 'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-sm bg-amber-900/40 text-amber-400 border border-amber-800';
+  }
+  const hint = document.getElementById('cloud-hint');
+  if (hint) {
+    if (cloudStatus.cloud) {
+      hint.textContent = 'Saves go live for every visitor instantly via Cloudflare KV.';
+    } else {
+      hint.innerHTML = 'Cloud not configured yet — saves stay on this device. See <strong class="text-gray-300">Save &amp; deploy</strong> for setup steps.';
+    }
+  }
+}
+
+async function refreshCloudStatus() {
+  try {
+    const { res, data } = await api('/api/status', { headers: {} });
+    if (res.ok && data) {
+      cloudStatus = {
+        cloud: !!data.cloud,
+        hasKV: !!data.hasKV,
+        hasAdminPassword: !!data.hasAdminPassword,
+        productCount: data.productCount,
+      };
+    }
+  } catch {
+    cloudStatus = { cloud: false, hasKV: false, hasAdminPassword: false };
+  }
+  updateCloudBadge();
 }
 
 function slugify(str) {
@@ -104,11 +127,6 @@ function slugify(str) {
     .slice(0, 40) || 'product';
 }
 
-function uid() {
-  return slugify(Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
-}
-
-/** Compress image file → JPEG data URL */
 function compressImage(file, maxW = 1100, quality = 0.82) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -125,8 +143,7 @@ function compressImage(file, maxW = 1100, quality = 0.82) {
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
     img.onerror = () => {
@@ -137,12 +154,48 @@ function compressImage(file, maxW = 1100, quality = 0.82) {
   });
 }
 
+/** Upload data URL to cloud → permanent /api/media/… URL */
+async function uploadToCloud(dataUrl, filename) {
+  if (!cloudStatus.cloud && !cloudStatus.hasKV) {
+    return dataUrl; // keep local data URL
+  }
+  const { res, data } = await api('/api/upload', {
+    method: 'POST',
+    body: JSON.stringify({ dataUrl, filename }),
+  });
+  if (!res.ok) throw new Error(data?.error || 'Upload failed');
+  return data.url;
+}
+
+async function ensureCloudUrls(product) {
+  const out = JSON.parse(JSON.stringify(product));
+  if (out.image && out.image.startsWith('data:')) {
+    out.image = await uploadToCloud(out.image, out.id + '.jpg');
+  }
+  if (out.slides?.length) {
+    for (let i = 0; i < out.slides.length; i++) {
+      if (out.slides[i].src?.startsWith('data:')) {
+        out.slides[i].src = await uploadToCloud(out.slides[i].src, `${out.id}-${i + 1}.jpg`);
+      }
+    }
+  }
+  // Prefer first slide as main image if empty
+  if (!out.image && out.slides?.[0]?.src) out.image = out.slides[0].src;
+  return out;
+}
+
 function productThumb(p) {
   const src = p.image || (p.slides && p.slides[0] && p.slides[0].src) || '';
-  if (src) {
-    return `<img src="${src}" alt="" class="w-14 h-14 object-cover rounded-sm bg-metal-950">`;
-  }
+  if (src) return `<img src="${src}" alt="" class="w-14 h-14 object-cover rounded-sm bg-metal-950">`;
   return `<div class="w-14 h-14 rounded-sm bg-metal-950 flex items-center justify-center text-corten-600 font-display text-lg">${(p.name || '?').charAt(0)}</div>`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function renderList() {
@@ -172,41 +225,132 @@ function renderList() {
     </div>
   `).join('');
 
-  list.querySelectorAll('.edit-btn').forEach((btn) => {
-    btn.addEventListener('click', () => openEditor(btn.dataset.edit));
-  });
+  list.querySelectorAll('.edit-btn').forEach((btn) => btn.addEventListener('click', () => openEditor(btn.dataset.edit)));
   list.querySelectorAll('.del-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (!confirm('Delete this product?')) return;
       catalogue = catalogue.filter((p) => p.id !== btn.dataset.del);
-      saveCatalogue();
+      await saveDraftLocal();
+      renderList();
     });
   });
   list.querySelectorAll('.move-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const i = parseInt(btn.dataset.move, 10);
-      const dir = parseInt(btn.dataset.dir, 10);
-      const j = i + dir;
+      const j = i + parseInt(btn.dataset.dir, 10);
       if (j < 0 || j >= catalogue.length) return;
-      const t = catalogue[i];
-      catalogue[i] = catalogue[j];
-      catalogue[j] = t;
-      saveCatalogue();
+      [catalogue[i], catalogue[j]] = [catalogue[j], catalogue[i]];
+      await saveDraftLocal();
+      renderList();
     });
   });
 }
 
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+async function loadCatalogue() {
+  // 1) Cloud
+  try {
+    const { res, data } = await api('/api/products', { headers: {} });
+    if (res.ok && Array.isArray(data?.products) && data.products.length) {
+      catalogue = data.products;
+      localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(catalogue));
+      return;
+    }
+  } catch (_) {}
+
+  // 2) Local draft
+  try {
+    const raw = localStorage.getItem(STORAGE_PRODUCTS);
+    if (raw) {
+      catalogue = JSON.parse(raw);
+      return;
+    }
+  } catch (_) {}
+
+  // 3) Seed from products.js
+  if (typeof window.products !== 'undefined' && Array.isArray(window.products)) {
+    catalogue = JSON.parse(JSON.stringify(window.products));
+  } else {
+    catalogue = [];
+  }
+}
+
+function saveDraftLocal() {
+  localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(catalogue));
+  localStorage.setItem(STORAGE_PUBLISHED, JSON.stringify(catalogue));
+}
+
+async function publishLive() {
+  const btn = document.getElementById('btn-publish');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Publishing…';
+  }
+  try {
+    // Upload any remaining data: URLs in products
+    toast('Uploading photos & saving…');
+    const uploaded = [];
+    for (const p of catalogue) {
+      uploaded.push(await ensureCloudUrls(p));
+    }
+    catalogue = uploaded;
+    saveDraftLocal();
+
+    if (cloudStatus.hasKV || cloudStatus.cloud) {
+      const { res, data } = await api('/api/products', {
+        method: 'PUT',
+        body: JSON.stringify({ products: catalogue }),
+      });
+      if (!res.ok) throw new Error(data?.error || `Save failed (${res.status})`);
+      toast(`Live for everyone — ${catalogue.length} products saved to cloud`);
+    } else {
+      toast('Saved on this browser only (cloud not configured yet)', true);
+    }
+    renderList();
+  } catch (e) {
+    toast(String(e.message || e), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Publish live (everyone)';
+    }
+  }
+}
+
+function loadHnPricesLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_HN_PRICES);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(DEFAULT_HN_PRICES));
+}
+
+async function loadHnPrices() {
+  try {
+    const { res, data } = await api('/api/pricing', { headers: {} });
+    if (res.ok && data?.prices) {
+      localStorage.setItem(STORAGE_HN_PRICES, JSON.stringify(data.prices));
+      return data.prices;
+    }
+  } catch (_) {}
+  return loadHnPricesLocal();
+}
+
+async function saveHnPricesCloud(prices) {
+  localStorage.setItem(STORAGE_HN_PRICES, JSON.stringify(prices));
+  if (cloudStatus.hasKV || cloudStatus.cloud) {
+    const { res, data } = await api('/api/pricing', {
+      method: 'PUT',
+      body: JSON.stringify({ prices }),
+    });
+    if (!res.ok) throw new Error(data?.error || 'Pricing save failed');
+    toast('Number pricing live for everyone');
+  } else {
+    toast('Number pricing saved on this device only', true);
+  }
 }
 
 function openEditor(id) {
   editingId = id || null;
-  pendingImages = [];
   const p = id ? catalogue.find((x) => x.id === id) : null;
   document.getElementById('editor-title').textContent = p ? 'Edit product' : 'Add product';
   document.getElementById('f-id').value = p?.id || '';
@@ -220,12 +364,8 @@ function openEditor(id) {
   document.getElementById('f-link').value = p?.link || '';
   document.getElementById('f-featured').checked = !!p?.featured;
   document.getElementById('f-image').value = p?.image || '';
-
-  // Existing slides
-  const slides = p?.slides ? [...p.slides] : [];
-  pendingImages = slides.map((s) => ({ src: s.src, label: s.label || '' }));
+  pendingImages = (p?.slides || []).map((s) => ({ src: s.src, label: s.label || '' }));
   renderSlidePreviews();
-
   document.getElementById('editor-panel').classList.remove('hidden');
   document.getElementById('list-panel').classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -249,10 +389,9 @@ function renderSlidePreviews() {
       <img src="${s.src}" alt="" class="w-full aspect-square object-cover">
       <input type="text" data-slide-label="${i}" value="${escapeHtml(s.label)}" placeholder="Label"
         class="absolute bottom-0 inset-x-0 bg-black/70 text-[10px] text-white px-1 py-1 border-0 outline-none">
-      <button type="button" data-slide-del="${i}" class="absolute top-1 right-1 bg-black/70 text-white text-xs w-6 h-6 rounded-sm opacity-80 hover:opacity-100">×</button>
+      <button type="button" data-slide-del="${i}" class="absolute top-1 right-1 bg-black/70 text-white text-xs w-6 h-6 rounded-sm">×</button>
     </div>
   `).join('');
-
   box.querySelectorAll('[data-slide-del]').forEach((btn) => {
     btn.addEventListener('click', () => {
       pendingImages.splice(parseInt(btn.dataset.slideDel, 10), 1);
@@ -273,7 +412,6 @@ function collectFormProduct() {
     alert('Name is required');
     return null;
   }
-  // Sync labels from inputs
   document.querySelectorAll('[data-slide-label]').forEach((inp) => {
     const i = parseInt(inp.dataset.slideLabel, 10);
     if (pendingImages[i]) pendingImages[i].label = inp.value;
@@ -281,19 +419,14 @@ function collectFormProduct() {
 
   let id = document.getElementById('f-id').value.trim() || slugify(name);
   if (!editingId) {
-    // ensure unique
     let base = id;
     let n = 1;
-    while (catalogue.some((p) => p.id === id)) {
-      id = base + '-' + n++;
-    }
+    while (catalogue.some((p) => p.id === id)) id = base + '-' + n++;
   }
 
   const price = parseFloat(document.getElementById('f-price').value);
   let priceLabel = document.getElementById('f-priceLabel').value.trim();
-  if (!priceLabel && !Number.isNaN(price)) {
-    priceLabel = '$' + price;
-  }
+  if (!priceLabel && !Number.isNaN(price)) priceLabel = '$' + price;
 
   let image = document.getElementById('f-image').value.trim();
   if (!image && pendingImages[0]) image = pendingImages[0].src;
@@ -313,56 +446,63 @@ function collectFormProduct() {
     featured: document.getElementById('f-featured').checked,
     link,
     image,
-    slides: pendingImages.map((s) => ({ src: s.src, label: s.label || '' }))
+    slides: pendingImages.map((s) => ({ src: s.src, label: s.label || '' })),
   };
 }
 
-function saveProductFromForm() {
+async function saveProductFromForm() {
   const product = collectFormProduct();
   if (!product) return;
-  const idx = catalogue.findIndex((p) => p.id === (editingId || product.id));
-  if (editingId && idx >= 0) {
-    catalogue[idx] = product;
-  } else if (idx >= 0 && !editingId) {
-    catalogue[idx] = product;
-  } else {
-    catalogue.push(product);
+  const saveBtn = document.getElementById('btn-save-product');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
   }
-  saveCatalogue();
-  closeEditor();
+  try {
+    // Upload images now if cloud available
+    let finalProduct = product;
+    if (cloudStatus.hasKV || cloudStatus.cloud) {
+      finalProduct = await ensureCloudUrls(product);
+    }
+    const idx = catalogue.findIndex((p) => p.id === (editingId || finalProduct.id));
+    if (idx >= 0) catalogue[idx] = finalProduct;
+    else catalogue.push(finalProduct);
+    saveDraftLocal();
+    // Auto-publish to cloud when connected
+    if (cloudStatus.hasKV || cloudStatus.cloud) {
+      const { res, data } = await api('/api/products', {
+        method: 'PUT',
+        body: JSON.stringify({ products: catalogue }),
+      });
+      if (!res.ok) throw new Error(data?.error || 'Cloud save failed');
+      toast('Product saved live for everyone');
+    } else {
+      toast('Product saved on this device (cloud not set up)');
+    }
+    closeEditor();
+    renderList();
+  } catch (e) {
+    toast(String(e.message || e), true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save product';
+    }
+  }
 }
 
-/** Build products.js file content for deploy */
 function buildProductsJs(list) {
-  // Convert data-URL images to /images/ paths for deployable export
-  const exportList = list.map((p) => {
-    const copy = JSON.parse(JSON.stringify(p));
-    const fileBase = slugify(p.id || p.name);
-    if (copy.image && copy.image.startsWith('data:')) {
-      copy.image = `/images/${fileBase}.jpg`;
-    }
-    if (copy.slides) {
-      copy.slides = copy.slides.map((s, i) => {
-        if (s.src && s.src.startsWith('data:')) {
-          return { ...s, src: `/images/${fileBase}${i ? '-' + (i + 1) : ''}.jpg` };
-        }
-        return s;
-      });
-    }
-    return copy;
-  });
-
   return `// Corten Living product catalogue
 // Generated by Admin — ${new Date().toISOString().slice(0, 10)}
-const products = ${JSON.stringify(exportList, null, 2)};
+const products = ${JSON.stringify(list, null, 2)};
 
 // Expose for other scripts
 window.products = products;
 `;
 }
 
-function downloadText(filename, text, mime = 'text/javascript') {
-  const blob = new Blob([text], { type: mime });
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/javascript' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
@@ -370,76 +510,7 @@ function downloadText(filename, text, mime = 'text/javascript') {
   URL.revokeObjectURL(a.href);
 }
 
-function dataUrlToBlob(dataUrl) {
-  const [meta, b64] = dataUrl.split(',');
-  const mime = (meta.match(/:(.*?);/) || [])[1] || 'image/jpeg';
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
-
-async function downloadImages() {
-  let count = 0;
-  for (const p of catalogue) {
-    const fileBase = slugify(p.id || p.name);
-    if (p.image && p.image.startsWith('data:')) {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(dataUrlToBlob(p.image));
-      a.download = `${fileBase}.jpg`;
-      a.click();
-      count++;
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    if (p.slides) {
-      for (let i = 0; i < p.slides.length; i++) {
-        const s = p.slides[i];
-        if (s.src && s.src.startsWith('data:')) {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(dataUrlToBlob(s.src));
-          a.download = `${fileBase}${i ? '-' + (i + 1) : ''}.jpg`;
-          a.click();
-          count++;
-          await new Promise((r) => setTimeout(r, 200));
-        }
-      }
-    }
-  }
-  toast(count ? `Downloading ${count} image(s)… put them in the images/ folder` : 'No new uploaded images to download (paths only)');
-}
-
-function exportProductsJs() {
-  saveCatalogue();
-  const js = buildProductsJs(catalogue);
-  downloadText('products.js', js);
-  toast('Downloaded products.js — replace js/products.js in the repo and push');
-}
-
-function importProductsJson(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      let data = reader.result;
-      // Accept raw JSON array or products.js content
-      if (typeof data === 'string' && data.includes('const products')) {
-        const m = data.match(/const products\s*=\s*(\[[\s\S]*?\]);/);
-        if (!m) throw new Error('Could not parse products array');
-        data = m[1];
-      }
-      const arr = JSON.parse(data);
-      if (!Array.isArray(arr)) throw new Error('Expected an array');
-      catalogue = arr;
-      saveCatalogue();
-      toast('Imported ' + arr.length + ' products');
-    } catch (e) {
-      alert('Import failed: ' + e.message);
-    }
-  };
-  reader.readAsText(file);
-}
-
-function renderHnPricing() {
-  const prices = loadHnPrices();
+function renderHnPricing(prices) {
   const root = document.getElementById('hn-pricing');
   if (!root) return;
   const sizes = Object.keys(prices).sort((a, b) => a - b);
@@ -470,7 +541,7 @@ function renderHnPricing() {
 }
 
 function collectHnPricing() {
-  const prices = loadHnPrices();
+  const prices = loadHnPricesLocal();
   document.querySelectorAll('[data-hn]').forEach((inp) => {
     const size = inp.dataset.hn;
     const mount = inp.dataset.mount;
@@ -485,9 +556,6 @@ function collectHnPricing() {
 function showApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('admin-app').classList.remove('hidden');
-  loadCatalogue();
-  renderList();
-  renderHnPricing();
 }
 
 function showLogin() {
@@ -508,49 +576,111 @@ function switchTab(tab) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (isLoggedIn()) showApp();
-  else showLogin();
+async function bootAdmin() {
+  await refreshCloudStatus();
+  await loadCatalogue();
+  renderList();
+  const prices = await loadHnPrices();
+  renderHnPricing(prices);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await refreshCloudStatus();
+
+  if (isLoggedIn()) {
+    showApp();
+    await bootAdmin();
+  } else {
+    showLogin();
+  }
 
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const pass = document.getElementById('login-pass').value;
+    const err = document.getElementById('login-error');
+    err.classList.add('hidden');
+
+    // Prefer cloud auth when ADMIN_PASSWORD is configured
+    if (cloudStatus.hasAdminPassword) {
+      sessionStorage.setItem(STORAGE_PASS, pass);
+      const { res, data } = await api('/api/auth', { method: 'POST', body: '{}' });
+      if (res.ok) {
+        setLoggedIn(pass);
+        showApp();
+        await bootAdmin();
+        return;
+      }
+      sessionStorage.removeItem(STORAGE_PASS);
+      err.textContent = data?.error === 'Unauthorized' ? 'Incorrect password' : (data?.error || 'Login failed');
+      err.classList.remove('hidden');
+      return;
+    }
+
+    // Local fallback hash
     const hash = await sha256(pass);
     if (hash === getPassHash()) {
-      setLoggedIn(true);
+      setLoggedIn(pass);
       showApp();
+      await bootAdmin();
     } else {
-      document.getElementById('login-error').classList.remove('hidden');
+      err.textContent = 'Incorrect password';
+      err.classList.remove('hidden');
     }
   });
 
   document.getElementById('btn-logout')?.addEventListener('click', () => {
-    setLoggedIn(false);
+    clearSession();
     showLogin();
   });
 
   document.getElementById('btn-add')?.addEventListener('click', () => openEditor(null));
   document.getElementById('btn-cancel-edit')?.addEventListener('click', closeEditor);
-  document.getElementById('btn-save-product')?.addEventListener('click', saveProductFromForm);
+  document.getElementById('btn-save-product')?.addEventListener('click', () => saveProductFromForm());
 
+  document.getElementById('btn-publish')?.addEventListener('click', () => publishLive());
   document.getElementById('btn-save-draft')?.addEventListener('click', () => {
-    saveCatalogue();
+    saveDraftLocal();
+    toast('Draft saved on this device');
   });
-  document.getElementById('btn-publish')?.addEventListener('click', publishCatalogue);
-  document.getElementById('btn-export-js')?.addEventListener('click', exportProductsJs);
-  document.getElementById('btn-export-images')?.addEventListener('click', () => downloadImages());
-  document.getElementById('btn-reset-seed')?.addEventListener('click', () => {
-    if (!confirm('Reset catalogue from the built-in products.js seed? Unsaved local edits will be lost.')) return;
+  document.getElementById('btn-export-js')?.addEventListener('click', () => {
+    downloadText('products.js', buildProductsJs(catalogue));
+    toast('Downloaded products.js (optional backup)');
+  });
+
+  document.getElementById('btn-reset-seed')?.addEventListener('click', async () => {
+    if (!confirm('Reset catalogue from built-in products.js?')) return;
     localStorage.removeItem(STORAGE_PRODUCTS);
     if (typeof window.products !== 'undefined') {
       catalogue = JSON.parse(JSON.stringify(window.products));
     } else catalogue = [];
-    saveCatalogue();
+    saveDraftLocal();
+    renderList();
+    toast('Reset to seed catalogue (not published yet)');
   });
 
   document.getElementById('import-file')?.addEventListener('change', (e) => {
     const f = e.target.files?.[0];
-    if (f) importProductsJson(f);
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        let text = reader.result;
+        if (typeof text === 'string' && text.includes('const products')) {
+          const m = text.match(/const products\s*=\s*(\[[\s\S]*?\]);/);
+          if (!m) throw new Error('Could not parse products array');
+          text = m[1];
+        }
+        const arr = JSON.parse(text);
+        if (!Array.isArray(arr)) throw new Error('Expected an array');
+        catalogue = arr;
+        saveDraftLocal();
+        renderList();
+        toast('Imported ' + arr.length + ' products — click Publish live to go online');
+      } catch (err) {
+        alert('Import failed: ' + err.message);
+      }
+    };
+    reader.readAsText(f);
     e.target.value = '';
   });
 
@@ -559,34 +689,40 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
       try {
-        const dataUrl = await compressImage(file);
+        let dataUrl = await compressImage(file);
+        // Upload immediately when cloud is ready
+        if (cloudStatus.hasKV || cloudStatus.cloud) {
+          try {
+            dataUrl = await uploadToCloud(dataUrl, file.name);
+          } catch (upErr) {
+            toast('Cloud upload failed, kept local preview: ' + upErr.message, true);
+          }
+        }
         pendingImages.push({ src: dataUrl, label: file.name.replace(/\.[^.]+$/, '') });
       } catch (err) {
         alert('Image failed: ' + err.message);
       }
     }
     renderSlidePreviews();
-    // If main image empty, set first
-    if (pendingImages[0] && !document.getElementById('f-image').value) {
-      document.getElementById('f-image').value = pendingImages[0].src.startsWith('data:')
-        ? ''
-        : pendingImages[0].src;
-      // keep image field as path preference; data URLs live in slides
-      if (!document.getElementById('f-image').value && pendingImages[0]) {
-        // leave blank — image taken from first slide on save
-      }
-    }
     e.target.value = '';
     toast('Photo(s) added');
   });
 
-  document.getElementById('btn-save-hn')?.addEventListener('click', () => {
-    saveHnPrices(collectHnPricing());
+  document.getElementById('btn-save-hn')?.addEventListener('click', async () => {
+    try {
+      await saveHnPricesCloud(collectHnPricing());
+    } catch (e) {
+      toast(String(e.message || e), true);
+    }
   });
 
   document.getElementById('btn-change-pass')?.addEventListener('click', async () => {
     const next = document.getElementById('new-pass').value;
     const conf = document.getElementById('new-pass-conf').value;
+    if (cloudStatus.hasAdminPassword) {
+      alert('Cloud password is set in Cloudflare Pages → Settings → Environment variables (ADMIN_PASSWORD). Change it there.');
+      return;
+    }
     if (!next || next.length < 8) {
       alert('Password must be at least 8 characters');
       return;
@@ -595,11 +731,10 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Passwords do not match');
       return;
     }
-    const hash = await sha256(next);
-    localStorage.setItem(STORAGE_PASS_HASH, hash);
+    localStorage.setItem(STORAGE_PASS_HASH, await sha256(next));
     document.getElementById('new-pass').value = '';
     document.getElementById('new-pass-conf').value = '';
-    toast('Password updated for this browser');
+    toast('Local password updated for this browser');
   });
 
   document.querySelectorAll('[data-tab]').forEach((btn) => {
