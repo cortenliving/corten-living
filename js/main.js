@@ -55,7 +55,7 @@ function startSlideShow(container) {
 
 function productCardHTML(p, options = {}) {
   const compact = options.compact;
-  const href = p.link || '/quote.html';
+  const href = p.link || '/quote';
   const priceText = p.priceLabel || ('$' + p.price);
   const hasSlides = p.slides && p.slides.length;
   const firstImg = (hasSlides && p.slides[0].src) || p.image || '';
@@ -118,7 +118,7 @@ function renderProducts(filter = 'all') {
     : products.filter((p) => p.category === filter);
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">No products in this category yet. <a href="/house-numbers.html" class="text-corten-500 hover:underline">Configure House Numbers</a> or <a href="/quote.html" class="text-corten-500 hover:underline">request a custom cut</a>.</p>`;
+    grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">No products in this category yet. <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers</a> or <a href="/quote" class="text-corten-500 hover:underline">request a custom cut</a>.</p>`;
     return;
   }
 

@@ -36,11 +36,11 @@ tailwind.config = {
       </a>
       <div class="hidden md:flex items-center gap-7 text-sm font-medium">
         <a href="/" class="hover:text-corten-400 transition">Home</a>
-        <a href="/shop.html" class="hover:text-corten-400 transition">Shop</a>
-        <a href="/house-numbers.html" class="hover:text-corten-400 transition">Numbers</a>
-        <a href="/quote.html" class="hover:text-corten-400 transition">Custom Quote</a>
-        <a href="/contact.html" class="hover:text-corten-400 transition">Contact</a>
-        <a href="/cart.html" class="text-corten-400">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="text-corten-400">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
       </div>
       <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -50,11 +50,11 @@ tailwind.config = {
   <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
     <div class="px-4 py-4 space-y-3 text-sm">
       <a href="/" class="block hover:text-corten-400">Home</a>
-      <a href="/shop.html" class="block hover:text-corten-400">Shop</a>
-      <a href="/house-numbers.html" class="block hover:text-corten-400">House Numbers</a>
-      <a href="/quote.html" class="block hover:text-corten-400">Custom Quote</a>
-      <a href="/contact.html" class="block hover:text-corten-400">Contact</a>
-      <a href="/cart.html" class="block text-corten-400">Cart</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block text-corten-400">Cart</a>
     </div>
   </div>
 </nav>
@@ -67,8 +67,8 @@ tailwind.config = {
     <div id="cart-empty" class="hidden text-center py-16 text-gray-500 bg-metal-850 border border-corten-900/40 rounded-sm">
       <p class="mb-4">Your cart is empty.</p>
       <div class="flex flex-wrap justify-center gap-4 text-sm">
-        <a href="/house-numbers.html" class="text-corten-500 hover:underline">Configure House Numbers →</a>
-        <a href="/shop.html" class="text-corten-500 hover:underline">Browse Shop →</a>
+        <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers →</a>
+        <a href="/shop" class="text-corten-500 hover:underline">Browse Shop →</a>
       </div>
     </div>
 
@@ -79,7 +79,7 @@ tailwind.config = {
         <span class="text-gray-400">Total (excl. GST & shipping)</span>
         <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
       </div>
-      <a id="checkout-btn" href="/quote.html" class="block w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide text-center hover:opacity-90 transition">
+      <a id="checkout-btn" href="/quote" class="block w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide text-center hover:opacity-90 transition">
         Send cart as quote request
       </a>
       <p class="text-xs text-gray-600 text-center mt-3">We’ll confirm price, shipping and payment after your request.</p>
@@ -142,7 +142,7 @@ function renderCart() {
 
   const lines = cart.map(i => `${i.type}: ${i.chars} | ${i.size} | ${i.mount} | $${i.price}`).join('\n');
   const params = new URLSearchParams({ product: 'Cart order', message: lines, price: '$' + total });
-  document.getElementById('checkout-btn').href = '/quote.html?' + params.toString();
+  document.getElementById('checkout-btn').href = '/quote?' + params.toString();
   if (typeof updateCartCount === 'function') updateCartCount();
 }
 

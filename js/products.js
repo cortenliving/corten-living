@@ -10,7 +10,7 @@ const products = [
     desc: 'Custom numbers & letters in Arial Narrow Bold. Choose height, mounting style and characters with live preview.',
     tag: 'Bestseller',
     featured: true,
-    link: '/house-numbers.html',
+    link: '/house-numbers',
     image: '/images/hn-three-holes.jpg',
     slides: [
       { src: '/images/hn-three-holes.jpg', label: '3 digit · Pre-drilled' },
@@ -33,7 +33,7 @@ const products = [
     desc: 'Classic camper van silhouette in 3 mm Corten. Stake option available for garden mounting.',
     tag: 'With stake',
     featured: true,
-    link: '/quote.html?product=Kombi%20Van',
+    link: '/quote?product=Kombi%20Van',
     image: '/images/product-kombi.jpg',
     slides: [
       { src: '/images/product-kombi.jpg', label: 'Kombi Van' },
@@ -50,7 +50,7 @@ const products = [
     desc: 'Māori koru-inspired form. Clean laser cut from 3 mm Corten for walls, fences or gardens.',
     tag: 'NZ inspired',
     featured: true,
-    link: '/quote.html?product=Koru%20Garden%20Art',
+    link: '/quote?product=Koru%20Garden%20Art',
     image: '/images/product-koru.jpg',
     slides: [
       { src: '/images/product-koru.jpg', label: 'Koru form' }
@@ -66,7 +66,7 @@ const products = [
     desc: 'Heart silhouettes cut from weathering steel — a simple, lasting garden statement.',
     tag: 'Gift idea',
     featured: true,
-    link: '/quote.html?product=Corten%20Hearts',
+    link: '/quote?product=Corten%20Hearts',
     image: '/images/product-hearts.jpg',
     slides: [
       { src: '/images/product-hearts.jpg', label: 'Hearts' }
@@ -82,7 +82,7 @@ const products = [
     desc: 'Handcrafted outdoor silhouettes — animals, icons and custom shapes. Ask about stakes and pre-weathering.',
     tag: 'Custom',
     featured: false,
-    link: '/quote.html?product=Garden%20Sculptures',
+    link: '/quote?product=Garden%20Sculptures',
     image: '/images/product-garden-1.jpg',
     slides: [
       { src: '/images/product-garden-1.jpg', label: 'Garden sculpture' },
@@ -101,7 +101,7 @@ const products = [
     desc: 'Your street or property name laser-cut in 3 mm Corten. Perfect for rural RAPID and driveway entrances.',
     tag: 'Quote',
     featured: false,
-    link: '/quote.html?product=Custom%20Address%20Plaque',
+    link: '/quote?product=Custom%20Address%20Plaque',
     image: '/images/hn-letters-holes.jpg',
     slides: [
       { src: '/images/hn-letters-holes.jpg', label: 'Lettering sample' },
@@ -118,7 +118,7 @@ const products = [
     desc: 'Weathering steel planter with open bottom for drainage. Built to last generations outdoors.',
     tag: 'Custom sizes',
     featured: false,
-    link: '/quote.html?product=Corten%20Planter%20Box',
+    link: '/quote?product=Corten%20Planter%20Box',
     image: '/images/hero-corten.jpg',
     slides: [
       { src: '/images/hero-corten.jpg', label: 'Corten steel' }

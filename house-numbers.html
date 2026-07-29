@@ -36,12 +36,12 @@ tailwind.config = {
       </a>
       <div class="hidden md:flex items-center gap-7 text-sm font-medium">
         <a href="/" class="hover:text-corten-400 transition">Home</a>
-        <a href="/shop.html" class="hover:text-corten-400 transition">Shop</a>
-        <a href="/house-numbers.html" class="text-corten-400">Numbers</a>
-        <a href="/quote.html" class="hover:text-corten-400 transition">Custom Quote</a>
-        <a href="/contact.html" class="hover:text-corten-400 transition">Contact</a>
-        <a href="/cart.html" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
-        <a href="/quote.html" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="text-corten-400">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
       </div>
       <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -51,11 +51,11 @@ tailwind.config = {
   <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
     <div class="px-4 py-4 space-y-3 text-sm">
       <a href="/" class="block hover:text-corten-400">Home</a>
-      <a href="/shop.html" class="block hover:text-corten-400">Shop</a>
-      <a href="/house-numbers.html" class="block text-corten-400">House Numbers</a>
-      <a href="/quote.html" class="block hover:text-corten-400">Custom Quote</a>
-      <a href="/contact.html" class="block hover:text-corten-400">Contact</a>
-      <a href="/cart.html" class="block hover:text-corten-400">Cart</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
     </div>
   </div>
 </nav>
@@ -63,7 +63,7 @@ tailwind.config = {
 <section class="pt-28 pb-20 flex-1">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="mb-8">
-      <a href="/shop.html" class="text-sm text-corten-500 hover:text-corten-400">← Back to Shop</a>
+      <a href="/shop" class="text-sm text-corten-500 hover:text-corten-400">← Back to Shop</a>
     </div>
 
     <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
@@ -163,8 +163,8 @@ tailwind.config = {
           <button type="button" id="add-to-cart-btn" class="w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">
             Add to Cart
           </button>
-          <p id="cart-feedback" class="text-xs text-center text-corten-400 hidden">Added to cart ✓ — <a href="/cart.html" class="underline">View cart</a></p>
-          <p class="text-xs text-gray-600 text-center">Or <a href="/quote.html" id="enquire-link" class="text-corten-500 hover:underline">send as a quote request</a></p>
+          <p id="cart-feedback" class="text-xs text-center text-corten-400 hidden">Added to cart ✓ — <a href="/cart" class="underline">View cart</a></p>
+          <p class="text-xs text-gray-600 text-center">Or <a href="/quote" id="enquire-link" class="text-corten-500 hover:underline">send as a quote request</a></p>
         </form>
       </div>
     </div>
@@ -184,10 +184,10 @@ tailwind.config = {
       <div>
         <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Quick links</h4>
         <ul class="space-y-2 text-sm text-gray-400">
-          <li><a href="/shop.html" class="hover:text-corten-400 transition">Shop</a></li>
-          <li><a href="/house-numbers.html" class="hover:text-corten-400 transition">House Numbers</a></li>
-          <li><a href="/quote.html" class="hover:text-corten-400 transition">Custom Quote</a></li>
-          <li><a href="/contact.html" class="hover:text-corten-400 transition">Contact</a></li>
+          <li><a href="/shop" class="hover:text-corten-400 transition">Shop</a></li>
+          <li><a href="/house-numbers" class="hover:text-corten-400 transition">House Numbers</a></li>
+          <li><a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a></li>
+          <li><a href="/contact" class="hover:text-corten-400 transition">Contact</a></li>
         </ul>
       </div>
       <div>
@@ -262,7 +262,7 @@ function updateUI() {
     chars: chars || '(not set)',
     price: '$' + price
   });
-  document.getElementById('enquire-link').href = '/quote.html?' + params.toString();
+  document.getElementById('enquire-link').href = '/quote?' + params.toString();
 }
 
 document.querySelectorAll('.size-btn:not([disabled])').forEach(btn => {
