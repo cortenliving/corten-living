@@ -103,6 +103,20 @@ function updateCloudBadge() {
       hint.innerHTML = 'Add two secrets under Cloudflare Pages → Settings → Variables and secrets (see steps below). No KV needed.';
     }
   }
+  updateSettingsPanels();
+}
+
+function updateSettingsPanels() {
+  const cloud = document.getElementById('settings-cloud-pass');
+  const local = document.getElementById('settings-local-pass');
+  if (!cloud || !local) return;
+  if (cloudStatus.hasAdminPassword) {
+    cloud.classList.remove('hidden');
+    local.classList.add('hidden');
+  } else {
+    cloud.classList.add('hidden');
+    local.classList.remove('hidden');
+  }
 }
 
 async function refreshCloudStatus() {
