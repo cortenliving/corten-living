@@ -1,6 +1,6 @@
 # Corten Living
 
-Profile-cut 3 mm Corten steel garden sculptures, house numbers and custom pieces. Made in rural New Zealand.
+Profile-cut 3 mm Corten steel garden sculptures, house numbers and custom pieces. Made in Gisborne, New Zealand.
 
 Live site: [corten-living.pages.dev](https://corten-living.pages.dev/)
 
@@ -12,17 +12,17 @@ Saves write to your GitHub repo (`data/catalogue.json`, photos under `images/liv
 
 ### One-time setup (Variables and secrets only)
 
-1. **GitHub** → [Personal access tokens (classic)](https://github.com/settings/tokens)  
-   - Generate new token (classic)  
-   - Scope: **`repo`**  
-   - Copy the token  
+1. **GitHub** → [Personal access tokens (classic)](https://github.com/settings/tokens) 
+ - Generate new token (classic) 
+ - Scope: **`repo`** 
+ - Copy the token 
 
 2. **Cloudflare** → Workers & Pages → **corten-living** → **Settings** → **Variables and secrets** → **+ Add** (Production):
 
-   | Type | Name | Value |
-   |------|------|--------|
-   | Secret | `ADMIN_PASSWORD` | e.g. `CortenAdmin!` |
-   | Secret | `GITHUB_TOKEN` | the GitHub token |
+ | Type | Name | Value |
+ |------|------|--------|
+ | Secret | `ADMIN_PASSWORD` | e.g. `CortenAdmin!` |
+ | Secret | `GITHUB_TOKEN` | the GitHub token |
 
 3. **Deployments** → latest → **Retry deployment**
 
@@ -55,8 +55,8 @@ python -m http.server 8080
 
 ## Contact
 
-- Phone: 027 383 8178  
-- Email: cortenliving@gmail.com  
-- Rural New Zealand  
+- Phone: 027 383 8178 
+- Email: cortenliving@gmail.com 
+- Gisborne, New Zealand 
 
 © 2026 Corten Living
