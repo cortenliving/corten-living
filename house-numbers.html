@@ -123,12 +123,12 @@ tailwind.config = {
             <label class="block text-xs font-medium text-gray-400 mb-2">Height</label>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <button type="button" data-size="100" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">100 mm</button>
-              <button type="button" data-size="150" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium opacity-50 cursor-not-allowed" disabled title="Coming soon">150 mm</button>
+              <button type="button" data-size="150" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">150 mm</button>
               <button type="button" data-size="200" class="size-btn px-3 py-2.5 rounded-sm border border-corten-600 text-corten-400 text-sm font-medium">200 mm</button>
-              <button type="button" data-size="250" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium opacity-50 cursor-not-allowed" disabled title="Coming soon">250 mm</button>
-              <button type="button" data-size="300" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium opacity-50 cursor-not-allowed" disabled title="Coming soon">300 mm</button>
+              <button type="button" data-size="250" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">250 mm</button>
+              <button type="button" data-size="300" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">300 mm</button>
             </div>
-            <p class="text-xs text-gray-600 mt-1.5">150 / 250 / 300 mm coming soon — ask via quote for other heights</p>
+            <p class="text-xs text-gray-600 mt-1.5">All heights in 3 mm Corten · prices scale with size</p>
           </div>
 
           <div>
@@ -210,24 +210,82 @@ tailwind.config = {
 let selectedSize = 200;
 let selectedMount = 'clean';
 
+// Base anchors at 100 mm & 200 mm. 150 / 250 / 300 are height-linear from those.
+// (Halfway between 100→200 for 150; same step beyond 200 for 250/300.)
 const DEFAULT_PRICES = {
   100: {
     clean: { 1: 8, 2: 15, 3: 21 },
     holes: { 1: 10, 2: 17, 3: 24 }
   },
+  150: {
+    clean: { 1: 12, 2: 22, 3: 32 },
+    holes: { 1: 14, 2: 25, 3: 35 }
+  },
   200: {
     clean: { 1: 15, 2: 28, 3: 42 },
     holes: { 1: 17, 2: 32, 3: 46 }
+  },
+  250: {
+    clean: { 1: 19, 2: 35, 3: 53 },
+    holes: { 1: 21, 2: 40, 3: 57 }
+  },
+  300: {
+    clean: { 1: 22, 2: 41, 3: 63 },
+    holes: { 1: 24, 2: 47, 3: 68 }
   }
 };
 
+/** Linear price between/beyond 100 mm and 200 mm anchors */
+function scaleBetweenAnchors(p100, p200, size) {
+  const a = Number(p100) || 0;
+  const b = Number(p200) || 0;
+  const t = (Number(size) - 100) / 100; // 0 @100, 1 @200, 2 @300
+  return Math.max(1, Math.round(a + t * (b - a)));
+}
+
+/** Ensure all standard sizes exist; fill gaps from 100/200 anchors */
+function completePriceTable(input) {
+  const src = input && typeof input === 'object' ? input : {};
+  const out = JSON.parse(JSON.stringify(DEFAULT_PRICES));
+
+  // Overlay any admin/cloud values (keys may be strings)
+  for (const sizeKey of Object.keys(src)) {
+    const size = String(sizeKey);
+    if (!out[size]) out[size] = { clean: {}, holes: {} };
+    for (const mount of ['clean', 'holes']) {
+      if (!src[sizeKey]?.[mount]) continue;
+      if (!out[size][mount]) out[size][mount] = {};
+      for (const n of Object.keys(src[sizeKey][mount])) {
+        out[size][mount][n] = Number(src[sizeKey][mount][n]);
+      }
+    }
+  }
+
+  // Derive missing sizes / char counts from anchors
+  const anchors = [100, 200];
+  const sizes = [100, 150, 200, 250, 300];
+  for (const size of sizes) {
+    if (!out[size]) out[size] = { clean: {}, holes: {} };
+    for (const mount of ['clean', 'holes']) {
+      if (!out[size][mount]) out[size][mount] = {};
+      for (const n of [1, 2, 3]) {
+        if (out[size][mount][n] != null && out[size][mount][n] !== '') continue;
+        const p100 = out['100']?.[mount]?.[n] ?? DEFAULT_PRICES[100][mount][n];
+        const p200 = out['200']?.[mount]?.[n] ?? DEFAULT_PRICES[200][mount][n];
+        out[size][mount][n] = scaleBetweenAnchors(p100, p200, size);
+      }
+    }
+  }
+  return out;
+}
+
 // Admin overrides: cloud (/api/pricing) then localStorage then defaults
-let prices = DEFAULT_PRICES;
+let prices = completePriceTable(DEFAULT_PRICES);
 try {
   const stored = localStorage.getItem('cortenHouseNumberPrices');
   if (stored) {
     const parsed = JSON.parse(stored);
-    if (parsed && typeof parsed === 'object') prices = parsed;
+    if (parsed && typeof parsed === 'object') prices = completePriceTable(parsed);
   }
 } catch (e) {}
 
@@ -237,7 +295,7 @@ async function loadCloudPrices() {
     if (!res.ok) return;
     const data = await res.json();
     if (data.prices && typeof data.prices === 'object') {
-      prices = data.prices;
+      prices = completePriceTable(data.prices);
       try { localStorage.setItem('cortenHouseNumberPrices', JSON.stringify(prices)); } catch (e) {}
       if (typeof updateUI === 'function') updateUI();
     }
@@ -249,16 +307,36 @@ function getCharCount(str) {
   return (str || '').replace(/[^0-9A-Za-z]/g, '').length;
 }
 
+function lookupMountPrice(size, mount, count) {
+  // Prefer exact size key as number or string
+  const table = prices[size] || prices[String(size)];
+  if (!table) return null;
+  const mountTable = table[mount];
+  if (!mountTable) return null;
+  if (mountTable[count] != null) return Number(mountTable[count]);
+  if (mountTable[String(count)] != null) return Number(mountTable[String(count)]);
+  const base3 = mountTable[3] ?? mountTable['3'];
+  if (base3 == null) return null;
+  if (count <= 3) return Number(base3);
+  const extra = Math.round(Number(base3) * 0.32);
+  return Number(base3) + (count - 3) * extra;
+}
+
 function calcPrice() {
   const chars = document.getElementById('chars-input').value;
   const count = Math.max(1, Math.min(8, getCharCount(chars)));
-  const table = prices[selectedSize];
-  if (!table) return 0;
-  const mountTable = table[selectedMount];
-  if (mountTable[count]) return mountTable[count];
-  const base3 = mountTable[3];
-  const extra = Math.round(base3 * 0.32);
-  return base3 + (count - 3) * extra;
+
+  // Direct table hit
+  let price = lookupMountPrice(selectedSize, selectedMount, count);
+  if (price != null && !Number.isNaN(price)) return price;
+
+  // Scale from 100/200 anchors if size missing
+  const p100 = lookupMountPrice(100, selectedMount, count);
+  const p200 = lookupMountPrice(200, selectedMount, count);
+  if (p100 != null && p200 != null) {
+    return scaleBetweenAnchors(p100, p200, selectedSize);
+  }
+  return 0;
 }
 
 function updateUI() {

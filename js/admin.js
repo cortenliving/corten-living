@@ -9,9 +9,13 @@ const STORAGE_PASS = 'cortenAdminPass'; // session-only password for API
 const DEFAULT_PASS_HASH = '3c1db5a70bf6cf2ba4ebc27d48cd017c94bc623c3491fe2c2d7dcd4144f765ab';
 const STORAGE_PASS_HASH = 'cortenAdminPassHash';
 
+// 150/250/300 scaled linearly from 100↔200 anchors
 const DEFAULT_HN_PRICES = {
   100: { clean: { 1: 8, 2: 15, 3: 21 }, holes: { 1: 10, 2: 17, 3: 24 } },
-  200: { clean: { 1: 15, 2: 28, 3: 42 }, holes: { 1: 17, 2: 32, 3: 46 } }
+  150: { clean: { 1: 12, 2: 22, 3: 32 }, holes: { 1: 14, 2: 25, 3: 35 } },
+  200: { clean: { 1: 15, 2: 28, 3: 42 }, holes: { 1: 17, 2: 32, 3: 46 } },
+  250: { clean: { 1: 19, 2: 35, 3: 53 }, holes: { 1: 21, 2: 40, 3: 57 } },
+  300: { clean: { 1: 22, 2: 41, 3: 63 }, holes: { 1: 24, 2: 47, 3: 68 } }
 };
 
 let catalogue = [];
