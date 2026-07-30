@@ -3,6 +3,13 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
+# HTML should not stick on old deploys
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/admin
+  Cache-Control: public, max-age=0, must-revalidate
+
 /images/*
   Cache-Control: public, max-age=604800
 
@@ -10,4 +17,4 @@
   Cache-Control: public, max-age=86400
 
 /js/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=0, must-revalidate
