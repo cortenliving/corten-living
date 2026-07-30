@@ -4,21 +4,21 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Cart | Corten Living</title>
-<meta name="description" content="Review your Corten Living cart and send as a quote request." />
+<meta name="description" content="Review your cart and place an order with Corten Living." />
 <meta name="theme-color" content="#b7410e" />
 <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
- theme: {
- extend: {
- colors: {
- corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
- metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
- },
- fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
- }
- }
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,128 +28,232 @@ tailwind.config = {
 <body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
 
 <nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="flex items-center justify-between h-16">
- <a href="/" class="flex items-center gap-3 group">
- <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
- <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
- </a>
- <div class="hidden md:flex items-center gap-7 text-sm font-medium">
- <a href="/" class="hover:text-corten-400 transition">Home</a>
- <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
- <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
- <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
- <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
- <a href="/cart" class="text-corten-400">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
- </div>
- <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
- </button>
- </div>
- </div>
- <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
- <div class="px-4 py-4 space-y-3 text-sm">
- <a href="/" class="block hover:text-corten-400">Home</a>
- <a href="/shop" class="block hover:text-corten-400">Shop</a>
- <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
- <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
- <a href="/contact" class="block hover:text-corten-400">Contact</a>
- <a href="/cart" class="block text-corten-400">Cart</a>
- </div>
- </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="text-corten-400">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block text-corten-400">Cart</a>
+    </div>
+  </div>
 </nav>
 
 <section class="pt-28 pb-20 flex-1">
- <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
- <h1 class="font-display text-3xl font-bold text-white tracking-tight mb-2">Your Cart</h1>
- <p class="text-sm text-gray-500 mb-8">Cart is stored on this device. Send as a quote and we’ll confirm price, GST and shipping.</p>
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h1 class="font-display text-3xl font-bold text-white tracking-tight mb-2">Your Cart</h1>
+    <p class="text-sm text-gray-500 mb-8">Review your items and place an order. We’ll email you a confirmation.</p>
 
- <div id="cart-empty" class="hidden text-center py-16 text-gray-500 bg-metal-850 border border-corten-900/40 rounded-sm">
- <p class="mb-4">Your cart is empty.</p>
- <div class="flex flex-wrap justify-center gap-4 text-sm">
- <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers →</a>
- <a href="/shop" class="text-corten-500 hover:underline">Browse Shop →</a>
- </div>
- </div>
+    <div id="cart-empty" class="hidden text-center py-16 text-gray-500 bg-metal-850 border border-corten-900/40 rounded-sm">
+      <p class="mb-4">Your cart is empty.</p>
+      <div class="flex flex-wrap justify-center gap-4 text-sm">
+        <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers →</a>
+        <a href="/shop" class="text-corten-500 hover:underline">Browse Shop →</a>
+      </div>
+    </div>
 
- <div id="cart-items" class="space-y-4"></div>
+    <div id="order-success" class="hidden text-center py-14 bg-metal-850 border border-corten-700/50 rounded-sm px-6">
+      <p class="text-corten-400 font-display text-2xl mb-2">Order received</p>
+      <p id="success-order-id" class="text-white font-medium mb-3"></p>
+      <p class="text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
+        Thanks — a confirmation has been sent to your email. We’ll follow up with shipping, GST and payment details.
+      </p>
+      <a href="/house-numbers" class="inline-block mt-8 text-sm text-corten-500 hover:underline">Order more numbers →</a>
+    </div>
 
- <div id="cart-summary" class="hidden mt-8 bg-metal-850 border border-corten-900/50 rounded-sm p-6">
- <div class="flex justify-between items-center mb-6">
- <span class="text-gray-400">Total (excl. GST & shipping)</span>
- <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
- </div>
- <a id="checkout-btn" href="/quote" class="block w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide text-center hover:opacity-90 transition">
- Send cart as quote request
- </a>
- <p class="text-xs text-gray-600 text-center mt-3">We’ll confirm price, shipping and payment after your request.</p>
- <button type="button" id="clear-cart" class="mt-4 w-full text-sm text-gray-500 hover:text-corten-400">Clear cart</button>
- </div>
- </div>
+    <div id="cart-flow">
+      <div id="cart-items" class="space-y-4"></div>
+
+      <div id="cart-summary" class="hidden mt-8 space-y-6">
+        <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-400">Total (excl. GST &amp; shipping)</span>
+            <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
+          </div>
+          <p class="text-xs text-gray-600 mt-2">Payment is arranged after we confirm your order (invoice / bank transfer). Online card pay can be added later if you want.</p>
+        </div>
+
+        <form id="order-form" class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-4">
+          <h2 class="font-display text-xl text-white">Your details</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-gray-400 mb-1.5" for="order-name">Name *</label>
+              <input id="order-name" name="name" required type="text" autocomplete="name"
+                class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-400 mb-1.5" for="order-email">Email *</label>
+              <input id="order-email" name="email" required type="email" autocomplete="email"
+                class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5" for="order-phone">Phone</label>
+            <input id="order-phone" name="phone" type="tel" autocomplete="tel" placeholder="027 …"
+              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5" for="order-address">Delivery address</label>
+            <textarea id="order-address" name="address" rows="2" placeholder="Street, town, postcode"
+              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1.5" for="order-notes">Order notes</label>
+            <textarea id="order-notes" name="notes" rows="2" placeholder="Anything we should know?"
+              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+          </div>
+          <p id="order-error" class="hidden text-sm text-red-400"></p>
+          <button type="submit" id="place-order-btn" class="w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">
+            Place order
+          </button>
+          <p class="text-xs text-gray-600 text-center">You’ll get a confirmation email. We’ll reply with shipping &amp; payment.</p>
+        </form>
+
+        <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-400">Clear cart</button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <footer class="border-t border-corten-900/40 bg-metal-950 mt-auto">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center text-xs text-gray-600">
- <p>© 2026 Corten Living · Gisborne, New Zealand</p>
- </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center text-xs text-gray-600">
+    <p>© 2026 Corten Living · Gisborne, New Zealand</p>
+  </div>
 </footer>
 
 <script src="/js/main.js"></script>
 <script>
 function renderCart() {
- const cart = typeof getCart === 'function' ? getCart() : [];
- const empty = document.getElementById('cart-empty');
- const items = document.getElementById('cart-items');
- const summary = document.getElementById('cart-summary');
+  const cart = typeof getCart === 'function' ? getCart() : [];
+  const empty = document.getElementById('cart-empty');
+  const items = document.getElementById('cart-items');
+  const summary = document.getElementById('cart-summary');
+  const flow = document.getElementById('cart-flow');
+  const success = document.getElementById('order-success');
 
- if (cart.length === 0) {
- empty.classList.remove('hidden');
- items.innerHTML = '';
- summary.classList.add('hidden');
- if (typeof updateCartCount === 'function') updateCartCount();
- return;
- }
+  if (success && !success.classList.contains('hidden')) return;
 
- empty.classList.add('hidden');
- summary.classList.remove('hidden');
+  if (cart.length === 0) {
+    empty.classList.remove('hidden');
+    items.innerHTML = '';
+    summary.classList.add('hidden');
+    if (typeof updateCartCount === 'function') updateCartCount();
+    return;
+  }
 
- let total = 0;
- items.innerHTML = cart.map((item, i) => {
- total += item.price * (item.qty || 1);
- return `
- <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 flex justify-between items-start gap-4">
- <div>
- <p class="font-display text-lg text-white">${item.type}</p>
- <p class="text-sm text-gray-400 mt-1">${item.chars} · ${item.size} · ${item.mount}</p>
- <p class="text-corten-400 font-semibold mt-2">$${item.price}</p>
- </div>
- <button type="button" data-remove="${i}" class="remove-btn text-gray-500 hover:text-corten-400 text-sm">Remove</button>
- </div>`;
- }).join('');
+  empty.classList.add('hidden');
+  summary.classList.remove('hidden');
 
- items.querySelectorAll('.remove-btn').forEach(btn => {
- btn.addEventListener('click', () => {
- const idx = parseInt(btn.dataset.remove, 10);
- const next = (typeof getCart === 'function' ? getCart() : []).slice();
- next.splice(idx, 1);
- if (typeof setCart === 'function') setCart(next);
- else localStorage.setItem('cortenCart', JSON.stringify(next));
- renderCart();
- });
- });
+  let total = 0;
+  items.innerHTML = cart.map((item, i) => {
+    total += item.price * (item.qty || 1);
+    return `
+    <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 flex justify-between items-start gap-4">
+      <div>
+        <p class="font-display text-lg text-white">${item.type}</p>
+        <p class="text-sm text-gray-400 mt-1">${item.chars} · ${item.size} · ${item.mount}</p>
+        <p class="text-corten-400 font-semibold mt-2">$${item.price}</p>
+      </div>
+      <button type="button" data-remove="${i}" class="remove-btn text-gray-500 hover:text-corten-400 text-sm">Remove</button>
+    </div>`;
+  }).join('');
 
- document.getElementById('cart-total').textContent = '$' + total;
+  items.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.remove, 10);
+      const next = (typeof getCart === 'function' ? getCart() : []).slice();
+      next.splice(idx, 1);
+      if (typeof setCart === 'function') setCart(next);
+      else localStorage.setItem('cortenCart', JSON.stringify(next));
+      renderCart();
+    });
+  });
 
- const lines = cart.map(i => `${i.type}: ${i.chars} | ${i.size} | ${i.mount} | $${i.price}`).join('\n');
- const params = new URLSearchParams({ product: 'Cart order', message: lines, price: '$' + total });
- document.getElementById('checkout-btn').href = '/quote?' + params.toString();
- if (typeof updateCartCount === 'function') updateCartCount();
+  document.getElementById('cart-total').textContent = '$' + total;
+  document.getElementById('order-form').dataset.total = String(total);
+  if (typeof updateCartCount === 'function') updateCartCount();
 }
 
 document.getElementById('clear-cart')?.addEventListener('click', () => {
- if (typeof setCart === 'function') setCart([]);
- else localStorage.removeItem('cortenCart');
- renderCart();
+  if (typeof setCart === 'function') setCart([]);
+  else localStorage.removeItem('cortenCart');
+  renderCart();
+});
+
+document.getElementById('order-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cart = typeof getCart === 'function' ? getCart() : [];
+  const errEl = document.getElementById('order-error');
+  const btn = document.getElementById('place-order-btn');
+  errEl.classList.add('hidden');
+
+  if (!cart.length) {
+    errEl.textContent = 'Your cart is empty.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const total = parseFloat(document.getElementById('order-form').dataset.total || '0') ||
+    cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
+
+  const payload = {
+    name: document.getElementById('order-name').value.trim(),
+    email: document.getElementById('order-email').value.trim(),
+    phone: document.getElementById('order-phone').value.trim(),
+    address: document.getElementById('order-address').value.trim(),
+    notes: document.getElementById('order-notes').value.trim(),
+    items: cart,
+    total,
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'Placing order…';
+
+  try {
+    const res = await fetch('/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Order failed');
+
+    if (typeof setCart === 'function') setCart([]);
+    else localStorage.removeItem('cortenCart');
+    if (typeof updateCartCount === 'function') updateCartCount();
+
+    document.getElementById('cart-flow').classList.add('hidden');
+    document.getElementById('cart-empty').classList.add('hidden');
+    const success = document.getElementById('order-success');
+    success.classList.remove('hidden');
+    document.getElementById('success-order-id').textContent =
+      'Order ' + (data.orderId || '') + ' · confirmation sent to ' + payload.email;
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not place order. Please try again or email cortenliving@gmail.com';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Place order';
+  }
 });
 
 renderCart();

@@ -164,7 +164,6 @@ tailwind.config = {
  Add to Cart
  </button>
  <p id="cart-feedback" class="text-xs text-center text-corten-400 hidden">Added to cart ✓ — <a href="/cart" class="underline">View cart</a></p>
- <p class="text-xs text-gray-600 text-center">Or <a href="/quote" id="enquire-link" class="text-corten-500 hover:underline">send as a quote request</a></p>
  </form>
  </div>
  </div>
@@ -364,7 +363,6 @@ function updateUI() {
  chars: chars || '(not set)',
  price: '$' + price
  });
- document.getElementById('enquire-link').href = '/quote?' + params.toString();
 }
 
 document.querySelectorAll('.size-btn:not([disabled])').forEach(btn => {
