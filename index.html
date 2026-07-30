@@ -67,41 +67,45 @@ tailwind.config = {
  </div>
 </nav>
 
-<!-- HERO -->
-<section class="relative pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden">
- <div class="absolute inset-0 pointer-events-none">
- <div class="absolute top-1/4 -right-20 w-96 h-96 bg-corten-600/10 rounded-full blur-3xl"></div>
- <div class="absolute bottom-0 left-10 w-72 h-72 bg-corten-800/10 rounded-full blur-3xl"></div>
- </div>
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
- <div class="grid lg:grid-cols-2 gap-12 items-center">
- <div>
- <p class="text-corten-500 font-medium tracking-widest uppercase text-sm mb-4">Gisborne NZ · 3 mm Corten Steel</p>
- <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
- Weathered beauty.<br>
- <span class="text-corten-500">Profile-cut Corten</span><br>
- for your garden & home.
- </h1>
- <p class="mt-6 text-lg text-gray-400 max-w-lg leading-relaxed">
- From koru-inspired sculptures to precision house numbers — every piece is profile cut from quality 3 mm Corten steel in Gisborne, New Zealand.
- </p>
- <div class="mt-8 flex flex-wrap gap-4">
- <a href="/shop" class="px-6 py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition shadow-lg shadow-corten-900/40">Browse Shop</a>
- <a href="/house-numbers" class="px-6 py-3 border border-corten-600 text-corten-400 font-semibold rounded-sm tracking-wide hover:bg-corten-950/50 transition">Configure Numbers</a>
- </div>
- <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500">
- <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Raw or pre-weathered</div>
- <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>NZ-wide shipping</div>
- <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Custom DXF cuts</div>
- </div>
- </div>
- <div class="relative">
- <div class="aspect-[16/10] max-w-xl mx-auto rounded-sm overflow-hidden border border-corten-800/60 bg-metal-850 shadow-2xl">
- <img src="/images/hero-fence-numbers.jpg" alt="Corten steel house numbers 212 on a rural fence" class="w-full h-full object-cover object-right" width="1600" height="483">
- </div>
- </div>
- </div>
- </div>
+<!-- HERO — full-bleed fence photo with readable text overlay -->
+<section class="relative min-h-[78vh] lg:min-h-[85vh] flex items-center overflow-hidden">
+  <!-- Background image -->
+  <div class="absolute inset-0">
+    <img
+      src="/images/hero-fence-numbers.jpg"
+      alt=""
+      class="w-full h-full object-cover object-right"
+      width="1600"
+      height="483"
+    >
+    <!-- Blend: dark left for wording, lighter right so the photo still reads -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/35"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/50"></div>
+    <div class="absolute inset-0 bg-metal-950/20"></div>
+  </div>
+
+  <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 lg:pt-32 lg:pb-28">
+    <div class="max-w-xl lg:max-w-2xl">
+      <p class="text-corten-400 font-medium tracking-widest uppercase text-sm mb-4 drop-shadow">Gisborne NZ · 3 mm Corten Steel</p>
+      <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight drop-shadow-lg">
+        Weathered beauty.<br>
+        <span class="text-corten-400">Profile-cut Corten</span><br>
+        for your garden &amp; home.
+      </h1>
+      <p class="mt-6 text-lg text-gray-200 max-w-lg leading-relaxed drop-shadow">
+        From koru-inspired sculptures to precision house numbers — every piece is profile cut from quality 3 mm Corten steel in Gisborne, New Zealand.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="/shop" class="px-6 py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition shadow-lg shadow-black/40">Browse Shop</a>
+        <a href="/house-numbers" class="px-6 py-3 border border-corten-400/80 text-white font-semibold rounded-sm tracking-wide hover:bg-white/10 transition backdrop-blur-sm">Configure Numbers</a>
+      </div>
+      <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-200">
+        <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Raw or pre-weathered</div>
+        <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>NZ-wide shipping</div>
+        <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Custom DXF cuts</div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- CATEGORIES -->
