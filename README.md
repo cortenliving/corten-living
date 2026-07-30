@@ -1,6 +1,6 @@
 # Corten Living
 
-Handcrafted 3 mm Corten steel garden sculptures, house numbers and custom laser-cut pieces. Made in Gisborne, New Zealand.
+Profile-cut 3 mm Corten steel garden sculptures, house numbers and custom pieces. Made in rural New Zealand.
 
 Live site: [corten-living.pages.dev](https://corten-living.pages.dev/)
 
@@ -57,6 +57,6 @@ python -m http.server 8080
 
 - Phone: 027 383 8178  
 - Email: cortenliving@gmail.com  
-- Gisborne, New Zealand  
+- Rural New Zealand  
 
 © 2026 Corten Living
