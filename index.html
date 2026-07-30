@@ -67,41 +67,39 @@ tailwind.config = {
  </div>
 </nav>
 
-<!-- HERO — edge-to-edge photo, light crop only, soft text blend -->
-<section class="relative min-h-[52vh] sm:min-h-[56vh] lg:min-h-[62vh] flex items-center overflow-hidden bg-black">
-  <!-- Cover full width; short height matches the wide photo so crop is minimal -->
+<!-- HERO — edge-to-edge; phone focuses on the numbers, desktop shows more landscape -->
+<section class="relative min-h-[70vh] sm:min-h-[56vh] lg:min-h-[62vh] flex items-center overflow-hidden bg-black">
   <div class="absolute inset-0">
     <img
       src="/images/hero-fence-numbers.jpg"
       alt="Corten house numbers on a fence at dusk"
-      class="w-full h-full object-cover object-center"
+      class="w-full h-full object-cover object-[78%_center] sm:object-[70%_center] lg:object-center"
       width="1600"
       height="483"
       fetchpriority="high"
     >
-    <!-- Soft left shade for text only -->
-    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent"></div>
-    <div class="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/40"></div>
+    <!-- Stronger shade on phone (text sits full-width); lighter on large screens -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/25 sm:from-black/70 sm:via-black/35 sm:to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/45"></div>
   </div>
 
-  <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 lg:pt-32 lg:pb-28">
+  <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-28">
     <div class="max-w-xl lg:max-w-2xl">
-      <!-- Text sits on a soft scrim so it stays readable without killing the photo -->
-      <div class="rounded-sm bg-black/35 backdrop-blur-[2px] px-5 py-6 sm:px-8 sm:py-8 border border-white/5 shadow-2xl">
-        <p class="text-corten-400 font-medium tracking-widest uppercase text-sm mb-4">Gisborne NZ · 3 mm Corten Steel</p>
-        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
+      <div class="rounded-sm bg-black/45 sm:bg-black/35 backdrop-blur-[2px] px-4 py-5 sm:px-8 sm:py-8 border border-white/5 shadow-2xl">
+        <p class="text-corten-400 font-medium tracking-widest uppercase text-xs sm:text-sm mb-3 sm:mb-4">Gisborne NZ · 3 mm Corten Steel</p>
+        <h1 class="font-display text-3xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
           Weathered beauty.<br>
           <span class="text-corten-400">Profile-cut Corten</span><br>
           for your garden &amp; home.
         </h1>
-        <p class="mt-6 text-lg text-gray-100 max-w-lg leading-relaxed">
+        <p class="mt-4 sm:mt-6 text-base sm:text-lg text-gray-100 max-w-lg leading-relaxed">
           From koru-inspired sculptures to precision house numbers — every piece is profile cut from quality 3 mm Corten steel in Gisborne, New Zealand.
         </p>
-        <div class="mt-8 flex flex-wrap gap-4">
-          <a href="/shop" class="px-6 py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition shadow-lg shadow-black/40">Browse Shop</a>
-          <a href="/house-numbers" class="px-6 py-3 border border-white/50 text-white font-semibold rounded-sm tracking-wide hover:bg-white/10 transition">Configure Numbers</a>
+        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+          <a href="/shop" class="px-6 py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide text-center hover:opacity-90 transition shadow-lg shadow-black/40">Browse Shop</a>
+          <a href="/house-numbers" class="px-6 py-3 border border-white/50 text-white font-semibold rounded-sm tracking-wide text-center hover:bg-white/10 transition">Configure Numbers</a>
         </div>
-        <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-100">
+        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-x-6 sm:gap-y-3 text-sm text-gray-100">
           <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Raw or pre-weathered</div>
           <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>NZ-wide shipping</div>
           <div class="flex items-center gap-2"><svg class="w-5 h-5 text-corten-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Custom DXF cuts</div>
