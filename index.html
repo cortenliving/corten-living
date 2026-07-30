@@ -67,21 +67,21 @@ tailwind.config = {
  </div>
 </nav>
 
-<!-- HERO — full image visible (zoomed out), light blend for text -->
-<section class="relative min-h-[56vh] sm:min-h-[60vh] lg:min-h-[68vh] flex items-center overflow-hidden bg-black">
-  <!-- Full photo fits in frame (no heavy crop) -->
+<!-- HERO — edge-to-edge photo, light crop only, soft text blend -->
+<section class="relative min-h-[52vh] sm:min-h-[56vh] lg:min-h-[62vh] flex items-center overflow-hidden bg-black">
+  <!-- Cover full width; short height matches the wide photo so crop is minimal -->
   <div class="absolute inset-0">
     <img
       src="/images/hero-fence-numbers.jpg"
       alt="Corten house numbers on a fence at dusk"
-      class="w-full h-full object-contain object-center"
+      class="w-full h-full object-cover object-center"
       width="1600"
       height="483"
       fetchpriority="high"
     >
     <!-- Soft left shade for text only -->
     <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent"></div>
-    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/45"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/40"></div>
   </div>
 
   <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 lg:pt-32 lg:pb-28">
