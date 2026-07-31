@@ -597,12 +597,186 @@ function switchTab(tab) {
  });
 }
 
+/* —— Shipping admin —— */
+let shippingDraft = null;
+
+function defaultShippingConfig() {
+ return {
+ enabled: true,
+ label: 'NZ shipping',
+ freeShippingOver: null,
+ defaultItemGrams: 500,
+ houseNumbers: {
+ baseGramsPerChar: 20,
+ gramsPerMmPerChar: 0.12,
+ holesExtraGramsPerChar: 2,
+ },
+ tiers: [
+ { maxWeightKg: 0.3, price: 9 },
+ { maxWeightKg: 0.6, price: 12 },
+ { maxWeightKg: 1.0, price: 16 },
+ { maxWeightKg: 2.0, price: 24 },
+ { maxWeightKg: 5.0, price: 35 },
+ { maxWeightKg: 999, price: 55 },
+ ],
+ };
+}
+
+async function loadShippingAdmin() {
+ try {
+ const { res, data } = await api('/api/shipping', { headers: {} });
+ if (res.ok && data?.config) {
+ shippingDraft = data.config;
+ } else {
+ shippingDraft = defaultShippingConfig();
+ }
+ } catch {
+ shippingDraft = defaultShippingConfig();
+ }
+ fillShippingForm(shippingDraft);
+}
+
+function fillShippingForm(cfg) {
+ const c = cfg || defaultShippingConfig();
+ const en = document.getElementById('ship-enabled');
+ if (en) en.checked = c.enabled !== false;
+ const lab = document.getElementById('ship-label');
+ if (lab) lab.value = c.label || 'NZ shipping';
+ const free = document.getElementById('ship-free-over');
+ if (free) free.value = c.freeShippingOver != null && c.freeShippingOver !== '' ? c.freeShippingOver : '';
+ const defG = document.getElementById('ship-default-g');
+ if (defG) defG.value = c.defaultItemGrams ?? 500;
+ const hn = c.houseNumbers || {};
+ const b = document.getElementById('ship-hn-base');
+ const m = document.getElementById('ship-hn-mm');
+ const h = document.getElementById('ship-hn-holes');
+ if (b) b.value = hn.baseGramsPerChar ?? 20;
+ if (m) m.value = hn.gramsPerMmPerChar ?? 0.12;
+ if (h) h.value = hn.holesExtraGramsPerChar ?? 2;
+ renderShipTiers(c.tiers || []);
+ updateShipExamples();
+}
+
+function renderShipTiers(tiers) {
+ const body = document.getElementById('ship-tiers-body');
+ if (!body) return;
+ const list = Array.isArray(tiers) && tiers.length ? tiers : defaultShippingConfig().tiers;
+ body.innerHTML = list.map((t, i) => `
+ <tr class="border-t border-gray-800">
+ <td class="py-2 pr-3">
+ <input type="number" step="0.01" min="0" data-tier-max="${i}" value="${t.maxWeightKg}"
+ class="w-28 bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ </td>
+ <td class="py-2 pr-3">
+ <input type="number" step="0.01" min="0" data-tier-price="${i}" value="${t.price}"
+ class="w-28 bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ </td>
+ <td class="py-2">
+ <button type="button" data-tier-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button>
+ </td>
+ </tr>
+ `).join('');
+ body.querySelectorAll('[data-tier-del]').forEach((btn) => {
+ btn.addEventListener('click', () => {
+ const rows = collectShipTiers();
+ rows.splice(parseInt(btn.dataset.tierDel, 10), 1);
+ renderShipTiers(rows.length ? rows : [{ maxWeightKg: 1, price: 15 }]);
+ updateShipExamples();
+ });
+ });
+ ['input', 'change'].forEach((ev) => {
+ body.querySelectorAll('input').forEach((inp) => {
+ inp.addEventListener(ev, updateShipExamples);
+ });
+ });
+}
+
+function collectShipTiers() {
+ const body = document.getElementById('ship-tiers-body');
+ if (!body) return [];
+ const maxes = body.querySelectorAll('[data-tier-max]');
+ const prices = body.querySelectorAll('[data-tier-price]');
+ const tiers = [];
+ maxes.forEach((inp, i) => {
+ tiers.push({
+ maxWeightKg: parseFloat(inp.value) || 0,
+ price: parseFloat(prices[i]?.value) || 0,
+ });
+ });
+ return tiers.sort((a, b) => a.maxWeightKg - b.maxWeightKg);
+}
+
+function collectShippingConfig() {
+ const freeRaw = document.getElementById('ship-free-over')?.value;
+ return {
+ enabled: !!document.getElementById('ship-enabled')?.checked,
+ label: document.getElementById('ship-label')?.value.trim() || 'NZ shipping',
+ freeShippingOver: freeRaw === '' || freeRaw == null ? null : parseFloat(freeRaw),
+ defaultItemGrams: parseFloat(document.getElementById('ship-default-g')?.value) || 500,
+ houseNumbers: {
+ baseGramsPerChar: parseFloat(document.getElementById('ship-hn-base')?.value) || 0,
+ gramsPerMmPerChar: parseFloat(document.getElementById('ship-hn-mm')?.value) || 0,
+ holesExtraGramsPerChar: parseFloat(document.getElementById('ship-hn-holes')?.value) || 0,
+ },
+ tiers: collectShipTiers(),
+ };
+}
+
+function exampleWeight(heightMm, chars, holes) {
+ const cfg = collectShippingConfig();
+ const hn = cfg.houseNumbers;
+ let per = hn.baseGramsPerChar + heightMm * hn.gramsPerMmPerChar;
+ if (holes) per += hn.holesExtraGramsPerChar;
+ const grams = Math.round(per * chars);
+ // find tier
+ const kg = grams / 1000;
+ let price = 0;
+ for (const t of cfg.tiers) {
+ if (kg <= t.maxWeightKg) { price = t.price; break; }
+ }
+ return { grams, price };
+}
+
+function updateShipExamples() {
+ try {
+ const a = exampleWeight(100, 3, false);
+ const b = exampleWeight(200, 3, false);
+ const c = exampleWeight(300, 3, true);
+ const el100 = document.getElementById('ship-example-100');
+ const el200 = document.getElementById('ship-example-200');
+ const el300 = document.getElementById('ship-example-300');
+ if (el100) el100.textContent = `100 mm × 3 chars clean: ~${a.grams} g → $${a.price} ship`;
+ if (el200) el200.textContent = `200 mm × 3 chars clean: ~${b.grams} g → $${b.price} ship`;
+ if (el300) el300.textContent = `300 mm × 3 chars holes: ~${c.grams} g → $${c.price} ship`;
+ } catch (_) {}
+}
+
+async function saveShippingLive() {
+ const msg = document.getElementById('ship-save-msg');
+ const cfg = collectShippingConfig();
+ if (msg) msg.textContent = 'Saving…';
+ try {
+ const { res, data } = await api('/api/shipping', {
+ method: 'PUT',
+ body: JSON.stringify({ config: cfg }),
+ });
+ if (!res.ok) throw new Error(data?.error || 'Save failed');
+ shippingDraft = cfg;
+ if (msg) msg.textContent = 'Saved live — cart will use these rates.';
+ toast('Shipping rates saved live');
+ } catch (e) {
+ if (msg) msg.textContent = '';
+ toast(String(e.message || e), true);
+ }
+}
+
 async function bootAdmin() {
  await refreshCloudStatus();
  await loadCatalogue();
  renderList();
  const prices = await loadHnPrices();
  renderHnPricing(prices);
+ await loadShippingAdmin();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -735,6 +909,18 @@ document.addEventListener('DOMContentLoaded', async () => {
  } catch (e) {
  toast(String(e.message || e), true);
  }
+ });
+
+ document.getElementById('ship-add-tier')?.addEventListener('click', () => {
+ const tiers = collectShipTiers();
+ tiers.push({ maxWeightKg: 10, price: 40 });
+ renderShipTiers(tiers);
+ updateShipExamples();
+ });
+ document.getElementById('btn-save-shipping')?.addEventListener('click', () => saveShippingLive());
+ ['ship-hn-base', 'ship-hn-mm', 'ship-hn-holes', 'ship-enabled', 'ship-label', 'ship-free-over', 'ship-default-g'].forEach((id) => {
+ document.getElementById(id)?.addEventListener('input', updateShipExamples);
+ document.getElementById(id)?.addEventListener('change', updateShipExamples);
  });
 
  document.getElementById('btn-change-pass')?.addEventListener('click', async () => {

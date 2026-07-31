@@ -71,6 +71,7 @@ tailwind.config = {
  <nav class="flex flex-wrap gap-1 text-sm">
  <button type="button" data-tab="products" class="px-3 py-1.5 border-b-2 border-corten-600 text-corten-400 font-medium">Products</button>
  <button type="button" data-tab="pricing" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Number pricing</button>
+ <button type="button" data-tab="shipping" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Shipping</button>
  <button type="button" data-tab="deploy" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Save & deploy</button>
  <button type="button" data-tab="settings" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Settings</button>
  </nav>
@@ -181,6 +182,85 @@ tailwind.config = {
  <p class="text-sm text-gray-500 mb-6">Used by the live configurator on this browser after you save. Export is not required — prices store on this device and the numbers page reads them automatically.</p>
  <div id="hn-pricing" class="space-y-4"></div>
  <button type="button" id="btn-save-hn" class="mt-6 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Save number pricing</button>
+ </div>
+
+ <!-- SHIPPING TAB -->
+ <div data-tab-panel="shipping" class="hidden">
+ <h1 class="font-display text-2xl font-bold text-white mb-2">Shipping rates</h1>
+ <p class="text-sm text-gray-500 mb-6 max-w-2xl">
+ Cart estimates parcel <strong class="text-gray-300">weight from product size</strong> (house numbers: height × characters),
+ then picks a <strong class="text-gray-300">price tier</strong>. Save publishes live for the cart and Stripe.
+ </p>
+ <div class="grid lg:grid-cols-2 gap-6">
+ <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
+ <h2 class="font-display text-lg text-white">General</h2>
+ <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+ <input type="checkbox" id="ship-enabled" class="rounded border-gray-600 text-corten-600" checked>
+ Enable shipping on cart / Stripe
+ </label>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Shipping label</label>
+ <input id="ship-label" type="text" value="NZ shipping" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Free shipping if subtotal ≥ $ (blank = off)</label>
+ <input id="ship-free-over" type="number" min="0" step="1" placeholder="e.g. 200" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Default weight for other products (grams each)</label>
+ <input id="ship-default-g" type="number" min="1" step="1" value="500" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ </div>
+ </div>
+ <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
+ <h2 class="font-display text-lg text-white">House number weight formula</h2>
+ <p class="text-xs text-gray-500 leading-relaxed">
+ Weight (g) ≈ <code class="text-corten-500">characters × (base + height_mm × per_mm)</code> + holes extra per char.
+ </p>
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">Base g / char</label>
+ <input id="ship-hn-base" type="number" step="0.1" min="0" value="20" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">g per mm / char</label>
+ <input id="ship-hn-mm" type="number" step="0.01" min="0" value="0.12" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">Holes extra g / char</label>
+ <input id="ship-hn-holes" type="number" step="0.1" min="0" value="2" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ </div>
+ <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 text-xs text-gray-400 space-y-1">
+ <p class="text-corten-400 font-medium">Live examples</p>
+ <p id="ship-example-100">100 mm × 3 chars clean: —</p>
+ <p id="ship-example-200">200 mm × 3 chars clean: —</p>
+ <p id="ship-example-300">300 mm × 3 chars holes: —</p>
+ </div>
+ </div>
+ </div>
+ <div class="mt-6 bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+ <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+ <h2 class="font-display text-lg text-white">Weight tiers → price (NZD)</h2>
+ <button type="button" id="ship-add-tier" class="text-sm text-corten-400 hover:text-corten-300">+ Add tier</button>
+ </div>
+ <p class="text-xs text-gray-500 mb-3">First tier where parcel weight ≤ max kg is used.</p>
+ <div class="overflow-x-auto">
+ <table class="w-full text-sm text-left">
+ <thead class="text-xs text-gray-500 uppercase">
+ <tr>
+ <th class="pb-2 pr-3">Max weight (kg)</th>
+ <th class="pb-2 pr-3">Price ($)</th>
+ <th class="pb-2 w-20"></th>
+ </tr>
+ </thead>
+ <tbody id="ship-tiers-body"></tbody>
+ </table>
+ </div>
+ </div>
+ <div class="mt-6 flex flex-wrap gap-3 items-center">
+ <button type="button" id="btn-save-shipping" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Save shipping live</button>
+ <p id="ship-save-msg" class="text-sm text-gray-500"></p>
+ </div>
  </div>
 
  <!-- DEPLOY TAB -->

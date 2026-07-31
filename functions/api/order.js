@@ -25,7 +25,11 @@ export async function onRequestPost(context) {
     const address = String(body.address || '').trim();
     const notes = String(body.notes || '').trim();
     const items = Array.isArray(body.items) ? body.items : [];
-    const total = Number(body.total) || 0;
+    const subtotal = Number(body.subtotal != null ? body.subtotal : body.total) || 0;
+    const shipping = Math.max(0, Number(body.shipping) || 0);
+    const shippingLabel = String(body.shippingLabel || 'NZ shipping');
+    const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
+    const total = Number(body.total) || (subtotal + shipping);
 
     if (!name || !email) {
       return json({ error: 'Name and email are required' }, 400);
@@ -51,11 +55,14 @@ export async function onRequestPost(context) {
       phone ? `Phone: ${phone}` : null,
       address ? `Address: ${address}` : null,
       notes ? `Notes: ${notes}` : null,
+      weightKg != null ? `Est. weight: ${weightKg} kg` : null,
       '',
       'Items:',
       lines,
       '',
-      `Total (excl. GST & shipping): $${total}`,
+      `Subtotal (excl. GST): $${subtotal}`,
+      `${shippingLabel}: $${shipping}${shipping === 0 && body.freeShipping ? ' (free shipping threshold)' : ''}`,
+      `Total (excl. GST): $${total}`,
     ].filter(Boolean).join('\n');
 
     const customerConfirm = [
@@ -66,16 +73,19 @@ export async function onRequestPost(context) {
       'We have received:',
       lines,
       '',
-      `Subtotal (excl. GST & shipping): $${total}`,
+      `Subtotal: $${subtotal}`,
+      `${shippingLabel}: $${shipping}`,
+      `Total (excl. GST): $${total}`,
+      weightKg != null ? `Estimated parcel weight: ~${weightKg} kg` : null,
       '',
-      'We will confirm shipping, GST and payment details shortly.',
+      'We will confirm GST and final dispatch details shortly.',
       '',
       'If you have any questions, reply to this email or call 027 383 8178.',
       '',
       'Corten Living',
       'Gisborne, New Zealand',
       'cortenliving@gmail.com',
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 
     // Prefer Resend if configured
     if (env.RESEND_API_KEY) {

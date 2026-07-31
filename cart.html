@@ -86,12 +86,21 @@ tailwind.config = {
       <div id="cart-items" class="space-y-4"></div>
 
       <div id="cart-summary" class="hidden mt-8 space-y-6">
-        <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-400">Total (excl. GST &amp; shipping)</span>
+        <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400">Subtotal (excl. GST)</span>
+            <span id="cart-subtotal" class="text-white font-medium">$0</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400" id="shipping-label">NZ shipping</span>
+            <span id="cart-shipping" class="text-white font-medium">$0</span>
+          </div>
+          <p id="shipping-weight" class="text-xs text-gray-500"></p>
+          <div class="flex justify-between items-center pt-2 border-t border-gray-800">
+            <span class="text-gray-300 font-medium">Total (excl. GST)</span>
             <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Prices excl. GST &amp; shipping. Stripe checkout charges the cart total; we confirm shipping separately if needed.</p>
+          <p class="text-xs text-gray-500">Shipping is estimated from size/weight (set in Admin → Shipping). Stripe charges this total.</p>
         </div>
 
         <form id="order-form" class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-4">
@@ -154,13 +163,15 @@ tailwind.config = {
 </footer>
 
 <script src="/js/main.js"></script>
+<script src="/js/shipping.js"></script>
 <script>
+let lastShip = null;
+
 function renderCart() {
   const cart = typeof getCart === 'function' ? getCart() : [];
   const empty = document.getElementById('cart-empty');
   const items = document.getElementById('cart-items');
   const summary = document.getElementById('cart-summary');
-  const flow = document.getElementById('cart-flow');
   const success = document.getElementById('order-success');
 
   if (success && !success.classList.contains('hidden')) return;
@@ -169,6 +180,7 @@ function renderCart() {
     empty.classList.remove('hidden');
     items.innerHTML = '';
     summary.classList.add('hidden');
+    lastShip = null;
     if (typeof updateCartCount === 'function') updateCartCount();
     return;
   }
@@ -176,9 +188,9 @@ function renderCart() {
   empty.classList.add('hidden');
   summary.classList.remove('hidden');
 
-  let total = 0;
+  let subtotal = 0;
   items.innerHTML = cart.map((item, i) => {
-    total += item.price * (item.qty || 1);
+    subtotal += item.price * (item.qty || 1);
     return `
     <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 flex justify-between items-start gap-4">
       <div>
@@ -201,15 +213,38 @@ function renderCart() {
     });
   });
 
-  document.getElementById('cart-total').textContent = '$' + total;
-  document.getElementById('order-form').dataset.total = String(total);
+  const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
+  const ship = window.CortenShipping
+    ? CortenShipping.calculateShipping(cart, subtotal, cfg)
+    : { shipping: 0, subtotal, total: subtotal, weightKg: 0, label: 'Shipping', freeShipping: false };
+  lastShip = ship;
+
+  document.getElementById('cart-subtotal').textContent = '$' + ship.subtotal;
+  document.getElementById('shipping-label').textContent = ship.label || 'NZ shipping';
+  document.getElementById('cart-shipping').textContent = ship.freeShipping
+    ? 'FREE'
+    : ('$' + ship.shipping);
+  document.getElementById('shipping-weight').textContent = ship.weightGrams
+    ? `Est. parcel weight: ~${ship.weightGrams} g (${ship.weightKg} kg)`
+    : '';
+  document.getElementById('cart-total').textContent = '$' + ship.total;
+  document.getElementById('order-form').dataset.total = String(ship.total);
+  document.getElementById('order-form').dataset.subtotal = String(ship.subtotal);
+  document.getElementById('order-form').dataset.shipping = String(ship.shipping);
   if (typeof updateCartCount === 'function') updateCartCount();
 }
 
 function getOrderPayload() {
   const cart = typeof getCart === 'function' ? getCart() : [];
-  const total = parseFloat(document.getElementById('order-form')?.dataset.total || '0') ||
+  const form = document.getElementById('order-form');
+  const subtotal = parseFloat(form?.dataset.subtotal || '0') ||
     cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
+  // Recalc shipping fresh so Stripe matches UI
+  const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
+  const ship = window.CortenShipping
+    ? CortenShipping.calculateShipping(cart, subtotal, cfg)
+    : { shipping: 0, subtotal, total: subtotal, weightKg: 0, label: 'NZ shipping', freeShipping: false };
+  lastShip = ship;
   return {
     name: document.getElementById('order-name').value.trim(),
     email: document.getElementById('order-email').value.trim(),
@@ -217,7 +252,12 @@ function getOrderPayload() {
     address: document.getElementById('order-address').value.trim(),
     notes: document.getElementById('order-notes').value.trim(),
     items: cart,
-    total,
+    subtotal: ship.subtotal,
+    shipping: ship.shipping,
+    shippingLabel: ship.label,
+    weightKg: ship.weightKg,
+    freeShipping: !!ship.freeShipping,
+    total: ship.total,
   };
 }
 
@@ -327,7 +367,12 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
   document.getElementById('cancel-note')?.classList.remove('hidden');
 }
 
-renderCart();
+(async function initCartPage() {
+  if (window.CortenShipping) {
+    await CortenShipping.loadShippingConfig();
+  }
+  renderCart();
+})();
 </script>
 </body>
 </html>

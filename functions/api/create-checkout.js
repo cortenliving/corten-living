@@ -33,6 +33,9 @@ export async function onRequestPost(context) {
     const address = String(body.address || '').trim();
     const notes = String(body.notes || '').trim();
     const items = Array.isArray(body.items) ? body.items : [];
+    const shippingAmount = Math.max(0, Number(body.shipping) || 0);
+    const shippingLabel = String(body.shippingLabel || 'NZ shipping').slice(0, 100);
+    const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
 
     if (!email) {
       return json({ error: 'Email is required for checkout' }, 400);
@@ -57,6 +60,8 @@ export async function onRequestPost(context) {
     params.set('metadata[phone]', phone.slice(0, 100));
     params.set('metadata[notes]', notes.slice(0, 400));
     params.set('metadata[address]', address.slice(0, 400));
+    params.set('metadata[shipping]', String(shippingAmount));
+    if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
     params.set('payment_intent_data[metadata][order_id]', orderId);
 
     let lineIndex = 0;
@@ -66,9 +71,6 @@ export async function onRequestPost(context) {
         return json({ error: 'Invalid item price in cart' }, 400);
       }
       const cents = Math.round(unit * 100);
-      if (cents < 50 && cents > 0) {
-        // Stripe NZD minimum is typically 50 cents
-      }
       if (cents <= 0) {
         return json({ error: 'Item price must be greater than zero' }, 400);
       }
@@ -83,13 +85,26 @@ export async function onRequestPost(context) {
       params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
       params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(cents));
       params.set(`line_items[${lineIndex}][price_data][product_data][name]`, label);
-      params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Excl. GST & shipping unless stated. Corten Living, Gisborne NZ.');
+      params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Excl. GST unless stated. Corten Living, Gisborne NZ.');
       params.set(`line_items[${lineIndex}][quantity]`, String(qty));
       lineIndex++;
     }
 
-    // Optional note line for shipping reminder (no charge)
-    // Stripe doesn't allow $0 line items easily — skip
+    // Shipping as its own line item when > $0
+    if (shippingAmount > 0) {
+      const shipCents = Math.round(shippingAmount * 100);
+      if (shipCents > 0) {
+        const desc = weightKg != null
+          ? `Estimated parcel ~${weightKg} kg`
+          : 'Estimated shipping';
+        params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
+        params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(shipCents));
+        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, shippingLabel);
+        params.set(`line_items[${lineIndex}][price_data][product_data][description]`, desc);
+        params.set(`line_items[${lineIndex}][quantity]`, '1');
+        lineIndex++;
+      }
+    }
 
     const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
