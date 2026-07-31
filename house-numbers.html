@@ -24,150 +24,223 @@ tailwind.config = {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
+<style>
+  /* Brighter page treatment just for house numbers */
+  body.hn-bright {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.28), transparent 55%),
+      radial-gradient(circle at 90% 40%, rgba(183, 65, 14, 0.12), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .hn-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.35);
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+  .hn-preview-stage {
+    background:
+      radial-gradient(ellipse at center, #3a2a20 0%, #1a1210 65%, #0f0c0a 100%);
+    border: 1px solid rgba(229, 122, 72, 0.4);
+    box-shadow: inset 0 0 60px rgba(183, 65, 14, 0.15), 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .preview-text {
+    font-size: clamp(3.5rem, 12vw, 6.5rem);
+    filter: drop-shadow(0 4px 20px rgba(229, 122, 72, 0.55)) drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+    background: linear-gradient(180deg, #ffb07a 0%, #e57a48 35%, #d56f3d 70%, #b7410e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .hn-opt {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .hn-opt:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(229, 122, 72, 0.7) !important;
+  }
+  .hn-opt.is-active {
+    border-color: #e57a48 !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, rgba(183,65,14,0.45), rgba(213,111,61,0.25));
+    box-shadow: 0 0 0 1px rgba(229,122,72,0.35), 0 8px 24px -8px rgba(183,65,14,0.6);
+  }
+  .hn-price-box {
+    background: linear-gradient(135deg, rgba(183,65,14,0.35), rgba(26,18,14,0.95));
+    border: 1px solid rgba(229, 122, 72, 0.55);
+    box-shadow: 0 0 40px -10px rgba(213, 111, 61, 0.5);
+  }
+  .hn-cta {
+    box-shadow: 0 10px 30px -8px rgba(183, 65, 14, 0.75);
+  }
+  .hn-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 36px -8px rgba(213, 111, 61, 0.85);
+  }
+  .gallery-thumb {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .gallery-thumb:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 24px -8px rgba(183, 65, 14, 0.5);
+  }
+  .gallery-thumb.is-selected {
+    box-shadow: 0 0 0 2px #e57a48, 0 8px 24px -6px rgba(213,111,61,0.55);
+  }
+</style>
 </head>
-<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
+<body class="hn-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
 
-<nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="flex items-center justify-between h-16">
- <a href="/" class="flex items-center gap-3 group">
- <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
- <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
- </a>
- <div class="hidden md:flex items-center gap-7 text-sm font-medium">
- <a href="/" class="hover:text-corten-400 transition">Home</a>
- <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
- <a href="/house-numbers" class="text-corten-400">Numbers</a>
- <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
- <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
- <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
- <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
- </div>
- <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
- </button>
- </div>
- </div>
- <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
- <div class="px-4 py-4 space-y-3 text-sm">
- <a href="/" class="block hover:text-corten-400">Home</a>
- <a href="/shop" class="block hover:text-corten-400">Shop</a>
- <a href="/house-numbers" class="block text-corten-400">House Numbers</a>
- <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
- <a href="/contact" class="block hover:text-corten-400">Contact</a>
- <a href="/cart" class="block hover:text-corten-400">Cart</a>
- </div>
- </div>
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#1a1410]/95 backdrop-blur-md border-b border-corten-600/30">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="text-corten-400">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-[#221a14] border-t border-corten-600/30">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
 </nav>
 
-<section class="pt-28 pb-20 flex-1">
- <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="mb-8">
- <a href="/shop" class="text-sm text-corten-500 hover:text-corten-400">← Back to Shop</a>
- </div>
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="mb-6 sm:mb-8 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <a href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
+        <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mt-2">
+          House Numbers <span class="text-corten-400">&amp; Letters</span>
+        </h1>
+        <p class="mt-2 text-gray-300 text-sm sm:text-base max-w-xl">Configure size, mounting and characters — live preview updates as you type.</p>
+      </div>
+    </div>
 
- <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
- <!-- Preview + gallery -->
- <div>
- <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 sm:p-8">
- <p class="text-xs text-gray-500 uppercase tracking-widest mb-4">Live Preview</p>
- <div class="bg-metal-950 border border-gray-800 rounded-sm min-h-[180px] flex items-center justify-center p-6 overflow-x-auto">
- <div id="preview" class="preview-text text-6xl sm:text-7xl md:text-8xl whitespace-nowrap select-none">212</div>
- </div>
- <p class="mt-4 text-xs text-gray-500 text-center">Preview uses Arial Narrow Bold · Actual product is profile-cut 3 mm Corten</p>
- </div>
+    <div class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <!-- Preview + gallery: wider on large screens -->
+      <div class="lg:col-span-7 space-y-5">
+        <div class="hn-card rounded-sm p-5 sm:p-8">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs text-corten-400 uppercase tracking-widest font-medium">Live Preview</p>
+            <p class="text-[10px] sm:text-xs text-gray-400">Arial Narrow Bold · 3 mm Corten</p>
+          </div>
+          <div class="hn-preview-stage rounded-sm min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] flex items-center justify-center p-6 sm:p-10 overflow-x-auto">
+            <div id="preview" class="preview-text whitespace-nowrap select-none">212</div>
+          </div>
+        </div>
 
- <!-- Real product photos -->
- <div class="mt-6">
- <p class="text-xs text-gray-500 uppercase tracking-widest mb-3">Real product photos</p>
- <div class="grid grid-cols-3 gap-2">
- <button type="button" class="gallery-thumb border border-corten-700 rounded-sm overflow-hidden aspect-[4/3] ring-1 ring-corten-600" data-src="/images/hn-three-holes.jpg">
- <img src="/images/hn-three-holes.jpg" alt="Three digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
- </button>
- <button type="button" class="gallery-thumb border border-gray-800 rounded-sm overflow-hidden aspect-[4/3]" data-src="/images/hn-three-clean.jpg">
- <img src="/images/hn-three-clean.jpg" alt="Three digits clean" class="w-full h-full object-cover" loading="lazy">
- </button>
- <button type="button" class="gallery-thumb border border-gray-800 rounded-sm overflow-hidden aspect-[4/3]" data-src="/images/hn-two-holes.jpg">
- <img src="/images/hn-two-holes.jpg" alt="Two digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
- </button>
- <button type="button" class="gallery-thumb border border-gray-800 rounded-sm overflow-hidden aspect-[4/3]" data-src="/images/hn-letters-holes.jpg">
- <img src="/images/hn-letters-holes.jpg" alt="Letters pre-drilled" class="w-full h-full object-cover" loading="lazy">
- </button>
- <button type="button" class="gallery-thumb border border-gray-800 rounded-sm overflow-hidden aspect-[4/3]" data-src="/images/hn-single-holes.jpg">
- <img src="/images/hn-single-holes.jpg" alt="Single digit pre-drilled" class="w-full h-full object-cover" loading="lazy">
- </button>
- <button type="button" class="gallery-thumb border border-gray-800 rounded-sm overflow-hidden aspect-[4/3]" data-src="/images/hn-single-clean.jpg">
- <img src="/images/hn-single-clean.jpg" alt="Single digit clean" class="w-full h-full object-cover" loading="lazy">
- </button>
- </div>
- <div id="gallery-main" class="mt-3 rounded-sm overflow-hidden border border-corten-900/40 aspect-[16/9] bg-metal-950">
- <img id="gallery-main-img" src="/images/hn-three-holes.jpg" alt="Corten house numbers" class="w-full h-full object-contain bg-metal-950">
- </div>
- </div>
+        <div class="hn-card rounded-sm p-5 sm:p-6">
+          <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-3">Real product photos</p>
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+            <button type="button" class="gallery-thumb is-selected border border-corten-500/60 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-three-holes.jpg">
+              <img src="/images/hn-three-holes.jpg" alt="Three digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
+            </button>
+            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-three-clean.jpg">
+              <img src="/images/hn-three-clean.jpg" alt="Three digits clean" class="w-full h-full object-cover" loading="lazy">
+            </button>
+            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-two-holes.jpg">
+              <img src="/images/hn-two-holes.jpg" alt="Two digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
+            </button>
+            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-letters-holes.jpg">
+              <img src="/images/hn-letters-holes.jpg" alt="Letters pre-drilled" class="w-full h-full object-cover" loading="lazy">
+            </button>
+            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-single-holes.jpg">
+              <img src="/images/hn-single-holes.jpg" alt="Single digit pre-drilled" class="w-full h-full object-cover" loading="lazy">
+            </button>
+            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-single-clean.jpg">
+              <img src="/images/hn-single-clean.jpg" alt="Single digit clean" class="w-full h-full object-cover" loading="lazy">
+            </button>
+          </div>
+          <div id="gallery-main" class="mt-4 rounded-sm overflow-hidden border border-corten-500/30 aspect-[16/9] bg-white shadow-lg">
+            <img id="gallery-main-img" src="/images/hn-three-holes.jpg" alt="Corten house numbers" class="w-full h-full object-contain">
+          </div>
+        </div>
 
- <div class="mt-6 bg-metal-850 border border-corten-900/40 rounded-sm p-5 text-sm text-gray-400 space-y-2">
- <p><span class="text-corten-400 font-medium">Material:</span> 3 mm Corten steel (weathering steel)</p>
- <p><span class="text-corten-400 font-medium">Finish:</span> Supplied raw — develops rich orange-brown patina outdoors</p>
- <p><span class="text-corten-400 font-medium">Font:</span> Arial Narrow Bold</p>
- <p><span class="text-corten-400 font-medium">Made:</span> Gisborne, New Zealand</p>
- </div>
- </div>
+        <div class="hn-card rounded-sm p-5 text-sm text-gray-300 grid sm:grid-cols-2 gap-3">
+          <p><span class="text-corten-400 font-semibold">Material</span><br>3 mm Corten steel</p>
+          <p><span class="text-corten-400 font-semibold">Finish</span><br>Raw — weathers outdoors</p>
+          <p><span class="text-corten-400 font-semibold">Font</span><br>Arial Narrow Bold</p>
+          <p><span class="text-corten-400 font-semibold">Made</span><br>Gisborne, New Zealand</p>
+        </div>
+      </div>
 
- <!-- Configurator -->
- <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 sm:p-8 lg:sticky lg:top-24 h-fit">
- <h1 class="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">Corten Steel House Numbers & Letters</h1>
- <p class="mt-2 text-gray-400 text-sm">Choose size, mounting style and type the characters you need.</p>
+      <!-- Configurator -->
+      <div class="lg:col-span-5">
+        <div class="hn-card rounded-sm p-6 sm:p-8 lg:sticky lg:top-24">
+          <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-2">Configure yours</p>
+          <h2 class="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">Build your set</h2>
+          <p class="mt-2 text-gray-300 text-sm">Pick height, mounting and type your characters.</p>
 
- <form id="config-form" class="mt-8 space-y-6" onsubmit="return false;">
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-2">Height</label>
- <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
- <button type="button" data-size="100" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">100 mm</button>
- <button type="button" data-size="150" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">150 mm</button>
- <button type="button" data-size="200" class="size-btn px-3 py-2.5 rounded-sm border border-corten-600 text-corten-400 text-sm font-medium">200 mm</button>
- <button type="button" data-size="250" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">250 mm</button>
- <button type="button" data-size="300" class="size-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium">300 mm</button>
- </div>
- <p class="text-xs text-gray-600 mt-1.5">All heights in 3 mm Corten · prices scale with size</p>
- </div>
+          <form id="config-form" class="mt-7 space-y-6" onsubmit="return false;">
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Height</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" data-size="100" class="size-btn hn-opt px-2 py-3 rounded-sm border border-white/15 text-gray-200 text-sm font-semibold">100 mm</button>
+                <button type="button" data-size="150" class="size-btn hn-opt px-2 py-3 rounded-sm border border-white/15 text-gray-200 text-sm font-semibold">150 mm</button>
+                <button type="button" data-size="200" class="size-btn hn-opt is-active px-2 py-3 rounded-sm border border-corten-500 text-white text-sm font-semibold">200 mm</button>
+                <button type="button" data-size="250" class="size-btn hn-opt px-2 py-3 rounded-sm border border-white/15 text-gray-200 text-sm font-semibold">250 mm</button>
+                <button type="button" data-size="300" class="size-btn hn-opt px-2 py-3 rounded-sm border border-white/15 text-gray-200 text-sm font-semibold">300 mm</button>
+              </div>
+              <p class="text-xs text-gray-400 mt-2">All heights · 3 mm Corten · prices scale with size</p>
+            </div>
 
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-2">Mounting style</label>
- <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
- <button type="button" data-mount="clean" class="mount-btn px-3 py-2.5 rounded-sm border border-corten-600 text-corten-400 text-sm font-medium text-left">
- Clean face<br><span class="text-xs opacity-70">No fixing holes</span>
- </button>
- <button type="button" data-mount="holes" class="mount-btn px-3 py-2.5 rounded-sm border border-gray-700 text-gray-400 text-sm font-medium text-left">
- Pre-drilled<br><span class="text-xs opacity-70">With mounting holes</span>
- </button>
- </div>
- </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Mounting style</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button type="button" data-mount="clean" class="mount-btn hn-opt is-active px-3 py-3 rounded-sm border border-corten-500 text-white text-sm font-medium text-left">
+                  Clean face<br><span class="text-xs text-corten-300/90">No fixing holes</span>
+                </button>
+                <button type="button" data-mount="holes" class="mount-btn hn-opt px-3 py-3 rounded-sm border border-white/15 text-gray-200 text-sm font-medium text-left">
+                  Pre-drilled<br><span class="text-xs text-gray-400">With mounting holes</span>
+                </button>
+              </div>
+            </div>
 
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5" for="chars-input">Characters (0-9 and A-Z)</label>
- <input type="text" id="chars-input" maxlength="8" value="212" placeholder="e.g. 212 or A8 or 14B"
- class="w-full bg-metal-950 border border-gray-700 rounded-sm px-4 py-3 text-white text-lg tracking-widest uppercase focus:border-corten-500 outline-none" autocomplete="off">
- <p class="text-xs text-gray-600 mt-1.5">Letters and numbers only. Max 8 characters.</p>
- </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="chars-input">Characters (0-9 and A-Z)</label>
+              <input type="text" id="chars-input" maxlength="8" value="212" placeholder="e.g. 212 or A8 or 14B"
+                class="w-full bg-[#120e0c] border border-corten-500/40 rounded-sm px-4 py-3.5 text-white text-xl tracking-widest uppercase focus:border-corten-400 outline-none shadow-inner" autocomplete="off">
+              <p class="text-xs text-gray-400 mt-1.5">Letters and numbers only. Max 8 characters.</p>
+            </div>
 
- <div class="bg-metal-950 border border-corten-800/60 rounded-sm p-5">
- <div class="flex items-end justify-between">
- <div>
- <p class="text-xs text-gray-500">Price (excl. GST & shipping)</p>
- <p id="price-display" class="text-3xl font-display font-bold text-corten-400 mt-1">$42</p>
- </div>
- <p id="price-detail" class="text-xs text-gray-500 text-right">200 mm · 3 chars · Clean face</p>
- </div>
- </div>
+            <div class="hn-price-box rounded-sm p-5">
+              <div class="flex items-end justify-between gap-3">
+                <div>
+                  <p class="text-xs text-corten-200/80 uppercase tracking-wide">Price (excl. GST &amp; shipping)</p>
+                  <p id="price-display" class="text-4xl sm:text-5xl font-display font-bold text-white mt-1 drop-shadow">$42</p>
+                </div>
+                <p id="price-detail" class="text-xs sm:text-sm text-corten-100/90 text-right font-medium">200 mm · 3 chars · Clean face</p>
+              </div>
+            </div>
 
- <button type="button" id="add-to-cart-btn" class="w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">
- Add to Cart
- </button>
- <p id="cart-feedback" class="text-xs text-center text-corten-400 hidden">Added to cart ✓ — <a href="/cart" class="underline">View cart</a></p>
- </form>
- </div>
- </div>
- </div>
+            <button type="button" id="add-to-cart-btn" class="hn-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide transition">
+              Add to Cart
+            </button>
+            <p id="cart-feedback" class="text-sm text-center text-corten-300 hidden">Added to cart ✓ — <a href="/cart" class="underline text-white">View cart</a></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <footer class="border-t border-corten-900/40 bg-metal-950 mt-auto">
@@ -345,8 +418,8 @@ function updateUI() {
  const preview = document.getElementById('preview');
  preview.textContent = chars || '—';
 
- if (chars.length >= 5) preview.style.fontSize = 'clamp(2rem, 8vw, 3.5rem)';
- else if (chars.length >= 4) preview.style.fontSize = 'clamp(2.5rem, 10vw, 4.5rem)';
+ if (chars.length >= 5) preview.style.fontSize = 'clamp(2.2rem, 9vw, 4rem)';
+ else if (chars.length >= 4) preview.style.fontSize = 'clamp(2.8rem, 10vw, 5rem)';
  else preview.style.fontSize = '';
 
  const price = calcPrice();
@@ -368,12 +441,8 @@ function updateUI() {
 document.querySelectorAll('.size-btn:not([disabled])').forEach(btn => {
  btn.addEventListener('click', () => {
  selectedSize = parseInt(btn.dataset.size, 10);
- document.querySelectorAll('.size-btn').forEach(b => {
- b.classList.remove('border-corten-600', 'text-corten-400');
- b.classList.add('border-gray-700', 'text-gray-400');
- });
- btn.classList.add('border-corten-600', 'text-corten-400');
- btn.classList.remove('border-gray-700', 'text-gray-400');
+ document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('is-active'));
+ btn.classList.add('is-active');
  updateUI();
  });
 });
@@ -381,12 +450,8 @@ document.querySelectorAll('.size-btn:not([disabled])').forEach(btn => {
 document.querySelectorAll('.mount-btn').forEach(btn => {
  btn.addEventListener('click', () => {
  selectedMount = btn.dataset.mount;
- document.querySelectorAll('.mount-btn').forEach(b => {
- b.classList.remove('border-corten-600', 'text-corten-400');
- b.classList.add('border-gray-700', 'text-gray-400');
- });
- btn.classList.add('border-corten-600', 'text-corten-400');
- btn.classList.remove('border-gray-700', 'text-gray-400');
+ document.querySelectorAll('.mount-btn').forEach(b => b.classList.remove('is-active'));
+ btn.classList.add('is-active');
  updateUI();
  });
 });
@@ -428,12 +493,8 @@ document.querySelectorAll('.gallery-thumb').forEach(btn => {
  const src = btn.dataset.src;
  const main = document.getElementById('gallery-main-img');
  if (main && src) main.src = src;
- document.querySelectorAll('.gallery-thumb').forEach(b => {
- b.classList.remove('border-corten-700', 'ring-1', 'ring-corten-600');
- b.classList.add('border-gray-800');
- });
- btn.classList.add('border-corten-700', 'ring-1', 'ring-corten-600');
- btn.classList.remove('border-gray-800');
+ document.querySelectorAll('.gallery-thumb').forEach(b => b.classList.remove('is-selected'));
+ btn.classList.add('is-selected');
  });
 });
 
