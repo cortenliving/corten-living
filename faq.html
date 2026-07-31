@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FAQ | Corten Living — Corten Steel Questions</title>
+<meta name="description" content="Common questions about Corten steel, house numbers, mounting, shipping and custom cuts from Corten Living in Gisborne, NZ." />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<style>
+  body.faq-bright {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.28), transparent 55%),
+      radial-gradient(circle at 85% 40%, rgba(183, 65, 14, 0.12), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .faq-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.28);
+  }
+  .faq-item {
+    background: linear-gradient(165deg, #2e241e 0%, #1c1612 100%);
+    border: 1px solid rgba(229, 122, 72, 0.25);
+  }
+  .faq-item[open] {
+    border-color: rgba(229, 122, 72, 0.5);
+    box-shadow: 0 8px 28px -12px rgba(183, 65, 14, 0.45);
+  }
+  .faq-item summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-chevron {
+    transition: transform 0.2s ease;
+  }
+  .faq-item[open] .faq-chevron {
+    transform: rotate(180deg);
+  }
+</style>
+</head>
+<body class="faq-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
+
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#1a1410]/95 backdrop-blur-md border-b border-corten-600/30">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/faq" class="text-corten-400">FAQ</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-[#221a14] border-t border-corten-600/30">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/faq" class="block text-corten-400">FAQ</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
+</nav>
+
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 sm:mb-10">
+      <a href="/" class="text-sm text-corten-400 hover:text-corten-300">← Back to Home</a>
+      <div class="mt-4 flex items-start gap-4">
+        <div class="w-12 h-12 shrink-0 rounded-sm flex items-center justify-center corten-gradient shadow-lg shadow-corten-600/40" aria-hidden="true">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-1">Help</p>
+          <h1 class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Frequently asked <span class="text-corten-400">questions</span>
+          </h1>
+          <p class="mt-2 text-gray-300 text-sm sm:text-base max-w-xl">
+            Straight answers about Corten steel, house numbers, mounting and NZ shipping from our Gisborne workshop.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3" id="faq-list">
+
+      <details class="faq-item rounded-sm group">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">What is Corten steel — will it stain walls or timber?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>Corten (weathering steel) forms a stable, protective rust-like patina outdoors instead of rusting away like ordinary mild steel. That’s the warm orange-brown look people love.</p>
+          <p>While it weathers, it can leave <strong class="text-gray-200">run-off stains</strong> on light walls, pale timber, concrete or paving below. For clean faces or light cladding, mount with a small stand-off, use a drip edge, or place numbers where runoff won’t mark anything important. On dark fence timber the effect is usually minor once the surface has stabilised.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">Raw vs pre-weathered — what do I get?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>Most pieces leave our workshop as <strong class="text-gray-200">raw 3 mm Corten</strong> — a mill finish that will weather naturally once outdoors (speed depends on rain, salt air and sun).</p>
+          <p>If you need a more developed look from day one, ask about <strong class="text-gray-200">pre-weathering</strong> options when you order. Either way, the steel keeps changing slightly over the first months until the patina settles.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">House number heights (100–300 mm) — how big do they look?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>Height is the character height (top to bottom of a digit or letter), not including mounting gap:</p>
+          <ul class="list-disc pl-5 space-y-1 text-gray-400">
+            <li><strong class="text-gray-200">100 mm</strong> — compact; letterbox / close-up doors</li>
+            <li><strong class="text-gray-200">150–200 mm</strong> — popular for most houses and fences</li>
+            <li><strong class="text-gray-200">250–300 mm</strong> — bold for long driveways and rural gates (readable from further away)</li>
+          </ul>
+          <p>Use the live preview on the <a href="/house-numbers" class="text-corten-400 hover:underline">House Numbers</a> page, or message us a photo of your post/fence and we’ll suggest a size.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">Clean face vs pre-drilled mounting?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p><strong class="text-gray-200">Clean face</strong> — no fixing holes in the character. Ideal if you want a seamless look and will use adhesive, stand-offs, or your own mounting method.</p>
+          <p><strong class="text-gray-200">Pre-drilled</strong> — mounting holes cut in each character so you can screw straight to timber, posts or cladding. Faster DIY install; the holes are part of the finished look (as on many of our product photos).</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">How long does it take? Are you made in Gisborne?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>Yes — every piece is <strong class="text-gray-200">profile-cut in Gisborne, New Zealand</strong> from 3 mm Corten steel.</p>
+          <p>Lead times depend on the queue and order complexity. Simple house number sets are usually turned around promptly; custom DXF jobs may take longer. We’ll confirm timing when you order or request a quote. Need it for a specific date? Tell us — we’ll be honest about what’s realistic.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">NZ shipping — standard vs rural cost?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>We ship <strong class="text-gray-200">NZ-wide</strong>. At checkout, shipping is estimated from parcel weight/size.</p>
+          <p><strong class="text-gray-200">Standard</strong> — town, city and normal street delivery.</p>
+          <p><strong class="text-gray-200">Rural</strong> — RD / rural delivery addresses cost more (an extra rural surcharge on top of the base rate), because couriers charge more for those runs. Type your address in the cart — if it looks rural we’ll flag it, or you can choose Rural yourself.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">Can I order custom shapes / DXF?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>Yes. Upload a <strong class="text-gray-200">DXF</strong> (or describe what you need) on the <a href="/quote" class="text-corten-400 hover:underline">Custom Quote</a> page. We profile-cut custom signage, garden pieces and one-offs from 3 mm Corten.</p>
+          <p>Clean closed outlines work best. If you’re unsure about the file, send it through anyway — we’ll check and reply with a price.</p>
+        </div>
+      </details>
+
+      <details class="faq-item rounded-sm">
+        <summary class="flex items-center justify-between gap-3 px-4 sm:px-5 py-4">
+          <span class="font-medium text-white text-sm sm:text-base leading-snug pr-2">Care outdoors — do I need to maintain it?</span>
+          <svg class="faq-chevron w-5 h-5 text-corten-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="px-4 sm:px-5 pb-5 text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3 space-y-2">
+          <p>For most outdoor installs: <strong class="text-gray-200">leave it alone</strong>. Rain and air develop the protective patina. You don’t paint or oil it like timber.</p>
+          <p>Avoid trapping constant wet mud against the steel or sealing it under a finish that stops it “breathing.” A rinse with a hose if it gets filthy is fine. Over time the colour deepens and settles — that’s normal, not a fault.</p>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="faq-card rounded-sm mt-10 p-6 sm:p-8 text-center">
+      <p class="font-display text-xl text-white">Still have a question?</p>
+      <p class="mt-2 text-sm text-gray-400">We’re happy to help with sizing, photos of your site, or a custom cut.</p>
+      <div class="mt-5 flex flex-wrap justify-center gap-3">
+        <a href="/contact" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Contact us</a>
+        <a href="/quote" class="px-5 py-2.5 border border-corten-500/50 text-corten-300 text-sm font-semibold rounded-sm hover:bg-white/5 transition">Custom quote</a>
+        <a href="tel:0273838178" class="px-5 py-2.5 border border-white/15 text-gray-200 text-sm font-semibold rounded-sm hover:bg-white/5 transition">027 383 8178</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 text-center text-xs text-gray-500">
+    <p>© 2026 Corten Living · Gisborne, New Zealand</p>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>
