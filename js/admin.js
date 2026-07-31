@@ -574,7 +574,7 @@ function collectFormProduct() {
   }
  }
 
- // Keep card "from" price in sync with cheapest size option
+ // Always sync card price + "From $X" label from cheapest size option
  let basePrice = Number.isNaN(price) ? 0 : price;
  let baseSize = document.getElementById('f-size').value.trim() || 'Various';
  let displayLabel = priceLabel;
@@ -584,15 +584,14 @@ function collectFormProduct() {
    const minP = Math.min(...prices);
    const maxP = Math.max(...prices);
    basePrice = minP;
-   if (!displayLabel) {
-    displayLabel = minP === maxP ? ('$' + minP) : ('From $' + minP);
-   }
+   // Always overwrite display from sizes so old "From $72" can't stick after a price cut
+   displayLabel = minP === maxP ? ('$' + minP) : ('From $' + minP);
   }
-  // Summary size line for shop cards
-  if (!document.getElementById('f-size').value.trim() && sizes.length > 1) {
+  // Summary size line for shop cards — show range if multiple sizes
+  if (sizes.length > 1) {
    baseSize = 'Multiple sizes';
-  } else if (!document.getElementById('f-size').value.trim() && sizes[0]) {
-   baseSize = sizes[0].size || sizes[0].label || 'Various';
+  } else if (sizes[0]) {
+   baseSize = sizes[0].size || sizes[0].label || baseSize || 'Various';
   }
  }
 

@@ -152,10 +152,31 @@ function scaleSizeLabel(label, factor) {
  });
 }
 
+/** Display price for cards: always prefer lowest size option when sizes exist */
+function productPriceDisplay(p) {
+ if (!p) return '';
+ if (!isHouseNumberProduct(p) && Array.isArray(p.sizes) && p.sizes.length) {
+  const prices = p.sizes.map((s) => Number(s.price)).filter((n) => !Number.isNaN(n) && n > 0);
+  if (prices.length) {
+   const minP = Math.min(...prices);
+   const maxP = Math.max(...prices);
+   return minP === maxP ? ('$' + minP) : ('From $' + minP);
+  }
+ }
+ // House numbers / single-price products
+ if (p.priceLabel && String(p.priceLabel).trim()) {
+  // If label is stale "From $X" but p.price is lower, trust numeric price when no sizes
+  // (sizes case handled above)
+  return p.priceLabel;
+ }
+ if (p.price != null && p.price !== '') return '$' + p.price;
+ return '';
+}
+
 function productCardHTML(p, options = {}) {
  const compact = options.compact;
  const href = productHref(p);
- const priceText = p.priceLabel || ('$' + p.price);
+ const priceText = productPriceDisplay(p);
  const hasSlides = p.slides && p.slides.length;
  const firstImg = (hasSlides && p.slides[0].src) || p.image || '';
  const isHN = isHouseNumberProduct(p);
