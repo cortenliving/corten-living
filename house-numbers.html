@@ -150,27 +150,10 @@ tailwind.config = {
 
         <div class="hn-card rounded-sm p-5 sm:p-6">
           <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-3">Real product photos</p>
-          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
-            <button type="button" class="gallery-thumb is-selected border border-corten-500/60 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-three-holes.jpg">
-              <img src="/images/hn-three-holes.jpg" alt="Three digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
-            </button>
-            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-three-clean.jpg">
-              <img src="/images/hn-three-clean.jpg" alt="Three digits clean" class="w-full h-full object-cover" loading="lazy">
-            </button>
-            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-two-holes.jpg">
-              <img src="/images/hn-two-holes.jpg" alt="Two digits pre-drilled" class="w-full h-full object-cover" loading="lazy">
-            </button>
-            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-letters-holes.jpg">
-              <img src="/images/hn-letters-holes.jpg" alt="Letters pre-drilled" class="w-full h-full object-cover" loading="lazy">
-            </button>
-            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-single-holes.jpg">
-              <img src="/images/hn-single-holes.jpg" alt="Single digit pre-drilled" class="w-full h-full object-cover" loading="lazy">
-            </button>
-            <button type="button" class="gallery-thumb border border-white/10 rounded-sm overflow-hidden aspect-square bg-white" data-src="/images/hn-single-clean.jpg">
-              <img src="/images/hn-single-clean.jpg" alt="Single digit clean" class="w-full h-full object-cover" loading="lazy">
-            </button>
+          <div id="gallery-thumbs" class="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+            <!-- Filled from admin catalogue (house-numbers product slides) -->
           </div>
-          <div id="gallery-main" class="mt-4 rounded-sm overflow-hidden border border-corten-500/30 aspect-[16/9] bg-white shadow-lg">
+          <div id="gallery-main" class="mt-4 rounded-sm overflow-hidden border border-corten-500/30 aspect-[16/9] bg-metal-950 shadow-lg">
             <img id="gallery-main-img" src="/images/hn-three-holes.jpg" alt="Corten house numbers" class="w-full h-full object-contain">
           </div>
         </div>
@@ -487,19 +470,103 @@ document.getElementById('add-to-cart-btn').addEventListener('click', () => {
  setTimeout(() => fb.classList.add('hidden'), 4000);
 });
 
-// Gallery thumbs
-document.querySelectorAll('.gallery-thumb').forEach(btn => {
- btn.addEventListener('click', () => {
- const src = btn.dataset.src;
- const main = document.getElementById('gallery-main-img');
- if (main && src) main.src = src;
- document.querySelectorAll('.gallery-thumb').forEach(b => b.classList.remove('is-selected'));
- btn.classList.add('is-selected');
+// Product photos — load from Admin catalogue (house-numbers slides), with static fallback
+const DEFAULT_HN_GALLERY = [
+ { src: '/images/hn-three-holes.jpg', label: 'Three digits pre-drilled' },
+ { src: '/images/hn-three-clean.jpg', label: 'Three digits clean' },
+ { src: '/images/hn-two-holes.jpg', label: 'Two digits pre-drilled' },
+ { src: '/images/hn-letters-holes.jpg', label: 'Letters pre-drilled' },
+ { src: '/images/hn-single-holes.jpg', label: 'Single digit pre-drilled' },
+ { src: '/images/hn-single-clean.jpg', label: 'Single digit clean' },
+];
+
+function escapeAttr(s) {
+ return String(s || '')
+  .replace(/&/g, '&amp;')
+  .replace(/"/g, '&quot;')
+  .replace(/</g, '&lt;');
+}
+
+function bindGalleryThumbs() {
+ document.querySelectorAll('#gallery-thumbs .gallery-thumb').forEach((btn) => {
+  btn.addEventListener('click', () => {
+   const src = btn.dataset.src;
+   const main = document.getElementById('gallery-main-img');
+   if (main && src) main.src = src;
+   document.querySelectorAll('#gallery-thumbs .gallery-thumb').forEach((b) => {
+    b.classList.remove('is-selected');
+    b.classList.remove('border-corten-500/60');
+    b.classList.add('border-white/10');
+   });
+   btn.classList.add('is-selected');
+   btn.classList.add('border-corten-500/60');
+   btn.classList.remove('border-white/10');
+  });
  });
-});
+}
+
+function renderHnGallery(slides) {
+ const list = (Array.isArray(slides) && slides.length)
+  ? slides.filter((s) => s && s.src)
+  : DEFAULT_HN_GALLERY;
+ const thumbs = document.getElementById('gallery-thumbs');
+ const main = document.getElementById('gallery-main-img');
+ if (!thumbs || !main) return;
+
+ thumbs.innerHTML = list.map((s, i) => `
+  <button type="button" class="gallery-thumb ${i === 0 ? 'is-selected border-corten-500/60' : 'border-white/10'} border rounded-sm overflow-hidden aspect-square bg-metal-950"
+    data-src="${escapeAttr(s.src)}" title="${escapeAttr(s.label || '')}">
+   <img src="${escapeAttr(s.src)}" alt="${escapeAttr(s.label || 'House number photo')}" class="w-full h-full object-cover" loading="lazy">
+  </button>
+ `).join('');
+
+ main.src = list[0].src;
+ main.alt = list[0].label || 'Corten house numbers';
+ bindGalleryThumbs();
+}
+
+async function loadHnGalleryFromCatalogue() {
+ // Prefer cloud / published catalogue so Admin photos show here
+ let product = null;
+ try {
+  if (typeof loadActiveProductsAsync === 'function') {
+   const list = await loadActiveProductsAsync();
+   product = (list || []).find((p) =>
+    p.id === 'house-numbers' ||
+    String(p.category || '').toLowerCase() === 'numbers' ||
+    String(p.name || '').toLowerCase().includes('house number')
+   );
+  }
+ } catch (_) {}
+
+ if (!product) {
+  try {
+   const list = typeof loadActiveProducts === 'function' ? loadActiveProducts() : (window.products || []);
+   product = (list || []).find((p) =>
+    p.id === 'house-numbers' ||
+    String(p.category || '').toLowerCase() === 'numbers'
+   );
+  } catch (_) {}
+ }
+
+ const slides = [];
+ if (product) {
+  if (Array.isArray(product.slides) && product.slides.length) {
+   product.slides.forEach((s) => {
+    if (s && s.src) slides.push({ src: s.src, label: s.label || product.name });
+   });
+  } else if (product.image) {
+   slides.push({ src: product.image, label: product.name });
+  }
+ }
+ renderHnGallery(slides.length ? slides : DEFAULT_HN_GALLERY);
+}
 
 updateUI();
 if (typeof updateCartCount === 'function') updateCartCount();
+// Show defaults immediately, then swap to Admin photos when catalogue loads
+renderHnGallery(DEFAULT_HN_GALLERY);
+loadHnGalleryFromCatalogue();
 </script>
 </body>
 </html>
