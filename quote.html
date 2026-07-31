@@ -10,222 +10,280 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
- theme: {
- extend: {
- colors: {
- corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
- metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
- },
- fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
- }
- }
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
+<style>
+  body.quote-bright {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.28), transparent 55%),
+      radial-gradient(circle at 10% 60%, rgba(183, 65, 14, 0.12), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .q-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.35);
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+  .q-icon {
+    background: linear-gradient(135deg, rgba(183,65,14,0.55), rgba(213,111,61,0.3));
+    border: 1px solid rgba(229, 122, 72, 0.45);
+    box-shadow: 0 6px 20px -6px rgba(183, 65, 14, 0.6);
+  }
+  .q-input {
+    background: #120e0c;
+    border: 1px solid rgba(229, 122, 72, 0.28);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .q-input:focus {
+    border-color: #e57a48;
+    box-shadow: 0 0 0 3px rgba(229, 122, 72, 0.15);
+    outline: none;
+  }
+  .q-drop {
+    border: 2px dashed rgba(229, 122, 72, 0.4);
+    background: rgba(18, 14, 12, 0.8);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .q-drop:hover, .q-drop.dragover {
+    border-color: #e57a48;
+    background: rgba(183, 65, 14, 0.12);
+    box-shadow: 0 0 30px -10px rgba(213, 111, 61, 0.45);
+  }
+  .q-price {
+    background: linear-gradient(135deg, rgba(183,65,14,0.4), rgba(26,18,14,0.95));
+    border: 1px solid rgba(229, 122, 72, 0.55);
+    box-shadow: 0 0 40px -10px rgba(213, 111, 61, 0.5);
+  }
+  .q-cta {
+    box-shadow: 0 10px 30px -8px rgba(183, 65, 14, 0.75);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+  .q-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 36px -8px rgba(213, 111, 61, 0.85);
+  }
+</style>
 </head>
-<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
+<body class="quote-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
 
-<nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="flex items-center justify-between h-16">
- <a href="/" class="flex items-center gap-3 group">
- <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
- <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
- </a>
- <div class="hidden md:flex items-center gap-7 text-sm font-medium">
- <a href="/" class="hover:text-corten-400 transition">Home</a>
- <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
- <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
- <a href="/quote" class="text-corten-400">Custom Quote</a>
- <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
- <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
- <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
- </div>
- <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
- </button>
- </div>
- </div>
- <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
- <div class="px-4 py-4 space-y-3 text-sm">
- <a href="/" class="block hover:text-corten-400">Home</a>
- <a href="/shop" class="block hover:text-corten-400">Shop</a>
- <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
- <a href="/quote" class="block text-corten-400">Custom Quote</a>
- <a href="/contact" class="block hover:text-corten-400">Contact</a>
- <a href="/cart" class="block hover:text-corten-400">Cart</a>
- </div>
- </div>
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#1a1410]/95 backdrop-blur-md border-b border-corten-600/30">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote" class="text-corten-400">Custom Quote</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-[#221a14] border-t border-corten-600/30">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote" class="block text-corten-400">Custom Quote</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
 </nav>
 
-<section class="pt-28 pb-20 flex-1">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="text-center mb-14">
- <h1 class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">Custom Cut & Quote</h1>
- <p class="mt-3 text-gray-400 max-w-2xl mx-auto">Upload your DXF for a professional quote, or use the quick estimator for simple flat profiles. Complex jobs are manually reviewed in Gisborne.</p>
- </div>
- <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
- <!-- Estimator -->
- <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 sm:p-8">
- <div class="flex items-center gap-3 mb-6">
- <div class="w-10 h-10 rounded-sm bg-corten-900/60 flex items-center justify-center">
- <svg class="w-5 h-5 text-corten-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
- </div>
- <div>
- <h2 class="font-display text-xl text-white">Quick Estimator</h2>
- <p class="text-xs text-gray-500">Simple flat profile cut · 3 mm Corten</p>
- </div>
- </div>
- <form id="estimator-form" class="space-y-5">
- <div class="grid grid-cols-2 gap-4">
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5" for="est-width">Width (mm)</label>
- <input type="number" id="est-width" min="10" max="2000" value="300" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none" required>
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5" for="est-height">Height (mm)</label>
- <input type="number" id="est-height" min="10" max="2000" value="300" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none" required>
- </div>
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5" for="est-qty">Quantity</label>
- <input type="number" id="est-qty" min="1" max="100" value="1" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none" required>
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5" for="est-complexity">Complexity</label>
- <select id="est-complexity" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- <option value="1.0">Simple outline</option>
- <option value="1.4">Moderate detail</option>
- <option value="1.9">Highly detailed / intricate</option>
- </select>
- </div>
- <button type="submit" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Calculate Estimate</button>
- </form>
- <div id="estimate-result" class="hidden mt-6 p-5 bg-metal-950 border border-corten-800 rounded-sm">
- <p class="text-sm text-gray-400">Estimated price (excl. GST & shipping)</p>
- <p id="estimate-price" class="text-3xl font-display font-bold text-corten-400 mt-1">$0</p>
- <p class="text-xs text-gray-500 mt-2">Guide only. Final price after DXF review. Includes material + cut. No stakes/folding/finishing.</p>
- </div>
- </div>
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="mb-8 sm:mb-12 max-w-3xl">
+      <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-2">Custom work</p>
+      <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+        Custom Cut <span class="text-corten-400">&amp; Quote</span>
+      </h1>
+      <p class="mt-3 text-gray-300 text-sm sm:text-base leading-relaxed">
+        Upload your DXF for a firm quote, or use the quick estimator for simple flat profiles. Complex jobs are reviewed in Gisborne — we usually reply in 1–2 business days.
+      </p>
+    </div>
 
- <!-- Quote Form -->
- <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 sm:p-8">
- <div class="flex items-center gap-3 mb-6">
- <div class="w-10 h-10 rounded-sm bg-corten-900/60 flex items-center justify-center">
- <svg class="w-5 h-5 text-corten-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
- </div>
- <div>
- <h2 class="font-display text-xl text-white">Submit DXF for Quote</h2>
- <p class="text-xs text-gray-500">Accurate pricing · reply in 1–2 business days</p>
- </div>
- </div>
- <form id="quote-form" action="https://forminit.com/f/mwpwiikqjzy" method="POST" enctype="multipart/form-data" class="space-y-5">
- <div class="grid sm:grid-cols-2 gap-4">
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Your Name *</label>
- <input type="text" name="fi-sender-fullName" required class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Email *</label>
- <input type="email" name="fi-sender-email" required class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- </div>
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Phone (optional)</label>
- <input type="text" name="fi-text-phone" placeholder="e.g. 027 383 8178" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">DXF / Drawing File</label>
- <div id="file-drop" class="file-drop relative border-2 border-dashed border-gray-700 rounded-sm p-6 text-center hover:border-corten-600 transition cursor-pointer">
- <input type="file" name="fi-file-attachment" id="dxf-file" accept=".dxf,.DXF,.pdf,.svg,.ai,.step,.stp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
- <div id="drop-placeholder">
- <svg class="w-8 h-8 mx-auto text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
- <p class="text-sm text-gray-400">Drop DXF here or click to browse</p>
- <p class="text-xs text-gray-600 mt-1">DXF preferred · PDF/SVG/STEP also · max ~20 MB</p>
- </div>
- </div>
- <div id="file-preview" class="hidden mt-3 p-4 bg-metal-950 border border-corten-800/60 rounded-sm">
- <div class="flex items-start gap-3">
- <div class="w-12 h-12 rounded-sm bg-corten-900/50 flex items-center justify-center flex-shrink-0">
- <svg class="w-6 h-6 text-corten-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
- </div>
- <div class="flex-1 min-w-0">
- <p id="preview-name" class="text-sm font-medium text-white truncate"></p>
- <p id="preview-meta" class="text-xs text-gray-500 mt-0.5"></p>
- <p class="text-xs text-corten-400 mt-1.5 flex items-center gap-1">
- <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
- Ready for quote
- </p>
- </div>
- <button type="button" id="clear-file" class="text-gray-500 hover:text-corten-400 transition p-1" title="Remove file">
- <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
- </button>
- </div>
- </div>
- <p class="text-xs text-gray-600 mt-2">No file? Describe the job in notes — photos welcome via email after submit.</p>
- </div>
- <div class="grid sm:grid-cols-2 gap-4">
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Quantity</label>
- <input type="number" name="fi-number-quantity" min="1" value="1" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Material</label>
- <select name="fi-select-material" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
- <option value="3mm Corten (raw)">3 mm Corten — Raw</option>
- <option value="3mm Corten (pre-weathered)">3 mm Corten — Pre-weathered</option>
- <option value="Other">Other (specify in notes)</option>
- </select>
- </div>
- </div>
- <div>
- <label class="block text-xs font-medium text-gray-400 mb-1.5">Notes / Special requirements</label>
- <textarea name="fi-text-message" rows="4" placeholder="Stakes? Mounting holes? Delivery location? Tolerances... or paste house number config details" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
- </div>
- <button type="submit" class="w-full py-3 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Send Quote Request</button>
- <p class="text-xs text-gray-600 text-center">You will receive a confirmation. Firm quote usually within 1–2 business days.</p>
- </form>
- </div>
- </div>
- </div>
+    <div class="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+      <!-- Estimator -->
+      <div class="q-card rounded-sm p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="q-icon w-12 h-12 rounded-sm flex items-center justify-center">
+            <svg class="w-6 h-6 text-corten-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <h2 class="font-display text-xl sm:text-2xl text-white">Quick Estimator</h2>
+            <p class="text-xs text-corten-300/90">Simple flat profile cut · 3 mm Corten</p>
+          </div>
+        </div>
+        <form id="estimator-form" class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="est-width">Width (mm)</label>
+              <input type="number" id="est-width" min="10" max="2000" value="300" class="q-input w-full rounded-sm px-3 py-3 text-white" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="est-height">Height (mm)</label>
+              <input type="number" id="est-height" min="10" max="2000" value="300" class="q-input w-full rounded-sm px-3 py-3 text-white" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="est-qty">Quantity</label>
+            <input type="number" id="est-qty" min="1" max="100" value="1" class="q-input w-full rounded-sm px-3 py-3 text-white" required>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="est-complexity">Complexity</label>
+            <select id="est-complexity" class="q-input w-full rounded-sm px-3 py-3 text-white">
+              <option value="1.0">Simple outline</option>
+              <option value="1.4">Moderate detail</option>
+              <option value="1.9">Highly detailed / intricate</option>
+            </select>
+          </div>
+          <button type="submit" class="q-cta w-full py-3.5 corten-gradient text-white font-bold rounded-sm tracking-wide">Calculate Estimate</button>
+        </form>
+        <div id="estimate-result" class="hidden mt-6 q-price rounded-sm p-5">
+          <p class="text-xs text-corten-200/80 uppercase tracking-wide">Estimated price (excl. GST &amp; shipping)</p>
+          <p id="estimate-price" class="text-4xl sm:text-5xl font-display font-bold text-white mt-1">$0</p>
+          <p class="text-xs text-gray-300 mt-2 leading-relaxed">Guide only. Final price after DXF review. Includes material + cut. No stakes/folding/finishing.</p>
+        </div>
+      </div>
+
+      <!-- Quote Form -->
+      <div class="q-card rounded-sm p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="q-icon w-12 h-12 rounded-sm flex items-center justify-center">
+            <svg class="w-6 h-6 text-corten-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          </div>
+          <div>
+            <h2 class="font-display text-xl sm:text-2xl text-white">Submit DXF for Quote</h2>
+            <p class="text-xs text-corten-300/90">Accurate pricing · reply in 1–2 business days</p>
+          </div>
+        </div>
+        <form id="quote-form" action="https://forminit.com/f/mwpwiikqjzy" method="POST" enctype="multipart/form-data" class="space-y-5">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Your Name *</label>
+              <input type="text" name="fi-sender-fullName" required class="q-input w-full rounded-sm px-3 py-3 text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Email *</label>
+              <input type="email" name="fi-sender-email" required class="q-input w-full rounded-sm px-3 py-3 text-white">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Phone (optional)</label>
+            <input type="text" name="fi-text-phone" placeholder="e.g. 027 383 8178" class="q-input w-full rounded-sm px-3 py-3 text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">DXF / Drawing File</label>
+            <div id="file-drop" class="file-drop q-drop relative rounded-sm p-7 text-center cursor-pointer">
+              <input type="file" name="fi-file-attachment" id="dxf-file" accept=".dxf,.DXF,.pdf,.svg,.ai,.step,.stp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+              <div id="drop-placeholder">
+                <svg class="w-10 h-10 mx-auto text-corten-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                <p class="text-sm text-gray-200 font-medium">Drop DXF here or click to browse</p>
+                <p class="text-xs text-gray-400 mt-1">DXF preferred · PDF/SVG/STEP also · max ~20 MB</p>
+              </div>
+            </div>
+            <div id="file-preview" class="hidden mt-3 p-4 bg-[#120e0c] border border-corten-500/40 rounded-sm">
+              <div class="flex items-start gap-3">
+                <div class="w-12 h-12 rounded-sm q-icon flex items-center justify-center flex-shrink-0">
+                  <svg class="w-6 h-6 text-corten-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p id="preview-name" class="text-sm font-medium text-white truncate"></p>
+                  <p id="preview-meta" class="text-xs text-gray-400 mt-0.5"></p>
+                  <p class="text-xs text-corten-300 mt-1.5 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    Ready for quote
+                  </p>
+                </div>
+                <button type="button" id="clear-file" class="text-gray-400 hover:text-corten-300 transition p-1" title="Remove file">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">No file? Describe the job in notes — photos welcome via email after submit.</p>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Quantity</label>
+              <input type="number" name="fi-number-quantity" min="1" value="1" class="q-input w-full rounded-sm px-3 py-3 text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Material</label>
+              <select name="fi-select-material" class="q-input w-full rounded-sm px-3 py-3 text-white">
+                <option value="3mm Corten (raw)">3 mm Corten — Raw</option>
+                <option value="3mm Corten (pre-weathered)">3 mm Corten — Pre-weathered</option>
+                <option value="Other">Other (specify in notes)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide">Notes / Special requirements</label>
+            <textarea name="fi-text-message" rows="4" placeholder="Stakes? Mounting holes? Delivery location? Tolerances..." class="q-input w-full rounded-sm px-3 py-3 text-white resize-none"></textarea>
+          </div>
+          <button type="submit" class="q-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide">Send Quote Request</button>
+          <p class="text-xs text-gray-400 text-center">You will receive a confirmation. Firm quote usually within 1–2 business days.</p>
+        </form>
+      </div>
+    </div>
+  </div>
 </section>
 
-<footer class="border-t border-corten-900/40 bg-metal-950 mt-auto">
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
- <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
- <div>
- <div class="flex items-center gap-3 mb-4">
- <img src="/images/logo.svg" alt="" class="w-10 h-10">
- <span class="font-display text-lg text-white tracking-wide">CORTEN LIVING</span>
- </div>
- <p class="text-sm text-gray-500 leading-relaxed">Locally designed and manufactured in Gisborne, New Zealand.</p>
- </div>
- <div>
- <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Quick links</h4>
- <ul class="space-y-2 text-sm text-gray-400">
- <li><a href="/shop" class="hover:text-corten-400 transition">Shop</a></li>
- <li><a href="/house-numbers" class="hover:text-corten-400 transition">House Numbers</a></li>
- <li><a href="/contact" class="hover:text-corten-400 transition">Contact</a></li>
- </ul>
- </div>
- <div>
- <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Contact</h4>
- <ul class="space-y-2 text-sm text-gray-400">
- <li><a href="tel:0273838178" class="hover:text-corten-400 transition">027 383 8178</a></li>
- <li><a href="mailto:cortenliving@gmail.com" class="hover:text-corten-400 transition">cortenliving@gmail.com</a></li>
- </ul>
- </div>
- <div>
- <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Prefer a call?</h4>
- <p class="text-sm text-gray-500">Happy to talk through custom sizes, stakes and NZ delivery.</p>
- </div>
- </div>
- <div class="mt-12 pt-8 border-t border-gray-800 text-center text-xs text-gray-600">
- <p>© 2026 Corten Living · All prices in NZD · GST may apply</p>
- </div>
- </div>
+<footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-14">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <img src="/images/logo.svg" alt="" class="w-10 h-10">
+          <span class="font-display text-lg text-white tracking-wide">CORTEN LIVING</span>
+        </div>
+        <p class="text-sm text-gray-400 leading-relaxed">Locally designed and manufactured in Gisborne, New Zealand.</p>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-400 uppercase mb-4">Quick links</h4>
+        <ul class="space-y-2 text-sm text-gray-300">
+          <li><a href="/shop" class="hover:text-corten-400 transition">Shop</a></li>
+          <li><a href="/house-numbers" class="hover:text-corten-400 transition">House Numbers</a></li>
+          <li><a href="/contact" class="hover:text-corten-400 transition">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-400 uppercase mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm text-gray-300">
+          <li><a href="tel:0273838178" class="hover:text-corten-400 transition">027 383 8178</a></li>
+          <li><a href="mailto:cortenliving@gmail.com" class="hover:text-corten-400 transition">cortenliving@gmail.com</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-400 uppercase mb-4">Prefer a call?</h4>
+        <p class="text-sm text-gray-400">Happy to talk through custom sizes, stakes and NZ delivery.</p>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 border-t border-white/10 text-center text-xs text-gray-500">
+      <p>© 2026 Corten Living · All prices in NZD · GST may apply</p>
+    </div>
+  </div>
 </footer>
 
 <script src="/js/main.js"></script>
