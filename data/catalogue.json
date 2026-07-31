@@ -52,9 +52,9 @@
       "name": "Kombi Van",
       "category": "sculpture",
       "size": "500 × 600 mm",
-      "price": 99,
-      "priceLabel": "$99",
-      "desc": "Classic camper van silhouette in 3 mm Corten. Stake option available for garden mounting.",
+      "price": 72,
+      "priceLabel": "$72",
+      "desc": "Classic 3mm Corten Steel Kombi Van Garden Sculpture\nIconic VW Kombi van design cut from 3mm Corten steel, complete with surfboard and palm trees. Supplied un weathered so it will naturally rust to a beautiful protective finish.\n\nNZ made from quality 3mm Corten steel\n\nMounting: Comes with a stake cut into the base for easy garden installation\nCustom size: Can be made to your required size\n\nUltimate Kiwi summer vibe – perfect for garden, beach house, or outdoor display.",
       "tag": "With stake",
       "featured": true,
       "link": "/quote?product=Kombi%20Van",
@@ -67,25 +67,6 @@
         {
           "src": "/images/product-kombi-2.jpg",
           "label": "Detail"
-        }
-      ]
-    },
-    {
-      "id": "koru",
-      "name": "Koru Garden Art",
-      "category": "sculpture",
-      "size": "Custom sizes",
-      "price": 59,
-      "priceLabel": "From $59",
-      "desc": "Māori koru-inspired form. Clean profile cut from 3 mm Corten for walls, fences or gardens.",
-      "tag": "NZ inspired",
-      "featured": true,
-      "link": "/quote?product=Koru%20Garden%20Art",
-      "image": "/images/product-koru.jpg",
-      "slides": [
-        {
-          "src": "/images/product-koru.jpg",
-          "label": "Koru form"
         }
       ]
     },
@@ -138,49 +119,7 @@
           "label": "Outdoor ready"
         }
       ]
-    },
-    {
-      "id": "custom-signage",
-      "name": "Custom Address Plaque",
-      "category": "signage",
-      "size": "Up to 600 mm",
-      "price": 95,
-      "priceLabel": "From $95",
-      "desc": "Your street or property name profile-cut in 3 mm Corten. Perfect for RAPID and driveway entrances.",
-      "tag": "Quote",
-      "featured": false,
-      "link": "/quote?product=Custom%20Address%20Plaque",
-      "image": "/images/hn-letters-holes.jpg",
-      "slides": [
-        {
-          "src": "/images/hn-letters-holes.jpg",
-          "label": "Lettering sample"
-        },
-        {
-          "src": "/images/hn-letters-clean.jpg",
-          "label": "Clean face"
-        }
-      ]
-    },
-    {
-      "id": "planter",
-      "name": "Corten Planter Box",
-      "category": "planter",
-      "size": "Custom sizes",
-      "price": 145,
-      "priceLabel": "From $145",
-      "desc": "Weathering steel planter with open bottom for drainage. Built to last generations outdoors.",
-      "tag": "Custom sizes",
-      "featured": false,
-      "link": "/quote?product=Corten%20Planter%20Box",
-      "image": "/images/hero-corten.jpg",
-      "slides": [
-        {
-          "src": "/images/hero-corten.jpg",
-          "label": "Corten steel"
-        }
-      ]
     }
   ],
-  "updatedAt": "2026-07-31T04:47:12.869Z"
+  "updatedAt": "2026-07-31T06:48:03.851Z"
 }
