@@ -5,8 +5,8 @@
       "name": "Corten House Numbers",
       "category": "numbers",
       "size": "100–300 mm",
-      "price": 8,
-      "priceLabel": "From $8",
+      "price": 7,
+      "priceLabel": "From $7",
       "desc": "Custom numbers & letters in Arial Narrow Bold. Choose height, mounting style and characters with live preview.",
       "tag": "Bestseller",
       "featured": true,
@@ -14,36 +14,16 @@
       "image": "/images/hn-three-holes.jpg",
       "slides": [
         {
-          "src": "/images/hn-three-holes.jpg",
-          "label": "3 digit · Pre-drilled"
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/fca711a21be64af5.jpg",
+          "label": "image (4)"
         },
         {
-          "src": "/images/hn-three-clean.jpg",
-          "label": "3 digit · Clean face"
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/d3ede6139fff422f.jpg",
+          "label": "image (5)"
         },
         {
-          "src": "/images/hn-two-holes.jpg",
-          "label": "2 digit · Pre-drilled"
-        },
-        {
-          "src": "/images/hn-two-clean.jpg",
-          "label": "2 digit · Clean face"
-        },
-        {
-          "src": "/images/hn-letters-holes.jpg",
-          "label": "Letters · Pre-drilled"
-        },
-        {
-          "src": "/images/hn-letters-clean.jpg",
-          "label": "Letters · Clean face"
-        },
-        {
-          "src": "/images/hn-single-holes.jpg",
-          "label": "Single · Pre-drilled"
-        },
-        {
-          "src": "/images/hn-single-clean.jpg",
-          "label": "Single · Clean face"
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6facff49e363457c.jpg",
+          "label": "content"
         }
       ]
     },
@@ -121,5 +101,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-07-31T06:48:03.851Z"
+  "updatedAt": "2026-07-31T06:55:23.061Z"
 }
