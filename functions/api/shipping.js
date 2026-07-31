@@ -8,6 +8,8 @@ const DEFAULT_CONFIG = {
   label: 'NZ shipping',
   currency: 'NZD',
   freeShippingOver: null,
+  ruralSurcharge: 12,
+  ruralLabel: 'Rural delivery surcharge',
   houseNumbers: {
     baseGramsPerChar: 20,
     gramsPerMmPerChar: 0.12,
@@ -69,6 +71,9 @@ export async function onRequestPut(context) {
         holesExtraGramsPerChar: Number(config.houseNumbers.holesExtraGramsPerChar) || 0,
         note: config.houseNumbers.note || '',
       };
+    }
+    if (config.ruralSurcharge != null) {
+      config.ruralSurcharge = Number(config.ruralSurcharge) || 0;
     }
     config.updatedAt = new Date().toISOString();
     await putJsonFile(context.env, FILE, config, 'Admin: update shipping rates');

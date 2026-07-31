@@ -3,6 +3,8 @@
   "label": "NZ shipping",
   "currency": "NZD",
   "freeShippingOver": null,
+  "ruralSurcharge": 12,
+  "ruralLabel": "Rural delivery surcharge",
   "houseNumbers": {
     "baseGramsPerChar": 20,
     "gramsPerMmPerChar": 0.12,

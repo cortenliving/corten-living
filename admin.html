@@ -210,6 +210,21 @@ tailwind.config = {
  <label class="block text-xs text-gray-400 mb-1">Default weight for other products (grams each)</label>
  <input id="ship-default-g" type="number" min="1" step="1" value="500" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
  </div>
+ <div class="pt-2 border-t border-gray-800">
+ <h3 class="text-sm text-white font-medium mb-2">Rural delivery</h3>
+ <p class="text-xs text-gray-500 mb-3 leading-relaxed">
+ Cart lets customers pick <strong class="text-gray-400">Standard</strong> or <strong class="text-gray-400">Rural</strong>.
+ Rural addresses (RD, Private Bag, etc.) cost more by this surcharge.
+ </p>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Rural surcharge ($ added on top of weight tier)</label>
+ <input id="ship-rural-surcharge" type="number" min="0" step="0.5" value="12" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ </div>
+ <div class="mt-3">
+ <label class="block text-xs text-gray-400 mb-1">Rural surcharge label (optional)</label>
+ <input id="ship-rural-label" type="text" value="Rural delivery surcharge" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ </div>
+ </div>
  </div>
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
  <h2 class="font-display text-lg text-white">House number weight formula</h2>

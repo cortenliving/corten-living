@@ -605,6 +605,8 @@ function defaultShippingConfig() {
  enabled: true,
  label: 'NZ shipping',
  freeShippingOver: null,
+ ruralSurcharge: 12,
+ ruralLabel: 'Rural delivery surcharge',
  defaultItemGrams: 500,
  houseNumbers: {
  baseGramsPerChar: 20,
@@ -646,6 +648,10 @@ function fillShippingForm(cfg) {
  if (free) free.value = c.freeShippingOver != null && c.freeShippingOver !== '' ? c.freeShippingOver : '';
  const defG = document.getElementById('ship-default-g');
  if (defG) defG.value = c.defaultItemGrams ?? 500;
+ const ruralS = document.getElementById('ship-rural-surcharge');
+ if (ruralS) ruralS.value = c.ruralSurcharge != null ? c.ruralSurcharge : 12;
+ const ruralL = document.getElementById('ship-rural-label');
+ if (ruralL) ruralL.value = c.ruralLabel || 'Rural delivery surcharge';
  const hn = c.houseNumbers || {};
  const b = document.getElementById('ship-hn-base');
  const m = document.getElementById('ship-hn-mm');
@@ -712,6 +718,8 @@ function collectShippingConfig() {
  enabled: !!document.getElementById('ship-enabled')?.checked,
  label: document.getElementById('ship-label')?.value.trim() || 'NZ shipping',
  freeShippingOver: freeRaw === '' || freeRaw == null ? null : parseFloat(freeRaw),
+ ruralSurcharge: parseFloat(document.getElementById('ship-rural-surcharge')?.value) || 0,
+ ruralLabel: document.getElementById('ship-rural-label')?.value.trim() || 'Rural delivery surcharge',
  defaultItemGrams: parseFloat(document.getElementById('ship-default-g')?.value) || 500,
  houseNumbers: {
  baseGramsPerChar: parseFloat(document.getElementById('ship-hn-base')?.value) || 0,

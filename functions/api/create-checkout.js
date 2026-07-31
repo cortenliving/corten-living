@@ -36,6 +36,7 @@ export async function onRequestPost(context) {
     const shippingAmount = Math.max(0, Number(body.shipping) || 0);
     const shippingLabel = String(body.shippingLabel || 'NZ shipping').slice(0, 100);
     const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
+    const deliveryType = body.deliveryType === 'rural' ? 'rural' : 'standard';
 
     if (!email) {
       return json({ error: 'Email is required for checkout' }, 400);
@@ -61,6 +62,7 @@ export async function onRequestPost(context) {
     params.set('metadata[notes]', notes.slice(0, 400));
     params.set('metadata[address]', address.slice(0, 400));
     params.set('metadata[shipping]', String(shippingAmount));
+    params.set('metadata[delivery_type]', deliveryType);
     if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
     params.set('payment_intent_data[metadata][order_id]', orderId);
 

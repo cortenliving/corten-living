@@ -1,12 +1,13 @@
 /**
- * Shipping calculator — used by cart (browser).
- * Config from /api/shipping or defaults below.
+ * Shipping calculator — weight tiers + standard/rural surcharge.
  */
 (function (global) {
   const DEFAULT_SHIPPING = {
     enabled: true,
     label: 'NZ shipping',
     freeShippingOver: null,
+    ruralSurcharge: 12,
+    ruralLabel: 'Rural delivery surcharge',
     houseNumbers: {
       baseGramsPerChar: 20,
       gramsPerMmPerChar: 0.12,
@@ -46,7 +47,6 @@
     return t.includes('house') || t.includes('number') || item.size;
   }
 
-  /** Grams for one cart line (qty applied) */
   function itemWeightGrams(item, cfg) {
     const qty = Math.max(1, parseInt(item.qty, 10) || 1);
     if (item.weightGrams != null && Number(item.weightGrams) > 0) {
@@ -81,48 +81,78 @@
   }
 
   /**
-   * @returns {{ enabled, label, weightKg, weightGrams, shipping, subtotal, freeShipping, total, breakdown }}
+   * @param {object} options
+   * @param {boolean} [options.rural]
    */
-  function calculateShipping(items, subtotal, cfg) {
+  function calculateShipping(items, subtotal, cfg, options = {}) {
     const c = cfg && typeof cfg === 'object' ? cfg : DEFAULT_SHIPPING;
     const sub = Number(subtotal) || 0;
     const weightKg = cartWeightKg(items, c);
     const weightGrams = Math.round(weightKg * 1000);
     const enabled = c.enabled !== false;
+    const rural = !!options.rural;
+    const ruralSurcharge = Number(c.ruralSurcharge) || 0;
+
+    const base = {
+      weightKg: Math.round(weightKg * 1000) / 1000,
+      weightGrams,
+      subtotal: sub,
+      rural,
+      baseShipping: 0,
+      ruralSurcharge: 0,
+      deliveryType: rural ? 'rural' : 'standard',
+    };
 
     if (!enabled) {
       return {
+        ...base,
         enabled: false,
         label: c.label || 'Shipping',
-        weightKg,
-        weightGrams,
         shipping: 0,
-        subtotal: sub,
         freeShipping: false,
         total: sub,
-        breakdown: items.map((it) => ({
+        breakdown: (items || []).map((it) => ({
           label: `${it.type || 'Item'} ${it.chars || ''}`.trim(),
           grams: itemWeightGrams(it, c),
         })),
       };
     }
 
-    let shipping = tierPrice(weightKg, c);
+    let baseShipping = tierPrice(weightKg, c);
     let freeShipping = false;
     const threshold = c.freeShippingOver;
     if (threshold != null && threshold !== '' && sub >= Number(threshold)) {
-      shipping = 0;
+      baseShipping = 0;
       freeShipping = true;
     }
 
+    // Rural costs more (even when free-shipping threshold met for base, rural still may apply — or not)
+    // Policy: free shipping threshold waives base only; rural surcharge still applies if rural.
+    // Or: free shipping waives everything. User asked rural costs more — I'll waive only base on free threshold, keep rural surcharge.
+    let ruralExtra = 0;
+    if (rural && ruralSurcharge > 0 && !freeShipping) {
+      ruralExtra = ruralSurcharge;
+    } else if (rural && ruralSurcharge > 0 && freeShipping) {
+      // Still charge rural surcharge when "free" urban shipping, as rural is harder
+      ruralExtra = ruralSurcharge;
+    }
+
+    const shipping = baseShipping + ruralExtra;
+    let label = c.label || 'NZ shipping';
+    if (rural) label = (c.label || 'NZ shipping') + ' (rural)';
+
     return {
       enabled: true,
-      label: c.label || 'NZ shipping',
-      weightKg: Math.round(weightKg * 1000) / 1000,
+      label,
+      weightKg: base.weightKg,
       weightGrams,
+      baseShipping,
+      ruralSurcharge: ruralExtra,
       shipping,
       subtotal: sub,
       freeShipping,
+      rural,
+      deliveryType: rural ? 'rural' : 'standard',
       total: sub + shipping,
       breakdown: (items || []).map((it) => ({
         label: `${it.type || 'Item'}${it.chars ? ' ' + it.chars : ''}${it.size ? ' · ' + it.size : ''}`.trim(),

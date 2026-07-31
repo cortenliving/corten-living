@@ -29,6 +29,7 @@ export async function onRequestPost(context) {
     const shipping = Math.max(0, Number(body.shipping) || 0);
     const shippingLabel = String(body.shippingLabel || 'NZ shipping');
     const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
+    const deliveryType = body.deliveryType === 'rural' ? 'rural' : 'standard';
     const total = Number(body.total) || (subtotal + shipping);
 
     if (!name || !email) {
@@ -56,6 +57,7 @@ export async function onRequestPost(context) {
       address ? `Address: ${address}` : null,
       notes ? `Notes: ${notes}` : null,
       weightKg != null ? `Est. weight: ${weightKg} kg` : null,
+      `Delivery type: ${deliveryType === 'rural' ? 'Rural (surcharge may apply)' : 'Standard'}`,
       '',
       'Items:',
       lines,
@@ -75,6 +77,7 @@ export async function onRequestPost(context) {
       '',
       `Subtotal: $${subtotal}`,
       `${shippingLabel}: $${shipping}`,
+      `Delivery: ${deliveryType === 'rural' ? 'Rural' : 'Standard'}`,
       `Total (excl. GST): $${total}`,
       weightKg != null ? `Estimated parcel weight: ~${weightKg} kg` : null,
       '',
