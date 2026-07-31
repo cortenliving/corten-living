@@ -72,7 +72,7 @@
       "category": "sculpture",
       "size": "Various",
       "price": 24,
-      "priceLabel": "From $34",
+      "priceLabel": "From $24",
       "desc": "Add a touch of love and elegance to your home or garden with this beautifully crafted Interlocking Hearts wall art. Cut from genuine 3mm Corten steel, this timeless design develops a stunning natural rusted patina that only gets better with age.\n\nPerfect as a gift for weddings, anniversaries, Valentine's Day, new homes, or simply to add character to your own space.\n\nFeatures:\nGenuine 3mm Corten Steel\nSuitable for indoor or outdoor use\n\nPerfect For:\nGarden walls\nFence décor\nFront entrance\nPatio or deck\nWedding or anniversary gifts\nHousewarming presents",
       "tag": "Gift idea",
       "featured": true,
@@ -96,12 +96,6 @@
           "label": "Medium",
           "size": "165x300",
           "price": 35
-        },
-        {
-          "id": "lg",
-          "label": "Large",
-          "size": "400 mm",
-          "price": 62
         }
       ]
     },
@@ -157,5 +151,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-07-31T07:24:07.222Z"
+  "updatedAt": "2026-07-31T07:24:26.765Z"
 }
