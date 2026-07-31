@@ -115,10 +115,12 @@ function productHref(p) {
 
 /**
  * Size options for shop products (not house numbers).
- * Uses product.sizes if set; otherwise builds Small / Medium / Large from base price.
+ * Uses product.sizes from Admin — every size you add on that product shows as a choice.
+ * If no sizes saved yet, falls back to one option from the product’s main size/price.
  */
 function getProductSizes(p) {
  if (!p) return [];
+ if (isHouseNumberProduct(p)) return [];
  if (Array.isArray(p.sizes) && p.sizes.length) {
  return p.sizes.map((s, i) => ({
  id: s.id || ('sz-' + i),
@@ -127,17 +129,10 @@ function getProductSizes(p) {
  price: Number(s.price) || 0,
  }));
  }
+ // Single fallback so old products still work until sizes are set in Admin
  const base = Number(p.price) || 0;
  const listed = String(p.size || '').trim() || 'Standard';
- // Single fixed size listed (e.g. "500 × 600 mm") — still offer scale options
- if (base > 0) {
- return [
- { id: 'sm', label: 'Small', size: scaleSizeLabel(listed, 0.75) || 'Small', price: Math.max(1, Math.round(base * 0.75)) },
- { id: 'md', label: 'Medium', size: listed, price: base },
- { id: 'lg', label: 'Large', size: scaleSizeLabel(listed, 1.25) || 'Large', price: Math.max(1, Math.round(base * 1.35)) },
- ];
- }
- return [{ id: 'std', label: 'Standard', size: listed, price: 0 }];
+ return [{ id: 'std', label: 'Standard', size: listed, price: base }];
 }
 
 /** Rough scale for labels like "500 × 600 mm" or "300 mm" */

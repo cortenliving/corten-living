@@ -146,9 +146,34 @@ tailwind.config = {
  </div>
  <div>
  <label class="block text-xs text-gray-400 mb-1">Link (page when clicked)</label>
- <input id="f-link" type="text" placeholder="/quote?product=… or /house-numbers" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
- <p class="text-[10px] text-gray-600 mt-1">Leave blank to auto-link to quote form with product name.</p>
+ <input id="f-link" type="text" placeholder="/product?id=… or /house-numbers" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+ <p class="text-[10px] text-gray-600 mt-1">Leave blank: sculptures → product page with sizes; numbers → house-numbers configurator.</p>
  </div>
+
+ <div id="sizes-editor" class="border-t border-gray-800 pt-4">
+ <div class="flex items-center justify-between gap-2 mb-2">
+ <div>
+ <p class="text-sm text-white font-medium">Size options</p>
+ <p class="text-[11px] text-gray-500 mt-0.5">Customers pick these on the product page (not used for House Numbers).</p>
+ </div>
+ <button type="button" id="btn-add-size" class="text-sm text-corten-400 hover:text-corten-300 shrink-0">+ Add size</button>
+ </div>
+ <div class="overflow-x-auto">
+ <table class="w-full text-sm text-left">
+ <thead class="text-[10px] text-gray-500 uppercase">
+ <tr>
+ <th class="pb-2 pr-2">Label</th>
+ <th class="pb-2 pr-2">Dimensions</th>
+ <th class="pb-2 pr-2">Price $</th>
+ <th class="pb-2 w-14"></th>
+ </tr>
+ </thead>
+ <tbody id="f-sizes-body"></tbody>
+ </table>
+ </div>
+ <p class="text-[10px] text-gray-600 mt-2">Example: Small · 375 × 450 mm · $54 — add Medium and Large the same way. All sizes show as choices under this product.</p>
+ </div>
+
  <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
  <input type="checkbox" id="f-featured" class="rounded border-gray-600 text-corten-600 focus:ring-corten-500">
  Show on homepage (Featured)

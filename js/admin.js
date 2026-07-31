@@ -21,6 +21,8 @@ const DEFAULT_HN_PRICES = {
 let catalogue = [];
 let editingId = null;
 let pendingImages = [];
+/** Size options for the product being edited: { id, label, size, price }[] */
+let pendingSizes = [];
 let cloudStatus = { cloud: false, hasGithub: false, hasAdminPassword: false, storage: 'none' };
 
 async function sha256(text) {
@@ -387,10 +389,106 @@ function openEditor(id) {
  document.getElementById('f-featured').checked = !!p?.featured;
  document.getElementById('f-image').value = p?.image || '';
  pendingImages = (p?.slides || []).map((s) => ({ src: s.src, label: s.label || '' }));
+ // Size options: use saved sizes, or seed one row from main size/price
+ if (Array.isArray(p?.sizes) && p.sizes.length) {
+  pendingSizes = p.sizes.map((s, i) => ({
+   id: s.id || ('sz-' + i),
+   label: s.label || '',
+   size: s.size || '',
+   price: s.price != null ? s.price : '',
+  }));
+ } else if (p && (p.size || p.price)) {
+  pendingSizes = [{
+   id: 'sz-0',
+   label: 'Standard',
+   size: p.size || '',
+   price: p.price ?? '',
+  }];
+ } else {
+  pendingSizes = [
+   { id: 'sz-sm', label: 'Small', size: '', price: '' },
+   { id: 'sz-md', label: 'Medium', size: '', price: '' },
+   { id: 'sz-lg', label: 'Large', size: '', price: '' },
+  ];
+ }
  renderSlidePreviews();
+ renderSizeRows();
+ updateSizesEditorVisibility();
  document.getElementById('editor-panel').classList.remove('hidden');
  document.getElementById('list-panel').classList.add('hidden');
  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateSizesEditorVisibility() {
+ const cat = document.getElementById('f-category')?.value;
+ const box = document.getElementById('sizes-editor');
+ if (!box) return;
+ // House numbers use the numbers configurator — hide size options
+ const hide = cat === 'numbers';
+ box.classList.toggle('hidden', hide);
+}
+
+function syncPendingSizesFromDom() {
+ const body = document.getElementById('f-sizes-body');
+ if (!body) return;
+ const rows = [];
+ body.querySelectorAll('tr[data-size-row]').forEach((tr, i) => {
+  const id = tr.dataset.sizeId || ('sz-' + i);
+  const label = tr.querySelector('[data-size-label]')?.value.trim() || '';
+  const size = tr.querySelector('[data-size-dims]')?.value.trim() || '';
+  const priceRaw = tr.querySelector('[data-size-price]')?.value;
+  const price = priceRaw === '' || priceRaw == null ? '' : parseFloat(priceRaw);
+  rows.push({ id, label, size, price: Number.isNaN(price) ? '' : price });
+ });
+ pendingSizes = rows;
+}
+
+function renderSizeRows() {
+ const body = document.getElementById('f-sizes-body');
+ if (!body) return;
+ if (!pendingSizes.length) {
+  body.innerHTML = `<tr><td colspan="4" class="py-3 text-xs text-gray-600">No sizes yet — click “+ Add size”.</td></tr>`;
+  return;
+ }
+ body.innerHTML = pendingSizes.map((s, i) => `
+  <tr data-size-row="${i}" data-size-id="${escapeHtml(s.id || ('sz-' + i))}" class="border-t border-gray-800">
+   <td class="py-2 pr-2">
+    <input type="text" data-size-label value="${escapeHtml(s.label || '')}" placeholder="Small"
+     class="w-full min-w-[5rem] bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+   </td>
+   <td class="py-2 pr-2">
+    <input type="text" data-size-dims value="${escapeHtml(s.size || '')}" placeholder="500 × 600 mm"
+     class="w-full min-w-[7rem] bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+   </td>
+   <td class="py-2 pr-2">
+    <input type="number" data-size-price min="0" step="1" value="${s.price === '' || s.price == null ? '' : s.price}" placeholder="72"
+     class="w-24 bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+   </td>
+   <td class="py-2">
+    <button type="button" data-size-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button>
+   </td>
+  </tr>
+ `).join('');
+
+ body.querySelectorAll('[data-size-del]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+   syncPendingSizesFromDom();
+   pendingSizes.splice(parseInt(btn.dataset.sizeDel, 10), 1);
+   renderSizeRows();
+  });
+ });
+}
+
+function collectSizesFromForm() {
+ syncPendingSizesFromDom();
+ return pendingSizes
+  .map((s, i) => ({
+   id: s.id || ('sz-' + i),
+   label: String(s.label || '').trim() || ('Size ' + (i + 1)),
+   size: String(s.size || '').trim(),
+   price: Number(s.price) || 0,
+  }))
+  .filter((s) => s.label || s.size || s.price > 0);
 }
 
 function closeEditor() {
@@ -462,24 +560,56 @@ function collectFormProduct() {
  else link = '/product?id=' + encodeURIComponent(id);
  }
 
- // Keep existing sizes when editing if form doesn't manage them yet
- const existing = editingId ? catalogue.find((x) => x.id === editingId) : null;
- const sizes = Array.isArray(existing?.sizes) ? existing.sizes : undefined;
+ // Size options (all products except numbers)
+ let sizes = [];
+ if (category !== 'numbers' && id !== 'house-numbers') {
+  sizes = collectSizesFromForm();
+  // If admin left sizes empty, seed one from main size/price fields
+  if (!sizes.length) {
+   const mainSize = document.getElementById('f-size')?.value.trim() || 'Standard';
+   const mainPrice = Number.isNaN(price) ? 0 : price;
+   if (mainPrice > 0 || mainSize) {
+    sizes = [{ id: 'sz-0', label: 'Standard', size: mainSize, price: mainPrice }];
+   }
+  }
+ }
+
+ // Keep card "from" price in sync with cheapest size option
+ let basePrice = Number.isNaN(price) ? 0 : price;
+ let baseSize = document.getElementById('f-size').value.trim() || 'Various';
+ let displayLabel = priceLabel;
+ if (sizes.length) {
+  const prices = sizes.map((s) => Number(s.price) || 0).filter((n) => n > 0);
+  if (prices.length) {
+   const minP = Math.min(...prices);
+   const maxP = Math.max(...prices);
+   basePrice = minP;
+   if (!displayLabel) {
+    displayLabel = minP === maxP ? ('$' + minP) : ('From $' + minP);
+   }
+  }
+  // Summary size line for shop cards
+  if (!document.getElementById('f-size').value.trim() && sizes.length > 1) {
+   baseSize = 'Multiple sizes';
+  } else if (!document.getElementById('f-size').value.trim() && sizes[0]) {
+   baseSize = sizes[0].size || sizes[0].label || 'Various';
+  }
+ }
 
  return {
  id,
  name,
  category,
- size: document.getElementById('f-size').value.trim() || 'Various',
- price: Number.isNaN(price) ? 0 : price,
- priceLabel,
+ size: baseSize,
+ price: basePrice,
+ priceLabel: displayLabel || (basePrice ? ('$' + basePrice) : ''),
  desc: document.getElementById('f-desc').value.trim(),
  tag: document.getElementById('f-tag').value.trim(),
  featured: document.getElementById('f-featured').checked,
  link,
  image,
  slides: pendingImages.map((s) => ({ src: s.src, label: s.label || '' })),
- ...(sizes ? { sizes } : {}),
+ ...(sizes.length ? { sizes } : {}),
  };
 }
 
@@ -848,6 +978,17 @@ document.addEventListener('DOMContentLoaded', async () => {
  });
 
  document.getElementById('btn-add')?.addEventListener('click', () => openEditor(null));
+ document.getElementById('btn-add-size')?.addEventListener('click', () => {
+  syncPendingSizesFromDom();
+  pendingSizes.push({
+   id: 'sz-' + Date.now(),
+   label: '',
+   size: '',
+   price: '',
+  });
+  renderSizeRows();
+ });
+ document.getElementById('f-category')?.addEventListener('change', updateSizesEditorVisibility);
  document.getElementById('btn-cancel-edit')?.addEventListener('click', closeEditor);
  document.getElementById('btn-save-product')?.addEventListener('click', () => saveProductFromForm());
 
