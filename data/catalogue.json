@@ -80,8 +80,8 @@
       "image": "/images/product-hearts.jpg",
       "slides": [
         {
-          "src": "/images/product-hearts.jpg",
-          "label": "Hearts"
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/a95e432bbc52426b.jpg",
+          "label": "2317403533"
         }
       ],
       "sizes": [
@@ -157,5 +157,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-07-31T07:23:25.019Z"
+  "updatedAt": "2026-07-31T07:24:07.222Z"
 }
