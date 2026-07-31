@@ -453,13 +453,23 @@ function collectFormProduct() {
  let image = document.getElementById('f-image').value.trim();
  if (!image && pendingImages[0]) image = pendingImages[0].src;
 
+ const category = document.getElementById('f-category').value;
  const linkRaw = document.getElementById('f-link').value.trim();
- const link = linkRaw || `/quote?product=${encodeURIComponent(name)}`;
+ // House numbers → configurator; all other products → product page with size picker
+ let link = linkRaw;
+ if (!link) {
+ if (category === 'numbers' || id === 'house-numbers') link = '/house-numbers';
+ else link = '/product?id=' + encodeURIComponent(id);
+ }
+
+ // Keep existing sizes when editing if form doesn't manage them yet
+ const existing = editingId ? catalogue.find((x) => x.id === editingId) : null;
+ const sizes = Array.isArray(existing?.sizes) ? existing.sizes : undefined;
 
  return {
  id,
  name,
- category: document.getElementById('f-category').value,
+ category,
  size: document.getElementById('f-size').value.trim() || 'Various',
  price: Number.isNaN(price) ? 0 : price,
  priceLabel,
@@ -469,6 +479,7 @@ function collectFormProduct() {
  link,
  image,
  slides: pendingImages.map((s) => ({ src: s.src, label: s.label || '' })),
+ ...(sizes ? { sizes } : {}),
  };
 }
 

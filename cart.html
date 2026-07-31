@@ -424,9 +424,9 @@ function renderCart() {
           <p class="font-display text-lg text-white">${typeLabel}</p>
           <p class="text-sm text-gray-300 mt-1">
             <span class="text-white font-semibold tracking-wider">${safeChars}</span>
-            ${detail ? ' · ' + detail : ''}
+            ${detail ? ' · ' + detail : ''}${(item.qty && item.qty > 1) ? ' · ×' + item.qty : ''}
           </p>
-          <p class="text-corten-400 font-bold text-xl mt-2">$${item.price}</p>
+          <p class="text-corten-400 font-bold text-xl mt-2">$${item.price}${(item.qty && item.qty > 1) ? ' each' : ''}</p>
         </div>
         <button type="button" data-remove="${i}" class="remove-btn text-sm text-gray-400 hover:text-red-400 shrink-0 px-2 py-1">Remove</button>
       </div>

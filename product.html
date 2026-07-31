@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Product | Corten Living</title>
+<meta name="description" content="Choose your size and order Corten steel garden pieces from Gisborne, NZ." />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<style>
+  body.pd-bright {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.28), transparent 55%),
+      radial-gradient(circle at 90% 40%, rgba(183, 65, 14, 0.12), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .pd-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.35);
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55);
+  }
+  .pd-opt {
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .pd-opt:hover { transform: translateY(-1px); border-color: rgba(229, 122, 72, 0.7) !important; }
+  .pd-opt.is-active {
+    border-color: #e57a48 !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, rgba(183,65,14,0.45), rgba(213,111,61,0.25));
+    box-shadow: 0 0 0 1px rgba(229,122,72,0.35), 0 8px 24px -8px rgba(183,65,14,0.6);
+  }
+  .pd-price {
+    background: linear-gradient(135deg, rgba(183,65,14,0.35), rgba(26,18,14,0.95));
+    border: 1px solid rgba(229, 122, 72, 0.55);
+    box-shadow: 0 0 40px -10px rgba(213, 111, 61, 0.5);
+  }
+  .pd-cta {
+    box-shadow: 0 10px 30px -8px rgba(183, 65, 14, 0.75);
+  }
+  .pd-cta:hover { transform: translateY(-1px); }
+  .gallery-thumb.is-selected {
+    box-shadow: 0 0 0 2px #e57a48, 0 8px 24px -6px rgba(213,111,61,0.55);
+  }
+</style>
+</head>
+<body class="pd-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
+
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#1a1410]/95 backdrop-blur-md border-b border-corten-600/30">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop" class="text-corten-400">Shop</a>
+        <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/faq" class="hover:text-corten-400 transition">FAQ</a>
+        <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-[#221a14] border-t border-corten-600/30">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/" class="block hover:text-corten-400">Home</a>
+      <a href="/shop" class="block text-corten-400">Shop</a>
+      <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
+      <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
+      <a href="/faq" class="block hover:text-corten-400">FAQ</a>
+      <a href="/contact" class="block hover:text-corten-400">Contact</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
+</nav>
+
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+
+    <div id="product-missing" class="hidden pd-card rounded-sm text-center py-16 px-6 max-w-xl mx-auto">
+      <p class="text-white text-lg font-display">Product not found</p>
+      <p class="text-sm text-gray-400 mt-2">This item may have been removed or the link is wrong.</p>
+      <a href="/shop" class="inline-block mt-6 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Back to Shop</a>
+    </div>
+
+    <div id="product-view" class="hidden">
+      <a href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
+
+      <div class="mt-4 grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <!-- Gallery -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="pd-card rounded-sm overflow-hidden aspect-[4/3] bg-metal-950 relative">
+            <img id="pd-main-img" src="" alt="" class="w-full h-full object-cover">
+            <span id="pd-tag" class="hidden absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wider bg-corten-600 text-white px-2 py-0.5 rounded-sm"></span>
+          </div>
+          <div id="pd-thumbs" class="grid grid-cols-4 sm:grid-cols-6 gap-2"></div>
+        </div>
+
+        <!-- Config -->
+        <div class="lg:col-span-5">
+          <div class="pd-card rounded-sm p-6 sm:p-8 lg:sticky lg:top-24 space-y-6">
+            <div>
+              <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-1">3 mm Corten steel</p>
+              <h1 id="pd-name" class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight"></h1>
+            </div>
+
+            <p id="pd-desc" class="text-sm text-gray-300 leading-relaxed whitespace-pre-line"></p>
+
+            <div>
+              <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Choose size</p>
+              <div id="pd-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+              <p class="text-xs text-gray-500 mt-2">All sizes · profile-cut 3 mm Corten · NZ made</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="pd-qty">Quantity</label>
+              <input id="pd-qty" type="number" min="1" max="50" value="1"
+                class="w-28 bg-[#120e0c] border border-corten-500/40 rounded-sm px-3 py-2.5 text-white focus:border-corten-400 outline-none">
+            </div>
+
+            <div class="pd-price rounded-sm p-5">
+              <div class="flex items-end justify-between gap-3">
+                <div>
+                  <p class="text-xs text-corten-200/80 uppercase tracking-wide">Price (excl. GST &amp; shipping)</p>
+                  <p id="pd-price" class="text-4xl sm:text-5xl font-display font-bold text-white mt-1">$0</p>
+                </div>
+                <p id="pd-price-detail" class="text-xs sm:text-sm text-corten-100/90 text-right font-medium"></p>
+              </div>
+            </div>
+
+            <button type="button" id="pd-add-cart" class="pd-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide transition">
+              Add to Cart
+            </button>
+            <p id="pd-cart-feedback" class="text-sm text-center text-corten-300 hidden">Added to cart ✓ — <a href="/cart" class="underline text-white">View cart</a></p>
+
+            <p class="text-xs text-gray-500 text-center leading-relaxed">
+              Need a one-off size or design? <a href="/quote" class="text-corten-400 hover:underline">Request a custom quote</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 text-center text-xs text-gray-500">
+    <p>© 2026 Corten Living · Gisborne, New Zealand</p>
+  </div>
+</footer>
+
+<script src="/js/products.js"></script>
+<script src="/js/main.js"></script>
+<script>
+(function () {
+  let product = null;
+  let sizes = [];
+  let selectedIdx = 0;
+
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function selectedSize() {
+    return sizes[selectedIdx] || sizes[0];
+  }
+
+  function updatePriceUI() {
+    const s = selectedSize();
+    if (!s) return;
+    const qty = Math.max(1, parseInt(document.getElementById('pd-qty').value, 10) || 1);
+    const unit = Number(s.price) || 0;
+    document.getElementById('pd-price').textContent = '$' + (unit * qty);
+    document.getElementById('pd-price-detail').textContent =
+      (s.label ? s.label + ' · ' : '') + (s.size || '') + (qty > 1 ? ' · ×' + qty : '');
+  }
+
+  function renderSizes() {
+    const box = document.getElementById('pd-sizes');
+    box.innerHTML = sizes.map((s, i) => `
+      <button type="button" data-size-idx="${i}"
+        class="pd-opt size-btn text-left px-3 py-3 rounded-sm border ${i === selectedIdx ? 'is-active border-corten-500 text-white' : 'border-white/15 text-gray-200'} text-sm font-medium">
+        <span class="block font-semibold">${escapeHtml(s.label || s.size)}</span>
+        <span class="block text-xs mt-0.5 ${i === selectedIdx ? 'text-corten-200' : 'text-gray-400'}">
+          ${escapeHtml(s.size || '')}${s.size && s.label ? ' · ' : ''}$${Number(s.price) || 0}
+        </span>
+      </button>
+    `).join('');
+    box.querySelectorAll('.size-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedIdx = parseInt(btn.dataset.sizeIdx, 10) || 0;
+        renderSizes();
+        updatePriceUI();
+      });
+    });
+  }
+
+  function renderGallery(p) {
+    const slides = (p.slides && p.slides.length)
+      ? p.slides
+      : (p.image ? [{ src: p.image, label: p.name }] : []);
+    const main = document.getElementById('pd-main-img');
+    if (!slides.length) {
+      main.removeAttribute('src');
+      main.alt = p.name;
+      return;
+    }
+    main.src = slides[0].src;
+    main.alt = p.name;
+    const thumbs = document.getElementById('pd-thumbs');
+    if (slides.length < 2) {
+      thumbs.innerHTML = '';
+      return;
+    }
+    thumbs.innerHTML = slides.map((s, i) => `
+      <button type="button" data-src="${escapeHtml(s.src)}"
+        class="gallery-thumb ${i === 0 ? 'is-selected' : ''} border border-white/10 rounded-sm overflow-hidden aspect-square bg-metal-950">
+        <img src="${escapeHtml(s.src)}" alt="" class="w-full h-full object-cover" loading="lazy">
+      </button>
+    `).join('');
+    thumbs.querySelectorAll('.gallery-thumb').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        main.src = btn.dataset.src;
+        thumbs.querySelectorAll('.gallery-thumb').forEach((b) => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+      });
+    });
+  }
+
+  function showProduct(p) {
+    product = p;
+    // House numbers use their own builder
+    if (typeof isHouseNumberProduct === 'function' && isHouseNumberProduct(p)) {
+      window.location.replace('/house-numbers');
+      return;
+    }
+
+    sizes = typeof getProductSizes === 'function' ? getProductSizes(p) : [];
+    if (!sizes.length) {
+      sizes = [{ id: 'default', label: 'Standard', size: p.size || 'Custom', price: Number(p.price) || 0 }];
+    }
+    selectedIdx = 0;
+
+    document.title = p.name + ' | Corten Living';
+    document.getElementById('pd-name').textContent = p.name;
+    document.getElementById('pd-desc').textContent = p.desc || '';
+    const tag = document.getElementById('pd-tag');
+    if (p.tag) {
+      tag.textContent = p.tag;
+      tag.classList.remove('hidden');
+    } else {
+      tag.classList.add('hidden');
+    }
+
+    renderGallery(p);
+    renderSizes();
+    updatePriceUI();
+
+    document.getElementById('product-view').classList.remove('hidden');
+    document.getElementById('product-missing').classList.add('hidden');
+  }
+
+  document.getElementById('pd-qty')?.addEventListener('input', updatePriceUI);
+  document.getElementById('pd-qty')?.addEventListener('change', updatePriceUI);
+
+  document.getElementById('pd-add-cart')?.addEventListener('click', () => {
+    if (!product) return;
+    const s = selectedSize();
+    const qty = Math.max(1, Math.min(50, parseInt(document.getElementById('pd-qty').value, 10) || 1));
+    const item = {
+      id: (product.id || 'item') + '-' + Date.now(),
+      productId: product.id,
+      type: product.name,
+      chars: s.label || s.size || 'Standard',
+      size: s.size || product.size || '',
+      mount: product.tag || '3 mm Corten',
+      price: Number(s.price) || 0,
+      qty,
+    };
+    const cart = typeof getCart === 'function' ? getCart() : [];
+    cart.push(item);
+    if (typeof setCart === 'function') setCart(cart);
+    else {
+      localStorage.setItem('cortenCart', JSON.stringify(cart));
+      if (typeof updateCartCount === 'function') updateCartCount();
+    }
+    const fb = document.getElementById('pd-cart-feedback');
+    fb.classList.remove('hidden');
+    setTimeout(() => fb.classList.add('hidden'), 4000);
+  });
+
+  (async function init() {
+    const params = new URLSearchParams(location.search);
+    const id = (params.get('id') || params.get('product') || '').trim();
+    const list = typeof loadActiveProductsAsync === 'function'
+      ? await loadActiveProductsAsync()
+      : (typeof loadActiveProducts === 'function' ? loadActiveProducts() : (window.products || []));
+
+    let p = null;
+    if (id) {
+      p = list.find((x) => x.id === id)
+        || list.find((x) => String(x.name || '').toLowerCase() === id.toLowerCase())
+        || list.find((x) => String(x.name || '').toLowerCase() === decodeURIComponent(id).toLowerCase());
+    }
+
+    if (!p) {
+      document.getElementById('product-missing').classList.remove('hidden');
+      return;
+    }
+    showProduct(p);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -96,12 +96,74 @@ function startSlideShow(container) {
  }, ms);
 }
 
+/** House numbers use the dedicated configurator; everything else uses /product?id= */
+function isHouseNumberProduct(p) {
+ if (!p) return false;
+ if (p.id === 'house-numbers') return true;
+ if (String(p.category || '').toLowerCase() === 'numbers') return true;
+ const link = String(p.link || '');
+ if (link.includes('house-numbers')) return true;
+ const name = String(p.name || '').toLowerCase();
+ return name.includes('house number');
+}
+
+function productHref(p) {
+ if (isHouseNumberProduct(p)) return p.link || '/house-numbers';
+ if (p && p.id) return '/product?id=' + encodeURIComponent(p.id);
+ return '/shop';
+}
+
+/**
+ * Size options for shop products (not house numbers).
+ * Uses product.sizes if set; otherwise builds Small / Medium / Large from base price.
+ */
+function getProductSizes(p) {
+ if (!p) return [];
+ if (Array.isArray(p.sizes) && p.sizes.length) {
+ return p.sizes.map((s, i) => ({
+ id: s.id || ('sz-' + i),
+ label: s.label || s.size || ('Size ' + (i + 1)),
+ size: s.size || s.label || '',
+ price: Number(s.price) || 0,
+ }));
+ }
+ const base = Number(p.price) || 0;
+ const listed = String(p.size || '').trim() || 'Standard';
+ // Single fixed size listed (e.g. "500 × 600 mm") — still offer scale options
+ if (base > 0) {
+ return [
+ { id: 'sm', label: 'Small', size: scaleSizeLabel(listed, 0.75) || 'Small', price: Math.max(1, Math.round(base * 0.75)) },
+ { id: 'md', label: 'Medium', size: listed, price: base },
+ { id: 'lg', label: 'Large', size: scaleSizeLabel(listed, 1.25) || 'Large', price: Math.max(1, Math.round(base * 1.35)) },
+ ];
+ }
+ return [{ id: 'std', label: 'Standard', size: listed, price: 0 }];
+}
+
+/** Rough scale for labels like "500 × 600 mm" or "300 mm" */
+function scaleSizeLabel(label, factor) {
+ const s = String(label || '');
+ if (!s || /various|custom|up to/i.test(s)) {
+ if (factor < 0.9) return 'Small';
+ if (factor > 1.1) return 'Large';
+ return s || 'Medium';
+ }
+ const nums = s.match(/\d+/g);
+ if (!nums || !nums.length) return s;
+ let i = 0;
+ return s.replace(/\d+/g, () => {
+ const n = Math.round(parseInt(nums[i++], 10) * factor);
+ return String(n);
+ });
+}
+
 function productCardHTML(p, options = {}) {
  const compact = options.compact;
- const href = p.link || '/quote';
+ const href = productHref(p);
  const priceText = p.priceLabel || ('$' + p.price);
  const hasSlides = p.slides && p.slides.length;
  const firstImg = (hasSlides && p.slides[0].src) || p.image || '';
+ const isHN = isHouseNumberProduct(p);
 
  let media;
  if (hasSlides && !compact) {
@@ -127,9 +189,10 @@ function productCardHTML(p, options = {}) {
  </div>`;
  }
 
- const cta = p.link && p.link.includes('house-numbers')
- ? 'Configure & Preview →'
- : 'Enquire / Customise →';
+ const cta = isHN ? 'Configure & Preview →' : 'Choose size →';
+ const descHtml = compact
+ ? ''
+ : `<p class="text-sm text-gray-400 mt-3 leading-relaxed line-clamp-4 whitespace-pre-line">${p.desc || ''}</p>`;
 
  return `
  <article class="product-card group bg-metal-850 border border-corten-900/40 rounded-sm overflow-hidden transition-all duration-300">
@@ -145,7 +208,7 @@ function productCardHTML(p, options = {}) {
  <p class="text-corten-400 font-semibold whitespace-nowrap">${priceText}</p>
  </div>
  <p class="text-xs text-gray-500 mt-1">${p.size} · 3 mm Corten</p>
- ${compact ? '' : `<p class="text-sm text-gray-400 mt-3 leading-relaxed">${p.desc}</p>`}
+ ${descHtml}
  <a href="${href}" class="mt-4 inline-block text-sm text-corten-500 hover:text-corten-400 font-medium">${cta}</a>
  </div>
  </article>`;

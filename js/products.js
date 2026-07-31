@@ -1,12 +1,12 @@
-// Corten Living product catalogue
+// Corten Living product catalogue (seed / fallback if cloud offline)
 const products = [
  {
  id: 'house-numbers',
  name: 'Corten House Numbers',
  category: 'numbers',
- size: '100–200 mm',
- price: 8,
- priceLabel: 'From $8',
+ size: '100–300 mm',
+ price: 7,
+ priceLabel: 'From $7',
  desc: 'Custom numbers & letters in Arial Narrow Bold. Choose height, mounting style and characters with live preview.',
  tag: 'Bestseller',
  featured: true,
@@ -28,16 +28,21 @@ const products = [
  name: 'Kombi Van',
  category: 'sculpture',
  size: '500 × 600 mm',
- price: 99,
- priceLabel: '$99',
- desc: 'Classic camper van silhouette in 3 mm Corten. Stake option available for garden mounting.',
+ price: 72,
+ priceLabel: 'From $54',
+ desc: 'Classic 3mm Corten Steel Kombi Van Garden Sculpture\nIconic VW Kombi van design cut from 3mm Corten steel, complete with surfboard and palm trees. Supplied un weathered so it will naturally rust to a beautiful protective finish.\n\nNZ made from quality 3mm Corten steel\n\nMounting: Comes with a stake cut into the base for easy garden installation\nCustom size: Can be made to your required size\n\nUltimate Kiwi summer vibe – perfect for garden, beach house, or outdoor display.',
  tag: 'With stake',
  featured: true,
- link: '/quote?product=Kombi%20Van',
+ link: '/product?id=kombi-van',
  image: '/images/product-kombi.jpg',
  slides: [
  { src: '/images/product-kombi.jpg', label: 'Kombi Van' },
  { src: '/images/product-kombi-2.jpg', label: 'Detail' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: '375 × 450 mm', price: 54 },
+ { id: 'md', label: 'Medium', size: '500 × 600 mm', price: 72 },
+ { id: 'lg', label: 'Large', size: '625 × 750 mm', price: 98 }
  ]
  },
  {
@@ -46,14 +51,19 @@ const products = [
  category: 'sculpture',
  size: 'Custom sizes',
  price: 59,
- priceLabel: 'From $59',
+ priceLabel: 'From $44',
  desc: 'Māori koru-inspired form. Clean profile cut from 3 mm Corten for walls, fences or gardens.',
  tag: 'NZ inspired',
  featured: true,
- link: '/quote?product=Koru%20Garden%20Art',
+ link: '/product?id=koru',
  image: '/images/product-koru.jpg',
  slides: [
  { src: '/images/product-koru.jpg', label: 'Koru form' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: '300 mm', price: 44 },
+ { id: 'md', label: 'Medium', size: '450 mm', price: 59 },
+ { id: 'lg', label: 'Large', size: '600 mm', price: 79 }
  ]
  },
  {
@@ -62,14 +72,19 @@ const products = [
  category: 'sculpture',
  size: 'Various',
  price: 45,
- priceLabel: 'From $45',
+ priceLabel: 'From $34',
  desc: 'Heart silhouettes cut from weathering steel — a simple, lasting garden statement.',
  tag: 'Gift idea',
  featured: true,
- link: '/quote?product=Corten%20Hearts',
+ link: '/product?id=hearts',
  image: '/images/product-hearts.jpg',
  slides: [
  { src: '/images/product-hearts.jpg', label: 'Hearts' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: '200 mm', price: 34 },
+ { id: 'md', label: 'Medium', size: '300 mm', price: 45 },
+ { id: 'lg', label: 'Large', size: '400 mm', price: 62 }
  ]
  },
  {
@@ -78,17 +93,22 @@ const products = [
  category: 'sculpture',
  size: 'Various',
  price: 49,
- priceLabel: 'From $49',
+ priceLabel: 'From $37',
  desc: 'Profile-cut outdoor silhouettes — animals, icons and custom shapes. Ask about stakes and pre-weathering.',
  tag: 'Custom',
  featured: false,
- link: '/quote?product=Garden%20Sculptures',
+ link: '/product?id=garden-sculptures',
  image: '/images/product-garden-1.jpg',
  slides: [
  { src: '/images/product-garden-1.jpg', label: 'Garden sculpture' },
  { src: '/images/product-garden-2.jpg', label: 'In the workshop' },
  { src: '/images/product-garden-3.jpg', label: 'Corten detail' },
  { src: '/images/product-garden-4.jpg', label: 'Outdoor ready' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: '300 mm', price: 37 },
+ { id: 'md', label: 'Medium', size: '450 mm', price: 49 },
+ { id: 'lg', label: 'Large', size: '600 mm', price: 69 }
  ]
  },
  {
@@ -97,15 +117,20 @@ const products = [
  category: 'signage',
  size: 'Up to 600 mm',
  price: 95,
- priceLabel: 'From $95',
- desc: 'Your street or property name profile-cut in 3 mm Corten. Perfect for RAPID and driveway entrances.',
+ priceLabel: 'From $75',
+ desc: 'Your street or property name profile-cut in 3 mm Corten. Perfect for driveway entrances.',
  tag: 'Quote',
  featured: false,
- link: '/quote?product=Custom%20Address%20Plaque',
+ link: '/product?id=custom-signage',
  image: '/images/hn-letters-holes.jpg',
  slides: [
  { src: '/images/hn-letters-holes.jpg', label: 'Lettering sample' },
  { src: '/images/hn-letters-clean.jpg', label: 'Clean face' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: 'Up to 300 mm', price: 75 },
+ { id: 'md', label: 'Medium', size: 'Up to 450 mm', price: 95 },
+ { id: 'lg', label: 'Large', size: 'Up to 600 mm', price: 125 }
  ]
  },
  {
@@ -114,14 +139,19 @@ const products = [
  category: 'planter',
  size: 'Custom sizes',
  price: 145,
- priceLabel: 'From $145',
+ priceLabel: 'From $115',
  desc: 'Weathering steel planter with open bottom for drainage. Built to last generations outdoors.',
  tag: 'Custom sizes',
  featured: false,
- link: '/quote?product=Corten%20Planter%20Box',
+ link: '/product?id=planter',
  image: '/images/hero-corten.jpg',
  slides: [
  { src: '/images/hero-corten.jpg', label: 'Corten steel' }
+ ],
+ sizes: [
+ { id: 'sm', label: 'Small', size: '400 mm wide', price: 115 },
+ { id: 'md', label: 'Medium', size: '600 mm wide', price: 145 },
+ { id: 'lg', label: 'Large', size: '800 mm wide', price: 185 }
  ]
  }
 ];
