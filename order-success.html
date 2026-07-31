@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payment successful | Corten Living</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+</head>
+<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
+<nav class="border-b border-corten-900/40 bg-metal-950">
+  <div class="max-w-3xl mx-auto px-4 h-16 flex items-center gap-3">
+    <img src="/images/logo.svg" alt="" class="w-8 h-8">
+    <span class="font-display text-lg text-white tracking-wide">CORTEN LIVING</span>
+  </div>
+</nav>
+<main class="flex-1 flex items-center justify-center px-4 py-16">
+  <div class="max-w-lg w-full bg-metal-850 border border-corten-700/40 rounded-sm p-8 text-center">
+    <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Payment successful</p>
+    <p id="order-ref" class="text-white font-medium mb-4"></p>
+    <p class="text-sm text-gray-400 leading-relaxed">
+      Thanks — Stripe has confirmed your payment. You’ll get a receipt by email from Stripe.
+      We’ll be in touch about production and dispatch.
+    </p>
+    <p class="text-xs text-gray-600 mt-4">Questions? 027 383 8178 · cortenliving@gmail.com</p>
+    <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="/house-numbers" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Order more numbers</a>
+      <a href="/" class="px-5 py-2.5 border border-gray-600 text-gray-300 text-sm font-semibold rounded-sm hover:border-corten-500">Home</a>
+    </div>
+  </div>
+</main>
+<script>
+// Clear cart after successful Stripe payment
+try {
+  localStorage.removeItem('cortenCart');
+} catch (e) {}
+const params = new URLSearchParams(location.search);
+const order = params.get('order');
+const session = params.get('session_id');
+const el = document.getElementById('order-ref');
+if (order) el.textContent = 'Order ' + order;
+else if (session) el.textContent = 'Checkout ' + session.slice(0, 20) + '…';
+else el.textContent = 'Your order is confirmed';
+</script>
+</body>
+</html>

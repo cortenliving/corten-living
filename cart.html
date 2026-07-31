@@ -62,7 +62,8 @@ tailwind.config = {
 <section class="pt-28 pb-20 flex-1">
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
     <h1 class="font-display text-3xl font-bold text-white tracking-tight mb-2">Your Cart</h1>
-    <p class="text-sm text-gray-500 mb-8">Review your items and place an order. We’ll email you a confirmation.</p>
+    <p class="text-sm text-gray-500 mb-8">Review your items, then pay securely with Stripe or place an order without paying now.</p>
+    <p id="cancel-note" class="hidden mb-4 text-sm text-amber-400/90 bg-amber-950/30 border border-amber-800/40 rounded-sm px-3 py-2">Payment cancelled — your cart is still here if you want to try again.</p>
 
     <div id="cart-empty" class="hidden text-center py-16 text-gray-500 bg-metal-850 border border-corten-900/40 rounded-sm">
       <p class="mb-4">Your cart is empty.</p>
@@ -90,11 +91,11 @@ tailwind.config = {
             <span class="text-gray-400">Total (excl. GST &amp; shipping)</span>
             <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
           </div>
-          <p class="text-xs text-gray-600 mt-2">Payment is arranged after we confirm your order (invoice / bank transfer). Online card pay can be added later if you want.</p>
+          <p class="text-xs text-gray-500 mt-2">Prices excl. GST &amp; shipping. Stripe checkout charges the cart total; we confirm shipping separately if needed.</p>
         </div>
 
         <form id="order-form" class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-4">
-          <h2 class="font-display text-xl text-white">Your details</h2>
+          <h2 class="font-display text-xl text-white">Checkout</h2>
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs text-gray-400 mb-1.5" for="order-name">Name *</label>
@@ -123,10 +124,21 @@ tailwind.config = {
               class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
           </div>
           <p id="order-error" class="hidden text-sm text-red-400"></p>
-          <button type="submit" id="place-order-btn" class="w-full py-3.5 corten-gradient text-white font-semibold rounded-sm tracking-wide hover:opacity-90 transition">
-            Place order
+
+          <button type="button" id="pay-stripe-btn" class="w-full py-3.5 corten-gradient text-white font-bold rounded-sm tracking-wide hover:opacity-90 transition">
+            Pay now with card
           </button>
-          <p class="text-xs text-gray-600 text-center">You’ll get a confirmation email. We’ll reply with shipping &amp; payment.</p>
+          <p class="text-xs text-gray-500 text-center">Secure payment via Stripe (cards, Apple Pay / Google Pay where available).</p>
+
+          <div class="relative py-2">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-800"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="px-2 bg-metal-850 text-gray-600">or</span></div>
+          </div>
+
+          <button type="submit" id="place-order-btn" class="w-full py-3 border border-gray-600 text-gray-200 font-semibold rounded-sm tracking-wide hover:border-corten-500 transition">
+            Place order without payment
+          </button>
+          <p class="text-xs text-gray-600 text-center">We’ll email confirmation and send an invoice / payment link.</p>
         </form>
 
         <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-400">Clear cart</button>
@@ -194,29 +206,11 @@ function renderCart() {
   if (typeof updateCartCount === 'function') updateCartCount();
 }
 
-document.getElementById('clear-cart')?.addEventListener('click', () => {
-  if (typeof setCart === 'function') setCart([]);
-  else localStorage.removeItem('cortenCart');
-  renderCart();
-});
-
-document.getElementById('order-form')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
+function getOrderPayload() {
   const cart = typeof getCart === 'function' ? getCart() : [];
-  const errEl = document.getElementById('order-error');
-  const btn = document.getElementById('place-order-btn');
-  errEl.classList.add('hidden');
-
-  if (!cart.length) {
-    errEl.textContent = 'Your cart is empty.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-
-  const total = parseFloat(document.getElementById('order-form').dataset.total || '0') ||
+  const total = parseFloat(document.getElementById('order-form')?.dataset.total || '0') ||
     cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
-
-  const payload = {
+  return {
     name: document.getElementById('order-name').value.trim(),
     email: document.getElementById('order-email').value.trim(),
     phone: document.getElementById('order-phone').value.trim(),
@@ -225,8 +219,79 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
     items: cart,
     total,
   };
+}
+
+function validateOrderForm(payload, requireName) {
+  if (!payload.items.length) return 'Your cart is empty.';
+  if (!payload.email) return 'Email is required.';
+  if (requireName && !payload.name) return 'Name is required.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return 'Enter a valid email.';
+  return null;
+}
+
+document.getElementById('clear-cart')?.addEventListener('click', () => {
+  if (typeof setCart === 'function') setCart([]);
+  else localStorage.removeItem('cortenCart');
+  renderCart();
+});
+
+// Pay now → Stripe Checkout
+document.getElementById('pay-stripe-btn')?.addEventListener('click', async () => {
+  const errEl = document.getElementById('order-error');
+  const btn = document.getElementById('pay-stripe-btn');
+  const invoiceBtn = document.getElementById('place-order-btn');
+  errEl.classList.add('hidden');
+
+  const payload = getOrderPayload();
+  const err = validateOrderForm(payload, false);
+  if (err) {
+    errEl.textContent = err;
+    errEl.classList.remove('hidden');
+    return;
+  }
 
   btn.disabled = true;
+  if (invoiceBtn) invoiceBtn.disabled = true;
+  btn.textContent = 'Redirecting to Stripe…';
+
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Could not start checkout');
+    if (!data.url) throw new Error('No checkout URL returned');
+    // Leave cart until success page clears it (in case they cancel)
+    window.location.href = data.url;
+  } catch (e) {
+    errEl.textContent = e.message || 'Stripe checkout failed. Check STRIPE_SECRET_KEY is set, or use “Place order without payment”.';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    if (invoiceBtn) invoiceBtn.disabled = false;
+    btn.textContent = 'Pay now with card';
+  }
+});
+
+// Place order without payment (invoice later)
+document.getElementById('order-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('order-error');
+  const btn = document.getElementById('place-order-btn');
+  const payBtn = document.getElementById('pay-stripe-btn');
+  errEl.classList.add('hidden');
+
+  const payload = getOrderPayload();
+  const err = validateOrderForm(payload, true);
+  if (err) {
+    errEl.textContent = err;
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  if (payBtn) payBtn.disabled = true;
   btn.textContent = 'Placing order…';
 
   try {
@@ -252,9 +317,15 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
     errEl.textContent = err.message || 'Could not place order. Please try again or email cortenliving@gmail.com';
     errEl.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = 'Place order';
+    if (payBtn) payBtn.disabled = false;
+    btn.textContent = 'Place order without payment';
   }
 });
+
+// Show note if user cancelled Stripe
+if (new URLSearchParams(location.search).get('cancelled') === '1') {
+  document.getElementById('cancel-note')?.classList.remove('hidden');
+}
 
 renderCart();
 </script>
