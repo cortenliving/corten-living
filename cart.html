@@ -46,6 +46,32 @@ tailwind.config = {
     border-color: rgba(229, 122, 72, 0.5);
     box-shadow: 0 8px 24px -10px rgba(183, 65, 14, 0.45);
   }
+  /* Large character preview (matches house-numbers page look) */
+  .cart-preview-stage {
+    background:
+      radial-gradient(ellipse at center, #3a2a20 0%, #1a1210 65%, #0f0c0a 100%);
+    border: 1px solid rgba(229, 122, 72, 0.4);
+    box-shadow: inset 0 0 40px rgba(183, 65, 14, 0.12), 0 6px 20px rgba(0,0,0,0.35);
+    min-height: 7.5rem;
+  }
+  @media (min-width: 640px) {
+    .cart-preview-stage { min-height: 9rem; }
+  }
+  .cart-preview-text {
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    line-height: 1;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #ffb07a 0%, #e57a48 35%, #d56f3d 70%, #b7410e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 4px 16px rgba(229, 122, 72, 0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.55));
+  }
+  .cart-preview-text.chars-4 { font-size: clamp(2rem, 6.5vw, 3.25rem); }
+  .cart-preview-text.chars-5plus { font-size: clamp(1.6rem, 5.5vw, 2.6rem); }
   .c-input {
     background: #120e0c;
     border: 1px solid rgba(229, 122, 72, 0.28);
@@ -377,19 +403,33 @@ function renderCart() {
   let subtotal = 0;
   items.innerHTML = cart.map((item, i) => {
     subtotal += item.price * (item.qty || 1);
-    const initial = (item.chars || item.type || '?').toString().charAt(0).toUpperCase();
+    const chars = String(item.chars || '').toUpperCase().replace(/[^0-9A-Z]/g, '') || '—';
+    const charLen = chars === '—' ? 0 : chars.length;
+    const sizeClass = charLen >= 5 ? 'chars-5plus' : (charLen >= 4 ? 'chars-4' : '');
+    const safeChars = chars
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const typeLabel = String(item.type || 'Item')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;');
+    const detail = [item.size, item.mount].filter(Boolean).join(' · ');
     return `
-    <div class="c-item rounded-sm p-5 flex justify-between items-start gap-4">
-      <div class="flex gap-4 min-w-0">
-        <div class="w-12 h-12 shrink-0 rounded-sm flex items-center justify-center font-display text-xl text-white"
-             style="background:linear-gradient(135deg,#b7410e,#d56f3d);box-shadow:0 6px 16px -6px rgba(183,65,14,0.7)">${initial}</div>
-        <div class="min-w-0">
-          <p class="font-display text-lg text-white">${item.type}</p>
-          <p class="text-sm text-gray-300 mt-1">${item.chars} · ${item.size} · ${item.mount}</p>
-          <p class="text-corten-400 font-bold text-lg mt-2">$${item.price}</p>
-        </div>
+    <div class="c-item rounded-sm overflow-hidden">
+      <div class="cart-preview-stage flex items-center justify-center px-4 py-5 sm:px-6 sm:py-7 overflow-x-auto">
+        <span class="cart-preview-text ${sizeClass} select-none" aria-hidden="true">${safeChars}</span>
       </div>
-      <button type="button" data-remove="${i}" class="remove-btn text-sm text-gray-400 hover:text-red-400 shrink-0 px-2 py-1">Remove</button>
+      <div class="p-4 sm:p-5 flex justify-between items-start gap-4">
+        <div class="min-w-0">
+          <p class="font-display text-lg text-white">${typeLabel}</p>
+          <p class="text-sm text-gray-300 mt-1">
+            <span class="text-white font-semibold tracking-wider">${safeChars}</span>
+            ${detail ? ' · ' + detail : ''}
+          </p>
+          <p class="text-corten-400 font-bold text-xl mt-2">$${item.price}</p>
+        </div>
+        <button type="button" data-remove="${i}" class="remove-btn text-sm text-gray-400 hover:text-red-400 shrink-0 px-2 py-1">Remove</button>
+      </div>
     </div>`;
   }).join('');
 
