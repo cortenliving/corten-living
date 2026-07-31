@@ -24,11 +24,58 @@ tailwind.config = {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/site.css">
+<style>
+  body.cart-bright {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.28), transparent 55%),
+      radial-gradient(circle at 85% 30%, rgba(183, 65, 14, 0.12), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .c-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.35);
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+  .c-item {
+    background: linear-gradient(165deg, #2e241e 0%, #1c1612 100%);
+    border: 1px solid rgba(229, 122, 72, 0.28);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .c-item:hover {
+    border-color: rgba(229, 122, 72, 0.5);
+    box-shadow: 0 8px 24px -10px rgba(183, 65, 14, 0.45);
+  }
+  .c-input {
+    background: #120e0c;
+    border: 1px solid rgba(229, 122, 72, 0.28);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .c-input:focus {
+    border-color: #e57a48;
+    box-shadow: 0 0 0 3px rgba(229, 122, 72, 0.15);
+    outline: none;
+  }
+  .c-total {
+    background: linear-gradient(135deg, rgba(183,65,14,0.4), rgba(26,18,14,0.95));
+    border: 1px solid rgba(229, 122, 72, 0.55);
+    box-shadow: 0 0 40px -10px rgba(213, 111, 61, 0.5);
+  }
+  .c-cta {
+    box-shadow: 0 10px 30px -8px rgba(183, 65, 14, 0.75);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+  .c-cta:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 36px -8px rgba(213, 111, 61, 0.85);
+  }
+  .c-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+</style>
 </head>
-<body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
+<body class="cart-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
 
-<nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav class="fixed top-0 inset-x-0 z-50 bg-[#1a1410]/95 backdrop-blur-md border-b border-corten-600/30">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
     <div class="flex items-center justify-between h-16">
       <a href="/" class="flex items-center gap-3 group">
         <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
@@ -41,13 +88,14 @@ tailwind.config = {
         <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
         <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
         <a href="/cart" class="text-corten-400">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+        <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
       </div>
       <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
   </div>
-  <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
+  <div id="mobile-menu" class="hidden md:hidden bg-[#221a14] border-t border-corten-600/30">
     <div class="px-4 py-4 space-y-3 text-sm">
       <a href="/" class="block hover:text-corten-400">Home</a>
       <a href="/shop" class="block hover:text-corten-400">Shop</a>
@@ -59,105 +107,113 @@ tailwind.config = {
   </div>
 </nav>
 
-<section class="pt-28 pb-20 flex-1">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="font-display text-3xl font-bold text-white tracking-tight mb-2">Your Cart</h1>
-    <p class="text-sm text-gray-500 mb-8">Review your items, then pay securely with Stripe or place an order without paying now.</p>
-    <p id="cancel-note" class="hidden mb-4 text-sm text-amber-400/90 bg-amber-950/30 border border-amber-800/40 rounded-sm px-3 py-2">Payment cancelled — your cart is still here if you want to try again.</p>
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="mb-8 max-w-2xl">
+      <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-2">Checkout</p>
+      <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">Your <span class="text-corten-400">Cart</span></h1>
+      <p class="mt-3 text-gray-300 text-sm sm:text-base">Review items, then pay with Stripe or place an order without payment.</p>
+    </div>
 
-    <div id="cart-empty" class="hidden text-center py-16 text-gray-500 bg-metal-850 border border-corten-900/40 rounded-sm">
-      <p class="mb-4">Your cart is empty.</p>
-      <div class="flex flex-wrap justify-center gap-4 text-sm">
-        <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers →</a>
-        <a href="/shop" class="text-corten-500 hover:underline">Browse Shop →</a>
+    <p id="cancel-note" class="hidden mb-6 text-sm text-amber-200 bg-amber-950/40 border border-amber-600/40 rounded-sm px-4 py-3">Payment cancelled — your cart is still here if you want to try again.</p>
+
+    <div id="cart-empty" class="hidden c-card rounded-sm text-center py-16 px-6">
+      <p class="text-gray-300 text-lg mb-2">Your cart is empty</p>
+      <p class="text-sm text-gray-500 mb-6">Add house numbers or browse the shop to get started.</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="/house-numbers" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Configure House Numbers</a>
+        <a href="/shop" class="px-5 py-2.5 border border-corten-500/50 text-corten-300 text-sm font-semibold rounded-sm hover:bg-white/5">Browse Shop</a>
       </div>
     </div>
 
-    <div id="order-success" class="hidden text-center py-14 bg-metal-850 border border-corten-700/50 rounded-sm px-6">
-      <p class="text-corten-400 font-display text-2xl mb-2">Order received</p>
+    <div id="order-success" class="hidden c-card rounded-sm text-center py-14 px-6 max-w-xl mx-auto border-corten-500/40">
+      <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Order received</p>
       <p id="success-order-id" class="text-white font-medium mb-3"></p>
-      <p class="text-sm text-gray-400 max-w-md mx-auto leading-relaxed">
-        Thanks — a confirmation has been sent to your email. We’ll follow up with shipping, GST and payment details.
+      <p class="text-sm text-gray-300 max-w-md mx-auto leading-relaxed">
+        Thanks — a confirmation has been sent to your email. We’ll follow up with shipping, GST and payment details if needed.
       </p>
-      <a href="/house-numbers" class="inline-block mt-8 text-sm text-corten-500 hover:underline">Order more numbers →</a>
+      <a href="/house-numbers" class="inline-block mt-8 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Order more numbers</a>
     </div>
 
-    <div id="cart-flow">
-      <div id="cart-items" class="space-y-4"></div>
+    <div id="cart-flow" class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <div class="lg:col-span-7 space-y-4">
+        <div id="cart-items" class="space-y-3"></div>
+      </div>
 
-      <div id="cart-summary" class="hidden mt-8 space-y-6">
-        <div class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-3">
+      <div id="cart-summary" class="hidden lg:col-span-5 space-y-5 lg:sticky lg:top-24">
+        <div class="c-total rounded-sm p-6 space-y-3">
+          <p class="text-xs text-corten-200/80 uppercase tracking-widest font-medium">Order summary</p>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-400">Subtotal (excl. GST)</span>
-            <span id="cart-subtotal" class="text-white font-medium">$0</span>
+            <span class="text-gray-300">Subtotal (excl. GST)</span>
+            <span id="cart-subtotal" class="text-white font-semibold">$0</span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-400" id="shipping-label">NZ shipping</span>
-            <span id="cart-shipping" class="text-white font-medium">$0</span>
+            <span class="text-gray-300" id="shipping-label">NZ shipping</span>
+            <span id="cart-shipping" class="text-white font-semibold">$0</span>
           </div>
-          <p id="shipping-weight" class="text-xs text-gray-500"></p>
-          <div class="flex justify-between items-center pt-2 border-t border-gray-800">
-            <span class="text-gray-300 font-medium">Total (excl. GST)</span>
-            <span id="cart-total" class="text-2xl font-display font-bold text-corten-400">$0</span>
+          <p id="shipping-weight" class="text-xs text-gray-400"></p>
+          <div class="flex justify-between items-center pt-3 border-t border-white/10">
+            <span class="text-white font-medium">Total (excl. GST)</span>
+            <span id="cart-total" class="text-3xl sm:text-4xl font-display font-bold text-white drop-shadow">$0</span>
           </div>
-          <p class="text-xs text-gray-500">Shipping is estimated from size/weight (set in Admin → Shipping). Stripe charges this total.</p>
+          <p class="text-xs text-gray-400 leading-relaxed">Shipping is estimated from size/weight (Admin → Shipping). Stripe charges this total.</p>
         </div>
 
-        <form id="order-form" class="bg-metal-850 border border-corten-900/50 rounded-sm p-6 space-y-4">
-          <h2 class="font-display text-xl text-white">Checkout</h2>
+        <form id="order-form" class="c-card rounded-sm p-6 sm:p-7 space-y-4">
+          <h2 class="font-display text-xl sm:text-2xl text-white">Checkout</h2>
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs text-gray-400 mb-1.5" for="order-name">Name *</label>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-name">Name *</label>
               <input id="order-name" name="name" required type="text" autocomplete="name"
-                class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+                class="c-input w-full rounded-sm px-3 py-3 text-white">
             </div>
             <div>
-              <label class="block text-xs text-gray-400 mb-1.5" for="order-email">Email *</label>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-email">Email *</label>
               <input id="order-email" name="email" required type="email" autocomplete="email"
-                class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+                class="c-input w-full rounded-sm px-3 py-3 text-white">
             </div>
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1.5" for="order-phone">Phone</label>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-phone">Phone</label>
             <input id="order-phone" name="phone" type="tel" autocomplete="tel" placeholder="027 …"
-              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none">
+              class="c-input w-full rounded-sm px-3 py-3 text-white">
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1.5" for="order-address">Delivery address</label>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-address">Delivery address</label>
             <textarea id="order-address" name="address" rows="2" placeholder="Street, town, postcode"
-              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+              class="c-input w-full rounded-sm px-3 py-3 text-white resize-none"></textarea>
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1.5" for="order-notes">Order notes</label>
+            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-notes">Order notes</label>
             <textarea id="order-notes" name="notes" rows="2" placeholder="Anything we should know?"
-              class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white focus:border-corten-500 outline-none resize-none"></textarea>
+              class="c-input w-full rounded-sm px-3 py-3 text-white resize-none"></textarea>
           </div>
           <p id="order-error" class="hidden text-sm text-red-400"></p>
 
-          <button type="button" id="pay-stripe-btn" class="w-full py-3.5 corten-gradient text-white font-bold rounded-sm tracking-wide hover:opacity-90 transition">
+          <button type="button" id="pay-stripe-btn" class="c-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide">
             Pay now with card
           </button>
-          <p class="text-xs text-gray-500 text-center">Secure payment via Stripe (cards, Apple Pay / Google Pay where available).</p>
+          <p class="text-xs text-gray-400 text-center">Secure payment via Stripe (cards, Apple Pay / Google Pay where available).</p>
 
           <div class="relative py-2">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-800"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="px-2 bg-metal-850 text-gray-600">or</span></div>
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="px-2 bg-[#221a14] text-gray-500">or</span></div>
           </div>
 
-          <button type="submit" id="place-order-btn" class="w-full py-3 border border-gray-600 text-gray-200 font-semibold rounded-sm tracking-wide hover:border-corten-500 transition">
+          <button type="submit" id="place-order-btn" class="w-full py-3.5 border border-corten-500/50 text-white font-semibold rounded-sm tracking-wide hover:bg-white/5 transition">
             Place order without payment
           </button>
-          <p class="text-xs text-gray-600 text-center">We’ll email confirmation and send an invoice / payment link.</p>
+          <p class="text-xs text-gray-500 text-center">We’ll email confirmation and can send an invoice / payment link.</p>
         </form>
 
-        <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-400">Clear cart</button>
+        <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-300 py-2">Clear cart</button>
       </div>
     </div>
   </div>
 </section>
 
-<footer class="border-t border-corten-900/40 bg-metal-950 mt-auto">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-center text-xs text-gray-600">
+<footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 text-center text-xs text-gray-500">
     <p>© 2026 Corten Living · Gisborne, New Zealand</p>
   </div>
 </footer>
@@ -191,14 +247,19 @@ function renderCart() {
   let subtotal = 0;
   items.innerHTML = cart.map((item, i) => {
     subtotal += item.price * (item.qty || 1);
+    const initial = (item.chars || item.type || '?').toString().charAt(0).toUpperCase();
     return `
-    <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 flex justify-between items-start gap-4">
-      <div>
-        <p class="font-display text-lg text-white">${item.type}</p>
-        <p class="text-sm text-gray-400 mt-1">${item.chars} · ${item.size} · ${item.mount}</p>
-        <p class="text-corten-400 font-semibold mt-2">$${item.price}</p>
+    <div class="c-item rounded-sm p-5 flex justify-between items-start gap-4">
+      <div class="flex gap-4 min-w-0">
+        <div class="w-12 h-12 shrink-0 rounded-sm flex items-center justify-center font-display text-xl text-white"
+             style="background:linear-gradient(135deg,#b7410e,#d56f3d);box-shadow:0 6px 16px -6px rgba(183,65,14,0.7)">${initial}</div>
+        <div class="min-w-0">
+          <p class="font-display text-lg text-white">${item.type}</p>
+          <p class="text-sm text-gray-300 mt-1">${item.chars} · ${item.size} · ${item.mount}</p>
+          <p class="text-corten-400 font-bold text-lg mt-2">$${item.price}</p>
+        </div>
       </div>
-      <button type="button" data-remove="${i}" class="remove-btn text-gray-500 hover:text-corten-400 text-sm">Remove</button>
+      <button type="button" data-remove="${i}" class="remove-btn text-sm text-gray-400 hover:text-red-400 shrink-0 px-2 py-1">Remove</button>
     </div>`;
   }).join('');
 
@@ -216,7 +277,7 @@ function renderCart() {
   const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
   const ship = window.CortenShipping
     ? CortenShipping.calculateShipping(cart, subtotal, cfg)
-    : { shipping: 0, subtotal, total: subtotal, weightKg: 0, label: 'Shipping', freeShipping: false };
+    : { shipping: 0, subtotal, total: subtotal, weightKg: 0, weightGrams: 0, label: 'Shipping', freeShipping: false };
   lastShip = ship;
 
   document.getElementById('cart-subtotal').textContent = '$' + ship.subtotal;
@@ -239,7 +300,6 @@ function getOrderPayload() {
   const form = document.getElementById('order-form');
   const subtotal = parseFloat(form?.dataset.subtotal || '0') ||
     cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
-  // Recalc shipping fresh so Stripe matches UI
   const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
   const ship = window.CortenShipping
     ? CortenShipping.calculateShipping(cart, subtotal, cfg)
@@ -275,7 +335,6 @@ document.getElementById('clear-cart')?.addEventListener('click', () => {
   renderCart();
 });
 
-// Pay now → Stripe Checkout
 document.getElementById('pay-stripe-btn')?.addEventListener('click', async () => {
   const errEl = document.getElementById('order-error');
   const btn = document.getElementById('pay-stripe-btn');
@@ -303,7 +362,6 @@ document.getElementById('pay-stripe-btn')?.addEventListener('click', async () =>
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Could not start checkout');
     if (!data.url) throw new Error('No checkout URL returned');
-    // Leave cart until success page clears it (in case they cancel)
     window.location.href = data.url;
   } catch (e) {
     errEl.textContent = e.message || 'Stripe checkout failed. Check STRIPE_SECRET_KEY is set, or use “Place order without payment”.';
@@ -314,7 +372,6 @@ document.getElementById('pay-stripe-btn')?.addEventListener('click', async () =>
   }
 });
 
-// Place order without payment (invoice later)
 document.getElementById('order-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const errEl = document.getElementById('order-error');
@@ -362,7 +419,6 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
   }
 });
 
-// Show note if user cancelled Stripe
 if (new URLSearchParams(location.search).get('cancelled') === '1') {
   document.getElementById('cancel-note')?.classList.remove('hidden');
 }
