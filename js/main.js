@@ -113,7 +113,6 @@ function productCardHTML(p, options = {}) {
  <div class="fallback hidden absolute inset-0 flex flex-col items-center justify-center bg-metal-950">
  <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
  </div>
- ${s.label ? `<span class="absolute bottom-2 left-2 right-2 text-center text-[10px] uppercase tracking-wider text-white/90 bg-black/50 rounded px-2 py-1">${s.label}</span>` : ''}
  </div>`).join('')}
  </div>`;
  } else if (firstImg) {
