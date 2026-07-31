@@ -45,6 +45,17 @@ python -m http.server 8080
 
 `/api/*` only works on Cloudflare Pages (or `wrangler pages dev` with secrets).
 
+## Stripe cart checkout
+
+Cart has **Pay now with card** (Stripe Checkout) and **Place order without payment**.
+
+1. Stripe → **Developers → API keys** → copy **Secret key** (`sk_test_...` or `sk_live_...`)
+2. Cloudflare → **corten-living** → **Variables and secrets** → secret `STRIPE_SECRET_KEY`
+3. **Retry deployment**
+4. Test on `/cart` with card `4242 4242 4242 4242`
+
+Quotes can still use **Payment Links** from the Stripe Dashboard (no code).
+
 ## Colour palette
 
 | Role | Hex |
