@@ -160,17 +160,25 @@ function productCardHTML(p, options = {}) {
  const firstImg = (hasSlides && p.slides[0].src) || p.image || '';
  const isHN = isHouseNumberProduct(p);
 
+ // Slideshow for multi-photo products (featured + shop). Featured uses 3s interval.
+ const slideMs = compact ? 3000 : 4200;
  let media;
- if (hasSlides && !compact) {
- media = `<div class="product-slides relative w-full h-full" data-interval="4200">
+ if (hasSlides && p.slides.length > 1) {
+ media = `<div class="product-slides relative w-full h-full" data-interval="${slideMs}">
  ${p.slides.map((s, i) => `
  <div class="slide absolute inset-0 transition-opacity duration-700 ${i === 0 ? 'opacity-100' : 'opacity-0'}">
- <img src="${s.src}" alt="${s.label || p.name}" class="w-full h-full object-cover" loading="lazy"
+ <img src="${s.src}" alt="${s.label || p.name}" class="w-full h-full object-cover" loading="${i === 0 ? 'eager' : 'lazy'}"
  onerror="this.onerror=null;this.src='';this.parentElement.querySelector('.fallback')?.classList.remove('hidden')">
  <div class="fallback hidden absolute inset-0 flex flex-col items-center justify-center bg-metal-950">
  <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
  </div>
  </div>`).join('')}
+ </div>`;
+ } else if (hasSlides && p.slides.length === 1) {
+ media = `<img src="${p.slides[0].src}" alt="${p.name}" class="w-full h-full object-cover" loading="lazy"
+ onerror="this.style.display='none';this.nextElementSibling?.classList.remove('hidden')">
+ <div class="fallback hidden absolute inset-0 flex items-center justify-center bg-metal-950">
+ <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
  </div>`;
  } else if (firstImg) {
  media = `<img src="${firstImg}" alt="${p.name}" class="w-full h-full object-cover" loading="lazy"
