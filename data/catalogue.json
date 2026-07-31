@@ -33,26 +33,17 @@
       "category": "sculpture",
       "size": "500 × 600 mm",
       "price": 72,
-      "priceLabel": "From $54",
+      "priceLabel": "$72",
       "desc": "Classic 3mm Corten Steel Kombi Van Garden Sculpture\nIconic VW Kombi van design cut from 3mm Corten steel, complete with surfboard and palm trees. Supplied un weathered so it will naturally rust to a beautiful protective finish.\n\nNZ made from quality 3mm Corten steel\n\nMounting: Comes with a stake cut into the base for easy garden installation\nCustom size: Can be made to your required size\n\nUltimate Kiwi summer vibe – perfect for garden, beach house, or outdoor display.",
       "tag": "With stake",
       "featured": true,
-      "link": "/product?id=kombi-van",
+      "link": "/quote?product=Kombi%20Van",
       "image": "/images/product-kombi.jpg",
       "slides": [
         {
           "src": "/images/product-kombi.jpg",
           "label": "Kombi Van"
-        },
-        {
-          "src": "/images/product-kombi-2.jpg",
-          "label": "Detail"
         }
-      ],
-      "sizes": [
-        { "id": "sm", "label": "Small", "size": "375 × 450 mm", "price": 54 },
-        { "id": "md", "label": "Medium", "size": "500 × 600 mm", "price": 72 },
-        { "id": "lg", "label": "Large", "size": "625 × 750 mm", "price": 98 }
       ]
     },
     {
@@ -61,22 +52,17 @@
       "category": "sculpture",
       "size": "Various",
       "price": 45,
-      "priceLabel": "From $34",
+      "priceLabel": "From $45",
       "desc": "Heart silhouettes cut from weathering steel — a simple, lasting garden statement.",
       "tag": "Gift idea",
       "featured": true,
-      "link": "/product?id=hearts",
+      "link": "/quote?product=Corten%20Hearts",
       "image": "/images/product-hearts.jpg",
       "slides": [
         {
           "src": "/images/product-hearts.jpg",
           "label": "Hearts"
         }
-      ],
-      "sizes": [
-        { "id": "sm", "label": "Small", "size": "200 mm", "price": 34 },
-        { "id": "md", "label": "Medium", "size": "300 mm", "price": 45 },
-        { "id": "lg", "label": "Large", "size": "400 mm", "price": 62 }
       ]
     },
     {
@@ -85,11 +71,11 @@
       "category": "sculpture",
       "size": "Various",
       "price": 49,
-      "priceLabel": "From $37",
+      "priceLabel": "From $49",
       "desc": "Profile-cut outdoor silhouettes — animals, icons and custom shapes. Ask about stakes and pre-weathering.",
       "tag": "Custom",
       "featured": false,
-      "link": "/product?id=garden-sculptures",
+      "link": "/quote?product=Garden%20Sculptures",
       "image": "/images/product-garden-1.jpg",
       "slides": [
         {
@@ -108,13 +94,8 @@
           "src": "/images/product-garden-4.jpg",
           "label": "Outdoor ready"
         }
-      ],
-      "sizes": [
-        { "id": "sm", "label": "Small", "size": "300 mm", "price": 37 },
-        { "id": "md", "label": "Medium", "size": "450 mm", "price": 49 },
-        { "id": "lg", "label": "Large", "size": "600 mm", "price": 69 }
       ]
     }
   ],
-  "updatedAt": "2026-07-31T07:30:00.000Z"
+  "updatedAt": "2026-07-31T07:06:07.420Z"
 }
