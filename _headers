@@ -3,11 +3,32 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
-# HTML should not stick on old deploys
+# HTML / pretty routes — never cache so new deploys show immediately
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
 
+/faq
+  Cache-Control: public, max-age=0, must-revalidate
+
 /admin
+  Cache-Control: public, max-age=0, must-revalidate
+
+/shop
+  Cache-Control: public, max-age=0, must-revalidate
+
+/cart
+  Cache-Control: public, max-age=0, must-revalidate
+
+/quote
+  Cache-Control: public, max-age=0, must-revalidate
+
+/contact
+  Cache-Control: public, max-age=0, must-revalidate
+
+/house-numbers
   Cache-Control: public, max-age=0, must-revalidate
 
 /images/*
