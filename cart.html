@@ -103,14 +103,18 @@ tailwind.config = {
     max-height: 16rem;
     overflow-y: auto;
   }
-  .delivery-opt {
-    background: #120e0c;
-    border: 1px solid rgba(229, 122, 72, 0.25);
-    transition: border-color 0.15s ease, background 0.15s ease;
+  .checkout-step {
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #9ca3af;
   }
-  .delivery-opt:has(input:checked) {
+  .checkout-step.is-active {
     border-color: #e57a48;
-    background: rgba(183, 65, 14, 0.15);
+    color: #fff;
+    background: rgba(183, 65, 14, 0.25);
+  }
+  .checkout-step.is-done {
+    border-color: rgba(229, 122, 72, 0.45);
+    color: #e57a48;
   }
 </style>
 </head>
@@ -151,10 +155,30 @@ tailwind.config = {
 
 <section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
   <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-    <div class="mb-8 max-w-2xl">
+    <div class="mb-6 max-w-2xl">
       <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-2">Checkout</p>
       <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">Your <span class="text-corten-400">Cart</span></h1>
-      <p class="mt-3 text-gray-300 text-sm sm:text-base">Review items, then pay with Stripe or place an order without payment.</p>
+      <p class="mt-3 text-gray-300 text-sm sm:text-base">Details → shipping address → pay. GST is added at checkout (15%).</p>
+    </div>
+
+    <!-- Steps (Duroweld-style) -->
+    <div id="checkout-steps" class="hidden mb-8 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      <button type="button" data-goto-step="1" class="checkout-step is-active rounded-sm px-3 py-3 text-left">
+        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 1</span>
+        <span class="font-display text-sm sm:text-base">Details</span>
+      </button>
+      <button type="button" data-goto-step="2" class="checkout-step rounded-sm px-3 py-3 text-left">
+        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 2</span>
+        <span class="font-display text-sm sm:text-base">Shipping</span>
+      </button>
+      <button type="button" data-goto-step="3" class="checkout-step rounded-sm px-3 py-3 text-left">
+        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 3</span>
+        <span class="font-display text-sm sm:text-base">Payment</span>
+      </button>
+      <div class="checkout-step rounded-sm px-3 py-3 text-left opacity-60 pointer-events-none">
+        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 4</span>
+        <span class="font-display text-sm sm:text-base">Completed</span>
+      </div>
     </div>
 
     <p id="cancel-note" class="hidden mb-6 text-sm text-amber-200 bg-amber-950/40 border border-amber-600/40 rounded-sm px-4 py-3">Payment cancelled — your cart is still here if you want to try again.</p>
@@ -169,10 +193,10 @@ tailwind.config = {
     </div>
 
     <div id="order-success" class="hidden c-card rounded-sm text-center py-14 px-6 max-w-xl mx-auto border-corten-500/40">
-      <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Order received</p>
+      <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Order complete</p>
       <p id="success-order-id" class="text-white font-medium mb-3"></p>
       <p class="text-sm text-gray-300 max-w-md mx-auto leading-relaxed">
-        Thanks — a confirmation has been sent to your email. We’ll follow up with shipping, GST and payment details if needed.
+        Thanks — a confirmation has been sent to your email.
       </p>
       <a href="/house-numbers" class="inline-block mt-8 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Order more numbers</a>
     </div>
@@ -180,6 +204,86 @@ tailwind.config = {
     <div id="cart-flow" class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
       <div class="lg:col-span-7 space-y-4">
         <div id="cart-items" class="space-y-3"></div>
+
+        <form id="order-form" class="c-card rounded-sm p-6 sm:p-7 space-y-5">
+          <!-- STEP 1: Details -->
+          <div data-step-panel="1" class="space-y-4">
+            <h2 class="font-display text-xl sm:text-2xl text-white">Your details</h2>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-name">Full name *</label>
+                <input id="order-name" name="name" required type="text" autocomplete="name" class="c-input w-full rounded-sm px-3 py-3 text-white">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-phone">Mobile</label>
+                <input id="order-phone" name="phone" type="tel" autocomplete="tel" placeholder="027 …" class="c-input w-full rounded-sm px-3 py-3 text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-email">Email *</label>
+              <input id="order-email" name="email" required type="email" autocomplete="email" class="c-input w-full rounded-sm px-3 py-3 text-white">
+            </div>
+            <p id="step1-error" class="hidden text-sm text-red-400"></p>
+            <button type="button" id="btn-to-step-2" class="c-cta w-full sm:w-auto px-8 py-3.5 corten-gradient text-white font-semibold rounded-sm">
+              Proceed to shipping →
+            </button>
+          </div>
+
+          <!-- STEP 2: Shipping address -->
+          <div data-step-panel="2" class="hidden space-y-4">
+            <h2 class="font-display text-xl sm:text-2xl text-white">Delivery address</h2>
+            <div class="relative">
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-address">NZ address *</label>
+              <input id="order-address" name="address" type="text" required autocomplete="off"
+                placeholder="Start typing your NZ address…"
+                class="c-input w-full rounded-sm px-3 py-3 text-white">
+              <div id="address-dropdown" class="addr-dropdown hidden absolute z-30 left-0 right-0 mt-1 rounded-sm" role="listbox"></div>
+              <p class="mt-1.5 text-[11px] text-gray-500 leading-relaxed">Type at least 3 characters and choose from the dropdown. Shipping type is set automatically from your address (standard or rural).</p>
+            </div>
+            <div id="delivery-status" class="rounded-sm border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-300">
+              Enter and select an address to calculate shipping.
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-notes">Order notes</label>
+              <textarea id="order-notes" name="notes" rows="2" placeholder="Anything we should know?"
+                class="c-input w-full rounded-sm px-3 py-3 text-white resize-none"></textarea>
+            </div>
+            <p id="step2-error" class="hidden text-sm text-red-400"></p>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" id="btn-back-step-1" class="px-5 py-3 border border-white/15 text-gray-200 rounded-sm text-sm font-medium hover:bg-white/5">← Back to details</button>
+              <button type="button" id="btn-to-step-3" class="c-cta px-8 py-3.5 corten-gradient text-white font-semibold rounded-sm">
+                Proceed to payment →
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3: Payment -->
+          <div data-step-panel="3" class="hidden space-y-4">
+            <h2 class="font-display text-xl sm:text-2xl text-white">Payment</h2>
+            <div class="rounded-sm border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-300 space-y-1">
+              <p><span class="text-gray-500">Deliver to:</span> <span id="pay-address-preview" class="text-white">—</span></p>
+              <p><span class="text-gray-500">Shipping:</span> <span id="pay-delivery-preview" class="text-white">—</span></p>
+            </div>
+            <p id="order-error" class="hidden text-sm text-red-400"></p>
+
+            <button type="button" id="pay-stripe-btn" class="c-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide">
+              Pay now with card
+            </button>
+            <p class="text-xs text-gray-400 text-center">Secure payment via Stripe. Total includes GST.</p>
+
+            <div class="relative py-2">
+              <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+              <div class="relative flex justify-center text-xs"><span class="px-2 bg-[#221a14] text-gray-500">or</span></div>
+            </div>
+
+            <button type="submit" id="place-order-btn" class="w-full py-3.5 border border-corten-500/50 text-white font-semibold rounded-sm tracking-wide hover:bg-white/5 transition">
+              Place order without payment
+            </button>
+            <p class="text-xs text-gray-500 text-center">We’ll email confirmation and can send a Stripe invoice / payment link.</p>
+
+            <button type="button" id="btn-back-step-2" class="text-sm text-gray-400 hover:text-corten-300">← Back to shipping</button>
+          </div>
+        </form>
       </div>
 
       <div id="cart-summary" class="hidden lg:col-span-5 space-y-5 lg:sticky lg:top-24">
@@ -187,91 +291,24 @@ tailwind.config = {
           <p class="text-xs text-corten-200/80 uppercase tracking-widest font-medium">Order summary</p>
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-300">Subtotal (excl. GST)</span>
-            <span id="cart-subtotal" class="text-white font-semibold">$0</span>
+            <span id="cart-subtotal" class="text-white font-semibold">$0.00</span>
           </div>
           <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-300" id="shipping-label">NZ shipping</span>
-            <span id="cart-shipping" class="text-white font-semibold">$0</span>
+            <span class="text-gray-300" id="shipping-label">NZ shipping (excl. GST)</span>
+            <span id="cart-shipping" class="text-white font-semibold">$0.00</span>
           </div>
           <p id="shipping-breakdown" class="hidden text-xs text-gray-400"></p>
           <p id="shipping-weight" class="text-xs text-gray-400"></p>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-300">GST (15%)</span>
+            <span id="cart-gst" class="text-white font-semibold">$0.00</span>
+          </div>
           <div class="flex justify-between items-center pt-3 border-t border-white/10">
-            <span class="text-white font-medium">Total (excl. GST)</span>
-            <span id="cart-total" class="text-3xl sm:text-4xl font-display font-bold text-white drop-shadow">$0</span>
+            <span class="text-white font-medium">Total (incl. GST)</span>
+            <span id="cart-total" class="text-3xl sm:text-4xl font-display font-bold text-white drop-shadow">$0.00</span>
           </div>
-          <p class="text-xs text-gray-400 leading-relaxed">Shipping is estimated from size/weight (Admin → Shipping). Stripe charges this total.</p>
+          <p class="text-xs text-gray-400 leading-relaxed">Shipping is estimated from parcel weight. Rural surcharge is applied automatically when your address is rural (RD, etc.).</p>
         </div>
-
-        <form id="order-form" class="c-card rounded-sm p-6 sm:p-7 space-y-4">
-          <h2 class="font-display text-xl sm:text-2xl text-white">Checkout</h2>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-name">Name *</label>
-              <input id="order-name" name="name" required type="text" autocomplete="name"
-                class="c-input w-full rounded-sm px-3 py-3 text-white">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-email">Email *</label>
-              <input id="order-email" name="email" required type="email" autocomplete="email"
-                class="c-input w-full rounded-sm px-3 py-3 text-white">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-phone">Phone</label>
-            <input id="order-phone" name="phone" type="tel" autocomplete="tel" placeholder="027 …"
-              class="c-input w-full rounded-sm px-3 py-3 text-white">
-          </div>
-          <div class="relative">
-            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-address">Delivery address *</label>
-            <input id="order-address" name="address" type="text" required autocomplete="off"
-              placeholder="Start typing your NZ address…"
-              class="c-input w-full rounded-sm px-3 py-3 text-white">
-            <div id="address-dropdown" class="addr-dropdown hidden absolute z-30 left-0 right-0 mt-1 rounded-sm" role="listbox"></div>
-            <p class="mt-1.5 text-[11px] text-gray-500 leading-relaxed">Type at least 3 characters — pick your address from the dropdown. NZ addresses only.</p>
-          </div>
-          <div>
-            <p class="block text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Delivery type</p>
-            <div class="grid sm:grid-cols-2 gap-2">
-              <label class="delivery-opt rounded-sm px-3 py-3 cursor-pointer flex items-start gap-2.5">
-                <input type="radio" name="delivery-type" id="delivery-standard" value="standard" checked class="mt-0.5 text-corten-600 border-gray-600">
-                <span>
-                  <span class="block text-sm text-white font-medium">Standard</span>
-                  <span class="block text-[11px] text-gray-400 mt-0.5">Town / city / suburb delivery</span>
-                </span>
-              </label>
-              <label class="delivery-opt rounded-sm px-3 py-3 cursor-pointer flex items-start gap-2.5">
-                <input type="radio" name="delivery-type" id="delivery-rural" value="rural" class="mt-0.5 text-corten-600 border-gray-600">
-                <span>
-                  <span class="block text-sm text-white font-medium">Rural <span class="text-amber-400 font-normal">(+ extra)</span></span>
-                  <span class="block text-[11px] text-gray-400 mt-0.5">RD / rural delivery · costs more</span>
-                </span>
-              </label>
-            </div>
-            <p id="delivery-hint" class="mt-2 text-[11px] text-gray-500"></p>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-notes">Order notes</label>
-            <textarea id="order-notes" name="notes" rows="2" placeholder="Anything we should know?"
-              class="c-input w-full rounded-sm px-3 py-3 text-white resize-none"></textarea>
-          </div>
-          <p id="order-error" class="hidden text-sm text-red-400"></p>
-
-          <button type="button" id="pay-stripe-btn" class="c-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide">
-            Pay now with card
-          </button>
-          <p class="text-xs text-gray-400 text-center">Secure payment via Stripe (cards, Apple Pay / Google Pay where available).</p>
-
-          <div class="relative py-2">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="px-2 bg-[#221a14] text-gray-500">or</span></div>
-          </div>
-
-          <button type="submit" id="place-order-btn" class="w-full py-3.5 border border-corten-500/50 text-white font-semibold rounded-sm tracking-wide hover:bg-white/5 transition">
-            Place order without payment
-          </button>
-          <p class="text-xs text-gray-500 text-center">We’ll email confirmation and can send an invoice / payment link.</p>
-        </form>
-
         <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-300 py-2">Clear cart</button>
       </div>
     </div>
@@ -288,33 +325,37 @@ tailwind.config = {
 <script src="/js/shipping.js"></script>
 <script src="/js/address-nz.js"></script>
 <script>
+const GST_RATE = 0.15;
 let lastShip = null;
-/** @type {boolean} */
 let isRuralDelivery = false;
+let deliveryReason = '';
+let checkoutStep = 1;
+let addressSelected = false;
 
-function getRural() {
-  return !!document.getElementById('delivery-rural')?.checked || isRuralDelivery;
+function money(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+function fmtMoney(n) {
+  return '$' + money(n).toFixed(2);
 }
 
-function setDeliveryType(rural, reason) {
+function getRural() {
+  return !!isRuralDelivery;
+}
+
+/** Apply rural/standard from address only — no customer override */
+function applyDeliveryFromAddress(rural, reason) {
   isRuralDelivery = !!rural;
-  const std = document.getElementById('delivery-standard');
-  const rur = document.getElementById('delivery-rural');
-  if (std && rur) {
-    std.checked = !rural;
-    rur.checked = !!rural;
-  }
-  const hint = document.getElementById('delivery-hint');
-  if (hint) {
+  deliveryReason = reason || '';
+  const status = document.getElementById('delivery-status');
+  const surcharge = Number((window.CortenShipping && CortenShipping.getCachedConfig()?.ruralSurcharge) || 12);
+  if (status) {
     if (rural) {
-      const surcharge = Number((window.CortenShipping && CortenShipping.getCachedConfig()?.ruralSurcharge) || 12);
-      hint.textContent = reason
-        ? `Rural detected (${reason}). Extra $${surcharge} applies.`
-        : `Rural delivery selected. Extra $${surcharge} applies.`;
-      hint.className = 'mt-2 text-[11px] text-amber-400/90';
+      status.innerHTML = `<span class="text-amber-400 font-medium">Rural delivery</span>${reason ? ' · ' + reason : ''} — rural surcharge $${surcharge.toFixed(2)} applies (excl. GST).`;
+      status.className = 'rounded-sm border border-amber-600/40 bg-amber-950/20 px-4 py-3 text-sm text-gray-300';
     } else {
-      hint.textContent = 'Standard NZ delivery rate for this parcel weight.';
-      hint.className = 'mt-2 text-[11px] text-gray-500';
+      status.innerHTML = `<span class="text-corten-400 font-medium">Standard delivery</span> — town / city / suburb rate for this parcel.`;
+      status.className = 'rounded-sm border border-corten-600/30 bg-black/20 px-4 py-3 text-sm text-gray-300';
     }
   }
   updateShippingTotals();
@@ -323,13 +364,29 @@ function setDeliveryType(rural, reason) {
 function computeShip(cart, subtotal) {
   const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
   const rural = getRural();
+  let ship;
   if (window.CortenShipping) {
-    return CortenShipping.calculateShipping(cart, subtotal, cfg, { rural });
+    ship = CortenShipping.calculateShipping(cart, subtotal, cfg, { rural });
+  } else {
+    ship = {
+      shipping: 0, subtotal, total: subtotal, weightKg: 0, weightGrams: 0,
+      label: 'NZ shipping', freeShipping: false, baseShipping: 0, ruralSurcharge: 0,
+      deliveryType: rural ? 'rural' : 'standard', rural,
+    };
   }
+  // GST on products + shipping (excl. amounts)
+  const excl = money((ship.subtotal || 0) + (ship.shipping || 0));
+  const gst = money(excl * GST_RATE);
+  const totalIncl = money(excl + gst);
   return {
-    shipping: 0, subtotal, total: subtotal, weightKg: 0, weightGrams: 0,
-    label: 'Shipping', freeShipping: false, baseShipping: 0, ruralSurcharge: 0,
-    deliveryType: rural ? 'rural' : 'standard', rural,
+    ...ship,
+    exclSubtotal: money(ship.subtotal || 0),
+    exclShipping: money(ship.shipping || 0),
+    gst,
+    gstRate: GST_RATE,
+    totalExcl: excl,
+    total: totalIncl,
+    totalIncl,
   };
 }
 
@@ -340,25 +397,24 @@ function updateShippingTotals() {
   const ship = computeShip(cart, subtotal);
   lastShip = ship;
 
-  document.getElementById('cart-subtotal').textContent = '$' + ship.subtotal;
-  document.getElementById('shipping-label').textContent = ship.label || 'NZ shipping';
+  document.getElementById('cart-subtotal').textContent = fmtMoney(ship.exclSubtotal);
+  document.getElementById('shipping-label').textContent =
+    (ship.label || 'NZ shipping') + ' (excl. GST)';
 
   const shipEl = document.getElementById('cart-shipping');
   if (ship.freeShipping && !ship.ruralSurcharge) {
     shipEl.textContent = 'FREE';
   } else if (ship.freeShipping && ship.ruralSurcharge > 0) {
-    shipEl.textContent = '$' + ship.shipping + ' (rural only)';
+    shipEl.textContent = fmtMoney(ship.exclShipping) + ' (rural only)';
   } else {
-    shipEl.textContent = '$' + ship.shipping;
+    shipEl.textContent = fmtMoney(ship.exclShipping);
   }
 
   const bd = document.getElementById('shipping-breakdown');
   if (bd) {
     if (ship.rural && ship.ruralSurcharge > 0) {
-      const basePart = ship.freeShipping
-        ? 'Base free'
-        : ('Base $' + ship.baseShipping);
-      bd.textContent = basePart + ' + rural $' + ship.ruralSurcharge;
+      const basePart = ship.freeShipping ? 'Base free' : ('Base ' + fmtMoney(ship.baseShipping));
+      bd.textContent = basePart + ' + rural ' + fmtMoney(ship.ruralSurcharge) + ' (excl. GST)';
       bd.classList.remove('hidden');
     } else {
       bd.textContent = '';
@@ -369,14 +425,37 @@ function updateShippingTotals() {
   document.getElementById('shipping-weight').textContent = ship.weightGrams
     ? `Est. parcel weight: ~${ship.weightGrams} g (${ship.weightKg} kg)`
     : '';
-  document.getElementById('cart-total').textContent = '$' + ship.total;
-  const form = document.getElementById('order-form');
-  if (form) {
-    form.dataset.total = String(ship.total);
-    form.dataset.subtotal = String(ship.subtotal);
-    form.dataset.shipping = String(ship.shipping);
-    form.dataset.deliveryType = ship.deliveryType || 'standard';
+
+  const gstEl = document.getElementById('cart-gst');
+  if (gstEl) gstEl.textContent = fmtMoney(ship.gst);
+  document.getElementById('cart-total').textContent = fmtMoney(ship.totalIncl);
+
+  const payDel = document.getElementById('pay-delivery-preview');
+  if (payDel) {
+    payDel.textContent = ship.rural
+      ? ('Rural' + (deliveryReason ? ' · ' + deliveryReason : ''))
+      : 'Standard';
   }
+  const payAddr = document.getElementById('pay-address-preview');
+  if (payAddr) {
+    const a = document.getElementById('order-address')?.value.trim() || '—';
+    payAddr.textContent = a;
+  }
+}
+
+function setCheckoutStep(step) {
+  checkoutStep = step;
+  document.querySelectorAll('[data-step-panel]').forEach((panel) => {
+    const n = parseInt(panel.getAttribute('data-step-panel'), 10);
+    panel.classList.toggle('hidden', n !== step);
+  });
+  document.querySelectorAll('[data-goto-step]').forEach((btn) => {
+    const n = parseInt(btn.getAttribute('data-goto-step'), 10);
+    btn.classList.toggle('is-active', n === step);
+    btn.classList.toggle('is-done', n < step);
+  });
+  updateShippingTotals();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderCart() {
@@ -385,6 +464,8 @@ function renderCart() {
   const items = document.getElementById('cart-items');
   const summary = document.getElementById('cart-summary');
   const success = document.getElementById('order-success');
+  const steps = document.getElementById('checkout-steps');
+  const flow = document.getElementById('cart-flow');
 
   if (success && !success.classList.contains('hidden')) return;
 
@@ -392,6 +473,8 @@ function renderCart() {
     empty.classList.remove('hidden');
     items.innerHTML = '';
     summary.classList.add('hidden');
+    steps?.classList.add('hidden');
+    flow?.classList.add('hidden');
     lastShip = null;
     if (typeof updateCartCount === 'function') updateCartCount();
     return;
@@ -399,21 +482,17 @@ function renderCart() {
 
   empty.classList.add('hidden');
   summary.classList.remove('hidden');
+  steps?.classList.remove('hidden');
+  flow?.classList.remove('hidden');
 
-  let subtotal = 0;
   items.innerHTML = cart.map((item, i) => {
-    subtotal += item.price * (item.qty || 1);
     const chars = String(item.chars || '').toUpperCase().replace(/[^0-9A-Z]/g, '') || '—';
     const charLen = chars === '—' ? 0 : chars.length;
     const sizeClass = charLen >= 5 ? 'chars-5plus' : (charLen >= 4 ? 'chars-4' : '');
-    const safeChars = chars
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    const typeLabel = String(item.type || 'Item')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;');
+    const safeChars = chars.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const typeLabel = String(item.type || 'Item').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const detail = [item.size, item.mount].filter(Boolean).join(' · ');
+    const line = money(item.price * (item.qty || 1));
     return `
     <div class="c-item rounded-sm overflow-hidden">
       <div class="cart-preview-stage flex items-center justify-center px-4 py-5 sm:px-6 sm:py-7 overflow-x-auto">
@@ -426,14 +505,14 @@ function renderCart() {
             <span class="text-white font-semibold tracking-wider">${safeChars}</span>
             ${detail ? ' · ' + detail : ''}${(item.qty && item.qty > 1) ? ' · ×' + item.qty : ''}
           </p>
-          <p class="text-corten-400 font-bold text-xl mt-2">$${item.price}${(item.qty && item.qty > 1) ? ' each' : ''}</p>
+          <p class="text-corten-400 font-bold text-xl mt-2">${fmtMoney(line)} <span class="text-xs font-normal text-gray-500">excl. GST</span></p>
         </div>
         <button type="button" data-remove="${i}" class="remove-btn text-sm text-gray-400 hover:text-red-400 shrink-0 px-2 py-1">Remove</button>
       </div>
     </div>`;
   }).join('');
 
-  items.querySelectorAll('.remove-btn').forEach(btn => {
+  items.querySelectorAll('.remove-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.remove, 10);
       const next = (typeof getCart === 'function' ? getCart() : []).slice();
@@ -453,7 +532,6 @@ function getOrderPayload() {
   const subtotal = cart.reduce((s, i) => s + i.price * (i.qty || 1), 0);
   const ship = computeShip(cart, subtotal);
   lastShip = ship;
-  const rural = getRural();
   return {
     name: document.getElementById('order-name').value.trim(),
     email: document.getElementById('order-email').value.trim(),
@@ -461,24 +539,34 @@ function getOrderPayload() {
     address: document.getElementById('order-address').value.trim(),
     notes: document.getElementById('order-notes').value.trim(),
     items: cart,
-    subtotal: ship.subtotal,
-    shipping: ship.shipping,
+    subtotal: ship.exclSubtotal,
+    shipping: ship.exclShipping,
     shippingLabel: ship.label,
     weightKg: ship.weightKg,
     freeShipping: !!ship.freeShipping,
-    deliveryType: rural ? 'rural' : 'standard',
+    deliveryType: ship.rural ? 'rural' : 'standard',
     ruralSurcharge: ship.ruralSurcharge || 0,
-    total: ship.total,
+    gst: ship.gst,
+    gstRate: GST_RATE,
+    totalExcl: ship.totalExcl,
+    total: ship.totalIncl,
+    totalIncl: ship.totalIncl,
   };
 }
 
-function validateOrderForm(payload, requireName) {
-  if (!payload.items.length) return 'Your cart is empty.';
-  if (!payload.email) return 'Email is required.';
-  if (requireName && !payload.name) return 'Name is required.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return 'Enter a valid email.';
-  if (!payload.address || payload.address.length < 5) {
-    return 'Please enter your delivery address (type and select from the list if possible).';
+function validateDetails() {
+  const name = document.getElementById('order-name').value.trim();
+  const email = document.getElementById('order-email').value.trim();
+  if (!name) return 'Name is required.';
+  if (!email) return 'Email is required.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email.';
+  return null;
+}
+
+function validateShipping() {
+  const address = document.getElementById('order-address').value.trim();
+  if (!address || address.length < 5) {
+    return 'Please type and select your NZ delivery address from the dropdown.';
   }
   return null;
 }
@@ -489,20 +577,77 @@ document.getElementById('clear-cart')?.addEventListener('click', () => {
   renderCart();
 });
 
+document.getElementById('btn-to-step-2')?.addEventListener('click', () => {
+  const err = validateDetails();
+  const el = document.getElementById('step1-error');
+  if (err) {
+    el.textContent = err;
+    el.classList.remove('hidden');
+    return;
+  }
+  el.classList.add('hidden');
+  setCheckoutStep(2);
+});
+
+document.getElementById('btn-back-step-1')?.addEventListener('click', () => setCheckoutStep(1));
+document.getElementById('btn-back-step-2')?.addEventListener('click', () => setCheckoutStep(2));
+
+document.getElementById('btn-to-step-3')?.addEventListener('click', () => {
+  const err = validateShipping();
+  const el = document.getElementById('step2-error');
+  if (err) {
+    el.textContent = err;
+    el.classList.remove('hidden');
+    return;
+  }
+  // Re-detect rural from current address before payment
+  const addr = document.getElementById('order-address').value.trim();
+  if (window.NzAddress) {
+    const det = NzAddress.detectRural(addr);
+    applyDeliveryFromAddress(!!det.rural, det.reason || '');
+  }
+  el.classList.add('hidden');
+  setCheckoutStep(3);
+});
+
+document.querySelectorAll('[data-goto-step]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const n = parseInt(btn.getAttribute('data-goto-step'), 10);
+    if (n === 1) setCheckoutStep(1);
+    if (n === 2) {
+      const err = validateDetails();
+      if (err) {
+        setCheckoutStep(1);
+        const el = document.getElementById('step1-error');
+        el.textContent = err;
+        el.classList.remove('hidden');
+        return;
+      }
+      setCheckoutStep(2);
+    }
+    if (n === 3) {
+      if (validateDetails()) { setCheckoutStep(1); return; }
+      if (validateShipping()) { setCheckoutStep(2); return; }
+      setCheckoutStep(3);
+    }
+  });
+});
+
 document.getElementById('pay-stripe-btn')?.addEventListener('click', async () => {
   const errEl = document.getElementById('order-error');
   const btn = document.getElementById('pay-stripe-btn');
   const invoiceBtn = document.getElementById('place-order-btn');
   errEl.classList.add('hidden');
 
-  const payload = getOrderPayload();
-  const err = validateOrderForm(payload, false);
-  if (err) {
-    errEl.textContent = err;
+  const dErr = validateDetails();
+  const sErr = validateShipping();
+  if (dErr || sErr) {
+    errEl.textContent = dErr || sErr;
     errEl.classList.remove('hidden');
     return;
   }
 
+  const payload = getOrderPayload();
   btn.disabled = true;
   if (invoiceBtn) invoiceBtn.disabled = true;
   btn.textContent = 'Redirecting to Stripe…';
@@ -533,14 +678,15 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
   const payBtn = document.getElementById('pay-stripe-btn');
   errEl.classList.add('hidden');
 
-  const payload = getOrderPayload();
-  const err = validateOrderForm(payload, true);
-  if (err) {
-    errEl.textContent = err;
+  const dErr = validateDetails();
+  const sErr = validateShipping();
+  if (dErr || sErr) {
+    errEl.textContent = dErr || sErr;
     errEl.classList.remove('hidden');
     return;
   }
 
+  const payload = getOrderPayload();
   btn.disabled = true;
   if (payBtn) payBtn.disabled = true;
   btn.textContent = 'Placing order…';
@@ -559,6 +705,7 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
     if (typeof updateCartCount === 'function') updateCartCount();
 
     document.getElementById('cart-flow').classList.add('hidden');
+    document.getElementById('checkout-steps')?.classList.add('hidden');
     document.getElementById('cart-empty').classList.add('hidden');
     const success = document.getElementById('order-success');
     success.classList.remove('hidden');
@@ -582,40 +729,26 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
     await CortenShipping.loadShippingConfig();
   }
 
-  // Delivery type radios
-  document.getElementById('delivery-standard')?.addEventListener('change', () => {
-    if (document.getElementById('delivery-standard').checked) setDeliveryType(false, '');
-  });
-  document.getElementById('delivery-rural')?.addEventListener('change', () => {
-    if (document.getElementById('delivery-rural').checked) setDeliveryType(true, '');
-  });
-
-  // NZ address autocomplete dropdown
   const addrInput = document.getElementById('order-address');
   const addrDrop = document.getElementById('address-dropdown');
   if (window.NzAddress && addrInput && addrDrop) {
     NzAddress.attachAutocomplete(addrInput, addrDrop, (result) => {
-      if (result.manual) {
-        // Typing manually: auto-suggest rural if RD patterns match, but don't force if already set
-        if (result.rural) setDeliveryType(true, result.reason);
-        else updateShippingTotals();
-        return;
-      }
-      // Selected from dropdown
-      setDeliveryType(!!result.rural, result.reason || '');
+      addressSelected = !result.manual;
+      // Always auto-set from detection — customer cannot choose
+      applyDeliveryFromAddress(!!result.rural, result.reason || '');
     });
-    // Also re-check rural on every input (for RD typing without blur)
     addrInput.addEventListener('input', () => {
+      addressSelected = false;
       const det = NzAddress.detectRural(addrInput.value);
-      // Only auto-switch to rural when pattern matches; don't auto-switch back to standard
-      // while user may still be typing — rural radio can be toggled manually.
-      if (det.rural && !document.getElementById('delivery-rural')?.checked) {
-        setDeliveryType(true, det.reason);
-      }
+      applyDeliveryFromAddress(!!det.rural, det.reason || '');
+    });
+    addrInput.addEventListener('change', () => {
+      const det = NzAddress.detectRural(addrInput.value);
+      applyDeliveryFromAddress(!!det.rural, det.reason || '');
     });
   }
 
-  setDeliveryType(false, '');
+  setCheckoutStep(1);
   renderCart();
 })();
 </script>

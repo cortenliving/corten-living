@@ -30,7 +30,13 @@ export async function onRequestPost(context) {
     const shippingLabel = String(body.shippingLabel || 'NZ shipping');
     const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
     const deliveryType = body.deliveryType === 'rural' ? 'rural' : 'standard';
-    const total = Number(body.total) || (subtotal + shipping);
+    const GST_RATE = 0.15;
+    let gst = Number(body.gst);
+    if (!Number.isFinite(gst) || gst < 0) {
+      gst = Math.round((subtotal + shipping) * GST_RATE * 100) / 100;
+    }
+    const totalExcl = Math.round((subtotal + shipping) * 100) / 100;
+    const total = Number(body.total) || Math.round((totalExcl + gst) * 100) / 100;
 
     if (!name || !email) {
       return json({ error: 'Name and email are required' }, 400);
@@ -64,7 +70,8 @@ export async function onRequestPost(context) {
       '',
       `Subtotal (excl. GST): $${subtotal}`,
       `${shippingLabel}: $${shipping}${shipping === 0 && body.freeShipping ? ' (free shipping threshold)' : ''}`,
-      `Total (excl. GST): $${total}`,
+      `GST (15%): $${gst}`,
+      `Total (incl. GST): $${total}`,
     ].filter(Boolean).join('\n');
 
     const customerConfirm = [
@@ -75,13 +82,12 @@ export async function onRequestPost(context) {
       'We have received:',
       lines,
       '',
-      `Subtotal: $${subtotal}`,
+      `Subtotal (excl. GST): $${subtotal}`,
       `${shippingLabel}: $${shipping}`,
       `Delivery: ${deliveryType === 'rural' ? 'Rural' : 'Standard'}`,
-      `Total (excl. GST): $${total}`,
+      `GST (15%): $${gst}`,
+      `Total (incl. GST): $${total}`,
       weightKg != null ? `Estimated parcel weight: ~${weightKg} kg` : null,
-      '',
-      'We will confirm GST and final dispatch details shortly.',
       '',
       'If you have any questions, reply to this email or call 027 383 8178.',
       '',

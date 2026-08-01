@@ -37,6 +37,22 @@ export async function onRequestPost(context) {
     const shippingLabel = String(body.shippingLabel || 'NZ shipping').slice(0, 100);
     const weightKg = body.weightKg != null ? Number(body.weightKg) : null;
     const deliveryType = body.deliveryType === 'rural' ? 'rural' : 'standard';
+    const GST_RATE = 0.15;
+    // Prefer client-calculated GST; recompute as safety
+    let subtotalExcl = 0;
+    for (const it of items) {
+      const unit = Number(it.price) || 0;
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      subtotalExcl += unit * qty;
+    }
+    subtotalExcl = Math.round(subtotalExcl * 100) / 100;
+    const excl = Math.round((subtotalExcl + shippingAmount) * 100) / 100;
+    let gstAmount = Number(body.gst);
+    if (!Number.isFinite(gstAmount) || gstAmount < 0) {
+      gstAmount = Math.round(excl * GST_RATE * 100) / 100;
+    } else {
+      gstAmount = Math.round(gstAmount * 100) / 100;
+    }
 
     if (!email) {
       return json({ error: 'Email is required for checkout' }, 400);
@@ -63,6 +79,8 @@ export async function onRequestPost(context) {
     params.set('metadata[address]', address.slice(0, 400));
     params.set('metadata[shipping]', String(shippingAmount));
     params.set('metadata[delivery_type]', deliveryType);
+    params.set('metadata[gst]', String(gstAmount));
+    params.set('metadata[subtotal_excl]', String(subtotalExcl));
     if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
     params.set('payment_intent_data[metadata][order_id]', orderId);
 
@@ -87,22 +105,37 @@ export async function onRequestPost(context) {
       params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
       params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(cents));
       params.set(`line_items[${lineIndex}][price_data][product_data][name]`, label);
-      params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Excl. GST unless stated. Corten Living, Gisborne NZ.');
+      params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Price excl. GST. Corten Living, Gisborne NZ.');
       params.set(`line_items[${lineIndex}][quantity]`, String(qty));
       lineIndex++;
     }
 
-    // Shipping as its own line item when > $0
+    // Shipping as its own line item when > $0 (excl. GST)
     if (shippingAmount > 0) {
       const shipCents = Math.round(shippingAmount * 100);
       if (shipCents > 0) {
-        const desc = weightKg != null
-          ? `Estimated parcel ~${weightKg} kg`
-          : 'Estimated shipping';
+        const desc = [
+          weightKg != null ? `Est. parcel ~${weightKg} kg` : 'Estimated shipping',
+          deliveryType === 'rural' ? 'Rural delivery' : 'Standard delivery',
+          'excl. GST',
+        ].join(' · ');
         params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
         params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(shipCents));
-        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, shippingLabel);
+        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, shippingLabel + (deliveryType === 'rural' ? ' (rural)' : ''));
         params.set(`line_items[${lineIndex}][price_data][product_data][description]`, desc);
+        params.set(`line_items[${lineIndex}][quantity]`, '1');
+        lineIndex++;
+      }
+    }
+
+    // GST 15% on products + shipping
+    if (gstAmount > 0) {
+      const gstCents = Math.round(gstAmount * 100);
+      if (gstCents > 0) {
+        params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
+        params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(gstCents));
+        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, 'GST (15%)');
+        params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'NZ GST on goods and shipping');
         params.set(`line_items[${lineIndex}][quantity]`, '1');
         lineIndex++;
       }
