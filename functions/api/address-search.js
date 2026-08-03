@@ -52,18 +52,21 @@ export async function onRequestGet(context) {
   }
 
   // 2) LINZ free addresses (physical TA addresses — may lack RD type)
-  if (env.LINZ_API_KEY && results.length < 6) {
+  let linzCount = 0;
+  if (env.LINZ_API_KEY) {
     try {
       const linz = await searchLinz(env, q);
+      linzCount = linz.length;
       results.push(...linz);
       providers.push('linz');
+      if (!linz.length) errors.push('linz: key ok but 0 matches for this query');
     } catch (e) {
-      errors.push('linz: ' + String(e.message || e));
+      errors.push('linz: ' + String(e.message || e).slice(0, 200));
     }
   }
 
-  // 3) OSM fallback
-  if (results.length < 4) {
+  // 3) OSM fallback (always fill gaps)
+  if (results.length < 8) {
     try {
       const osm = await searchOsm(q);
       results.push(...osm);
@@ -77,6 +80,8 @@ export async function onRequestGet(context) {
   return json({
     results: merged,
     providers,
+    linzCount,
+    hasLinzKey: !!env.LINZ_API_KEY,
     errors: errors.length ? errors : undefined,
     hasNzPost: !!(env.NZ_POST_CLIENT_ID && env.NZ_POST_CLIENT_SECRET) || !!env.NZ_POST_API_KEY,
   });
@@ -237,30 +242,99 @@ function normalizeNzPostResponse(data) {
 
 async function searchLinz(env, q) {
   // Layer 123113 = NZ Addresses (authoritative physical addresses from TAs)
+  // Docs: https://data.linz.govt.nz/layer/123113-nz-addresses/
   const layer = env.LINZ_ADDRESS_LAYER || 'layer-123113';
-  const safe = q.replace(/'/g, "''");
-  // Match full address contains (case-insensitive)
-  const filter = `full_address ILIKE '%${safe}%'`;
-  const u =
-    `https://data.linz.govt.nz/services;key=${encodeURIComponent(env.LINZ_API_KEY)}/wfs` +
-    `?service=WFS&version=2.0.0&request=GetFeature` +
-    `&typeNames=${encodeURIComponent(layer)}` +
-    `&outputFormat=application/json` +
-    `&count=10` +
-    `&cql_filter=${encodeURIComponent(filter)}`;
+  const key = env.LINZ_API_KEY;
+  const rawQ = String(q || '').trim();
+  if (!rawQ) return [];
 
-  const res = await fetch(u, { headers: { Accept: 'application/json' } });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.message || data.exceptions || ('LINZ HTTP ' + res.status));
+  // LINZ address text is often Title Case / mixed — try several filters
+  const safe = rawQ.replace(/'/g, "''");
+  const upper = safe.toUpperCase();
+  const tokens = upper.split(/[\s,]+/).filter((t) => t.length >= 2).slice(0, 6);
+
+  // Prefer road+number style when possible
+  const numMatch = rawQ.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+  const filters = [];
+
+  // full_address contains whole query (case-insensitive if supported)
+  filters.push(`full_address ILIKE '%${safe}%'`);
+  filters.push(`full_address LIKE '%${upper}%'`);
+  // ASCII variant used on some exports
+  filters.push(`full_address_ascii ILIKE '%${safe}%'`);
+  filters.push(`full_address_ascii LIKE '%${upper}%'`);
+
+  if (numMatch) {
+    const num = numMatch[1].replace(/'/g, "''");
+    const road = numMatch[2].replace(/'/g, "''").toUpperCase().replace(/\s+/g, ' ').trim();
+    // full_road_name is usually UPPERCASE in LDS
+    filters.push(
+      `(address_number='${num}' OR full_address_number LIKE '${num}%') AND full_road_name LIKE '%${road.split(/\s+/).slice(0, 3).join('%')}%'`
+    );
+    filters.push(`full_road_name LIKE '%${road.split(/\s+/)[0]}%' AND full_address LIKE '%${num}%'`);
   }
-  const features = data.features || [];
+
+  // Token AND match on full_address (e.g. PEEL AND GISBORNE)
+  if (tokens.length >= 2) {
+    const ands = tokens.map((t) => `full_address LIKE '%${t}%'`).join(' AND ');
+    filters.push(ands);
+  }
+
+  let features = [];
+  let lastErr = null;
+
+  for (const filter of filters) {
+    try {
+      const u =
+        `https://data.linz.govt.nz/services;key=${encodeURIComponent(key)}/wfs` +
+        `?service=WFS&version=2.0.0&request=GetFeature` +
+        `&typeNames=${encodeURIComponent(layer)}` +
+        `&outputFormat=application/json` +
+        `&count=12` +
+        `&srsName=EPSG:4326` +
+        `&cql_filter=${encodeURIComponent(filter)}`;
+
+      const res = await fetch(u, {
+        headers: { Accept: 'application/json' },
+      });
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // XML exception often returned
+        if (/Exception|exception/i.test(text)) {
+          lastErr = new Error(text.replace(/<[^>]+>/g, ' ').slice(0, 180));
+          continue;
+        }
+      }
+      if (!res.ok) {
+        lastErr = new Error(
+          data.message || data.exceptions || text.slice(0, 120) || ('LINZ HTTP ' + res.status)
+        );
+        continue;
+      }
+      const feats = data.features || [];
+      if (feats.length) {
+        features = feats;
+        break;
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (!features.length && lastErr) {
+    // Don't fail whole address search — just report
+    throw lastErr;
+  }
+
   return features.map((f) => {
     const p = f.properties || {};
     const full =
       p.full_address ||
       p.full_address_ascii ||
-      [p.address_number, p.full_road_name, p.suburb_locality, p.town_city]
+      [p.full_address_number || p.address_number, p.full_road_name, p.suburb_locality, p.town_city]
         .filter(Boolean)
         .join(' ');
     const text = String(full);
@@ -268,14 +342,20 @@ async function searchLinz(env, q) {
       /\bRD\s*\d+/i.test(text) ||
       /\brural\b/i.test(text) ||
       /\bprivate\s+bag\b/i.test(text);
+    // Rank exact-ish matches higher
+    const qU = upper.replace(/\s+/g, ' ');
+    const fU = text.toUpperCase();
+    let importance = 5; // base: linz beats osm in merge
+    if (p.address_number || p.full_address_number) importance += 1;
+    if (fU.includes(qU)) importance += 2;
     return {
       source: 'linz',
       short: full,
-      display: full,
+      display: full + (p.territorial_authority ? ` (${p.territorial_authority})` : ''),
       rural: isRural,
       reason: isRural ? 'Rural markers in LINZ address' : '',
       postcode: p.postcode || '',
-      importance: p.address_number ? 1 : 0.6,
+      importance,
       raw: p,
     };
   });
