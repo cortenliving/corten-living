@@ -2,9 +2,10 @@ import { json, handleOptions } from '../../lib/auth.js';
 import { sendPaidOrderEmails } from '../../lib/paid-order-email.js';
 
 /**
- * After Stripe Checkout success page loads:
- * 1) Ask Stripe to email the invoice/receipt to the customer
- * 2) Email shop + customer via Forminit/FormSubmit/Resend
+ * After Stripe success page:
+ * - Load session + charge receipt URL
+ * - Send Stripe invoice if present
+ * - Email shop + customer (Forminit/FormSubmit/Resend)
  */
 
 export async function onRequestOptions() {
@@ -25,7 +26,6 @@ export async function onRequestPost(context) {
       return json({ error: 'Invalid session id' }, 400);
     }
 
-    // Expand invoice + payment_intent so we can force Stripe emails
     const stripeRes = await fetch(
       `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=invoice&expand[]=payment_intent&expand[]=payment_intent.latest_charge`,
       { headers: { Authorization: `Bearer ${secret}` } }
@@ -51,25 +51,34 @@ export async function onRequestPost(context) {
       }, 400);
     }
 
-    // Force Stripe to email invoice / ensure receipt email is set
     const stripeEmail = await forceStripeCustomerEmails(secret, session);
 
-    const result = await sendPaidOrderEmails(env, session);
+    // Attach receipt URL into metadata for our email body
+    if (stripeEmail.receiptUrl && session.metadata) {
+      session.metadata = { ...session.metadata, receipt_url: stripeEmail.receiptUrl };
+    }
+
+    const result = await sendPaidOrderEmails(env, session, {
+      receiptUrl: stripeEmail.receiptUrl || null,
+    });
+
     return json({
       ok: true,
       ...result,
       stripeEmail,
+      receiptUrl: stripeEmail.receiptUrl || null,
     });
   } catch (e) {
     return json({ error: String(e.message || e) }, 500);
   }
 }
 
-/**
- * Best-effort: send invoice email + set receipt_email on PaymentIntent/Charge.
- */
 async function forceStripeCustomerEmails(secret, session) {
-  const out = { invoiceSent: false, receiptEmailSet: false, details: [] };
+  const out = {
+    invoiceSent: false,
+    receiptUrl: null,
+    details: [],
+  };
   const headers = {
     Authorization: `Bearer ${secret}`,
     'Content-Type': 'application/x-www-form-urlencoded',
@@ -81,31 +90,50 @@ async function forceStripeCustomerEmails(secret, session) {
     session.metadata?.customer_email ||
     '';
 
-  // 1) Send invoice if Checkout created one
+  // Receipt URL from charge (customer can open this even if email fails)
+  const pi = session.payment_intent;
+  const charge =
+    typeof pi === 'object' && pi?.latest_charge
+      ? typeof pi.latest_charge === 'string'
+        ? null
+        : pi.latest_charge
+      : null;
+
+  if (charge?.receipt_url) {
+    out.receiptUrl = charge.receipt_url;
+    out.details.push('Receipt link available');
+  } else if (typeof pi === 'object' && typeof pi?.latest_charge === 'string') {
+    try {
+      const chRes = await fetch(
+        `https://api.stripe.com/v1/charges/${encodeURIComponent(pi.latest_charge)}`,
+        { headers: { Authorization: `Bearer ${secret}` } }
+      );
+      const ch = await chRes.json();
+      if (ch.receipt_url) {
+        out.receiptUrl = ch.receipt_url;
+        out.details.push('Receipt link loaded from charge');
+      }
+    } catch (_) {}
+  }
+
+  // Send invoice email if Checkout created an invoice
   let invoiceId = null;
   if (typeof session.invoice === 'string') invoiceId = session.invoice;
   else if (session.invoice?.id) invoiceId = session.invoice.id;
 
   if (invoiceId) {
     try {
-      // Ensure invoice has customer_email
-      if (customerEmail) {
-        await fetch(`https://api.stripe.com/v1/invoices/${encodeURIComponent(invoiceId)}`, {
-          method: 'POST',
-          headers,
-          body: new URLSearchParams({
-            // custom fields not needed
-          }).toString(),
-        }).catch(() => {});
-      }
       const sendRes = await fetch(
         `https://api.stripe.com/v1/invoices/${encodeURIComponent(invoiceId)}/send`,
-        { method: 'POST', headers }
+        { method: 'POST', headers: { Authorization: `Bearer ${secret}` } }
       );
       const sendBody = await sendRes.json().catch(() => ({}));
       if (sendRes.ok) {
         out.invoiceSent = true;
-        out.details.push('Stripe invoice emailed to customer');
+        out.details.push('Stripe invoice emailed');
+        if (sendBody.hosted_invoice_url && !out.receiptUrl) {
+          out.receiptUrl = sendBody.hosted_invoice_url;
+        }
       } else {
         out.details.push('Invoice send: ' + (sendBody?.error?.message || sendRes.status));
       }
@@ -113,46 +141,7 @@ async function forceStripeCustomerEmails(secret, session) {
       out.details.push('Invoice send error: ' + String(e.message || e));
     }
   } else {
-    out.details.push('No invoice on session (invoice_creation may be off)');
-  }
-
-  // 2) Ensure PaymentIntent has receipt_email (helps automatic receipts)
-  let pi = session.payment_intent;
-  let piId = typeof pi === 'string' ? pi : pi?.id;
-  if (piId && customerEmail) {
-    try {
-      const piRes = await fetch(`https://api.stripe.com/v1/payment_intents/${encodeURIComponent(piId)}`, {
-        method: 'POST',
-        headers,
-        body: new URLSearchParams({ receipt_email: customerEmail }).toString(),
-      });
-      if (piRes.ok) {
-        out.receiptEmailSet = true;
-        out.details.push('PaymentIntent receipt_email set to ' + customerEmail);
-      } else {
-        const t = await piRes.json().catch(() => ({}));
-        out.details.push('PI update: ' + (t?.error?.message || piRes.status));
-      }
-    } catch (e) {
-      out.details.push('PI update error: ' + String(e.message || e));
-    }
-  }
-
-  // 3) If we have a charge id, try updating receipt_email on the charge
-  const chargeId =
-    (typeof pi === 'object' && pi?.latest_charge && (typeof pi.latest_charge === 'string' ? pi.latest_charge : pi.latest_charge?.id)) ||
-    null;
-  if (chargeId && customerEmail) {
-    try {
-      const chRes = await fetch(`https://api.stripe.com/v1/charges/${encodeURIComponent(chargeId)}`, {
-        method: 'POST',
-        headers,
-        body: new URLSearchParams({ receipt_email: customerEmail }).toString(),
-      });
-      if (chRes.ok) {
-        out.details.push('Charge receipt_email set');
-      }
-    } catch (_) {}
+    out.details.push('No invoice on this payment');
   }
 
   out.customerEmail = customerEmail || null;

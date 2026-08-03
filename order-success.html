@@ -35,12 +35,19 @@ tailwind.config = {
     <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Payment successful</p>
     <p id="order-ref" class="text-white font-medium mb-4"></p>
     <p class="text-sm text-gray-400 leading-relaxed">
-      Thanks — Stripe has confirmed your payment. We’re sending a confirmation email now.
+      Thanks — Stripe has confirmed your payment.
     </p>
     <p id="email-status" class="mt-4 text-sm text-gray-500">Sending confirmation…</p>
+    <p id="receipt-wrap" class="hidden mt-5">
+      <a id="receipt-link" href="#" target="_blank" rel="noopener"
+        class="inline-block px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">
+        View Stripe receipt
+      </a>
+      <span class="block text-xs text-gray-500 mt-2">Open this if the email hasn’t arrived yet.</span>
+    </p>
     <p class="text-xs text-gray-600 mt-4">Questions? 027 383 8178 · cortenliving@gmail.com</p>
     <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-      <a href="/house-numbers" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Order more numbers</a>
+      <a href="/house-numbers" class="px-5 py-2.5 border border-gray-600 text-gray-300 text-sm font-semibold rounded-sm hover:border-corten-500">Order more numbers</a>
       <a href="/" class="px-5 py-2.5 border border-gray-600 text-gray-300 text-sm font-semibold rounded-sm hover:border-corten-500">Home</a>
     </div>
   </div>
@@ -53,19 +60,26 @@ const order = params.get('order');
 const session = params.get('session_id');
 const el = document.getElementById('order-ref');
 const statusEl = document.getElementById('email-status');
+const receiptWrap = document.getElementById('receipt-wrap');
+const receiptLink = document.getElementById('receipt-link');
 
 if (order) el.textContent = 'Order ' + order;
 else if (session) el.textContent = 'Checkout confirmed';
 else el.textContent = 'Your order is confirmed';
 
+function showReceipt(url) {
+  if (!url) return;
+  receiptLink.href = url;
+  receiptWrap.classList.remove('hidden');
+}
+
 (async function notifyPaidOrder() {
   if (!session) {
-    statusEl.textContent = 'No session id — email may not have been triggered. Contact us if you need a receipt.';
+    statusEl.textContent = 'No session id — contact us if you need a receipt.';
     statusEl.className = 'mt-4 text-sm text-amber-400';
     return;
   }
 
-  // Retry a few times (Stripe session can lag briefly)
   let lastErr = '';
   for (let attempt = 0; attempt < 4; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
@@ -76,30 +90,22 @@ else el.textContent = 'Your order is confirmed';
         body: JSON.stringify({ sessionId: session }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && (data.emailed || data.shopNotified || data.stripeEmail?.invoiceSent)) {
+
+      if (data.receiptUrl) showReceipt(data.receiptUrl);
+
+      if (res.ok) {
         const bits = [];
-        if (data.shopNotified || (data.providers && data.providers.includes('forminit-shop'))) {
-          bits.push('Shop notified at cortenliving@gmail.com');
-        }
-        if (data.stripeEmail?.invoiceSent) {
-          bits.push('Stripe invoice emailed to ' + (data.customer || 'customer'));
-        }
-        if (data.emailed && data.customer) {
-          bits.push('Confirmation attempted to ' + data.customer);
-        }
+        if (data.shopNotified) bits.push('We have been notified of your order');
+        if (data.stripeEmail?.invoiceSent) bits.push('Stripe invoice emailed');
+        if (data.customerEmailed) bits.push('Confirmation emailed to ' + (data.customer || 'you'));
+        else if (data.customer) bits.push('If no email arrives, use the receipt button below');
         if (data.warning) bits.push(data.warning);
-        if (data.stripeEmail?.details?.length) {
-          bits.push(data.stripeEmail.details.join(' · '));
-        }
-        statusEl.textContent = bits.join(' — ') || 'Notifications sent.';
-        statusEl.className = data.warning || !data.stripeEmail?.invoiceSent
-          ? 'mt-4 text-sm text-amber-300'
-          : 'mt-4 text-sm text-green-400';
+
+        statusEl.textContent = bits.join('. ') || 'Order recorded.';
+        statusEl.className = (data.customerEmailed || data.receiptUrl)
+          ? 'mt-4 text-sm text-green-400'
+          : 'mt-4 text-sm text-amber-300';
         return;
-      }
-      if (res.ok && data.emailed === false) {
-        lastErr = data.warning || data.error || 'Email service did not send';
-        continue;
       }
       lastErr = data.error || data.warning || ('HTTP ' + res.status);
     } catch (e) {
@@ -108,8 +114,9 @@ else el.textContent = 'Your order is confirmed';
   }
 
   statusEl.innerHTML =
-    'Could not send confirmation automatically. ' +
-    'Please check spam, or email <a class="text-corten-400 underline" href="mailto:cortenliving@gmail.com">cortenliving@gmail.com</a> with your order ref. ' +
+    'Could not finish automatic emails. Email us at ' +
+    '<a class="text-corten-400 underline" href="mailto:cortenliving@gmail.com">cortenliving@gmail.com</a> ' +
+    'with your order number.' +
     (lastErr ? '<span class="block mt-1 text-xs text-gray-600">' + lastErr + '</span>' : '');
   statusEl.className = 'mt-4 text-sm text-amber-400';
 })();

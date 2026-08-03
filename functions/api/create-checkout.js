@@ -3,11 +3,8 @@ import { notifyShopCheckoutStarted } from '../../lib/paid-order-email.js';
 
 /**
  * Create a Stripe Checkout Session for the cart.
- *
- * Secrets:
- *   STRIPE_SECRET_KEY  — sk_test_... or sk_live_...
- * Optional:
- *   SITE_URL
+ * Secrets: STRIPE_SECRET_KEY
+ * Optional: SITE_URL
  */
 
 export async function onRequestOptions() {
@@ -55,17 +52,13 @@ export async function onRequestPost(context) {
     }
     const totalIncl = Math.round((excl + gstAmount) * 100) / 100;
 
-    if (!email) {
-      return json({ error: 'Email is required for checkout' }, 400);
-    }
-    if (!items.length) {
-      return json({ error: 'Cart is empty' }, 400);
-    }
+    if (!email) return json({ error: 'Email is required for checkout' }, 400);
+    if (!items.length) return json({ error: 'Cart is empty' }, 400);
 
     const origin = env.SITE_URL || new URL(request.url).origin;
     const orderId = 'CL-' + Date.now().toString(36).toUpperCase();
 
-    // Create Stripe Customer first — improves receipt delivery
+    // Create Customer first (helps receipts)
     let customerId = null;
     try {
       const custParams = new URLSearchParams();
@@ -85,151 +78,138 @@ export async function onRequestPost(context) {
       if (custRes.ok && cust.id) customerId = cust.id;
     } catch (_) {}
 
-    const params = new URLSearchParams();
-    params.set('mode', 'payment');
-    params.set('success_url', `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}&order=${encodeURIComponent(orderId)}`);
-    params.set('cancel_url', `${origin}/cart?cancelled=1`);
-    params.set('billing_address_collection', 'auto');
-    params.set('phone_number_collection[enabled]', 'true');
-
-    if (customerId) {
-      params.set('customer', customerId);
-      // Update email on payment if they change it at Checkout
-      params.set('customer_update[name]', 'auto');
-      params.set('customer_update[address]', 'auto');
-    } else {
-      params.set('customer_email', email);
-    }
-
-    // Receipt email (Dashboard: Customer emails → Successful payments must be ON in same mode)
-    params.set('payment_intent_data[receipt_email]', email);
-    params.set('payment_intent_data[description]', `Corten Living order ${orderId}`);
-
-    // Generate a post-purchase Invoice (Stripe can email invoice/receipt)
-    params.set('invoice_creation[enabled]', 'true');
-    params.set('invoice_creation[invoice_data][description]', `Corten Living order ${orderId}`);
-    params.set('invoice_creation[invoice_data][metadata][order_id]', orderId);
-    params.set('invoice_creation[invoice_data][footer]', 'Thank you for your order — Corten Living, Gisborne NZ.');
-    if (name) {
-      params.set('invoice_creation[invoice_data][custom_fields][0][name]', 'Customer');
-      params.set('invoice_creation[invoice_data][custom_fields][0][value]', name.slice(0, 30));
-    }
-
-    params.set('metadata[order_id]', orderId);
-    params.set('metadata[customer_name]', name.slice(0, 400));
-    params.set('metadata[customer_email]', email.slice(0, 200));
-    params.set('metadata[phone]', phone.slice(0, 100));
-    params.set('metadata[notes]', notes.slice(0, 400));
-    params.set('metadata[address]', address.slice(0, 400));
-    params.set('metadata[shipping]', String(shippingAmount));
-    params.set('metadata[delivery_type]', deliveryType);
-    params.set('metadata[gst]', String(gstAmount));
-    params.set('metadata[subtotal_excl]', String(subtotalExcl));
-
     const itemsSummary = items.slice(0, 20).map((it) => {
       const qty = it.qty || 1;
       return `${it.type || 'Item'}: ${it.chars || ''} · ${it.size || ''} · ${it.mount || ''} ×${qty} — $${it.price || 0}`;
     }).join('\n');
-    params.set('metadata[items]', itemsSummary.slice(0, 450));
-    if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
-    params.set('payment_intent_data[metadata][order_id]', orderId);
-    params.set('payment_intent_data[metadata][customer_email]', email);
 
-    let lineIndex = 0;
-    for (const it of items) {
-      const unit = Number(it.price);
-      if (!Number.isFinite(unit) || unit < 0) {
-        return json({ error: 'Invalid item price in cart' }, 400);
+    function buildParams(withInvoice) {
+      const params = new URLSearchParams();
+      params.set('mode', 'payment');
+      params.set('success_url', `${origin}/order-success?session_id={CHECKOUT_SESSION_ID}&order=${encodeURIComponent(orderId)}`);
+      params.set('cancel_url', `${origin}/cart?cancelled=1`);
+      params.set('billing_address_collection', 'auto');
+      params.set('phone_number_collection[enabled]', 'true');
+
+      if (customerId) {
+        params.set('customer', customerId);
+        params.set('customer_update[name]', 'auto');
+        params.set('customer_update[address]', 'auto');
+      } else {
+        params.set('customer_email', email);
       }
-      const cents = Math.round(unit * 100);
-      if (cents <= 0) {
-        return json({ error: 'Item price must be greater than zero' }, 400);
+
+      // MUST be set before payment completes for Stripe receipts
+      params.set('payment_intent_data[receipt_email]', email);
+      params.set('payment_intent_data[description]', `Corten Living ${orderId}`);
+      params.set('payment_intent_data[metadata][order_id]', orderId);
+      params.set('payment_intent_data[metadata][customer_email]', email);
+
+      if (withInvoice) {
+        // Minimal invoice_creation — Stripe can email this after pay
+        params.set('invoice_creation[enabled]', 'true');
+        params.set('invoice_creation[invoice_data][description]', `Order ${orderId}`);
+        params.set('invoice_creation[invoice_data][metadata][order_id]', orderId);
       }
-      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
-      const label = [
-        it.type || 'Corten product',
-        it.chars ? String(it.chars) : '',
-        it.size || '',
-        it.mount || '',
-      ].filter(Boolean).join(' · ').slice(0, 120);
 
-      params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
-      params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(cents));
-      params.set(`line_items[${lineIndex}][price_data][product_data][name]`, label);
-      params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Price excl. GST. Corten Living, Gisborne NZ.');
-      params.set(`line_items[${lineIndex}][quantity]`, String(qty));
-      lineIndex++;
-    }
+      params.set('metadata[order_id]', orderId);
+      params.set('metadata[customer_name]', name.slice(0, 400));
+      params.set('metadata[customer_email]', email.slice(0, 200));
+      params.set('metadata[phone]', phone.slice(0, 100));
+      params.set('metadata[notes]', notes.slice(0, 400));
+      params.set('metadata[address]', address.slice(0, 400));
+      params.set('metadata[shipping]', String(shippingAmount));
+      params.set('metadata[delivery_type]', deliveryType);
+      params.set('metadata[gst]', String(gstAmount));
+      params.set('metadata[subtotal_excl]', String(subtotalExcl));
+      params.set('metadata[items]', itemsSummary.slice(0, 450));
+      if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
 
-    if (shippingAmount > 0) {
-      const shipCents = Math.round(shippingAmount * 100);
-      if (shipCents > 0) {
-        const desc = [
-          weightKg != null ? `Est. parcel ~${weightKg} kg` : 'Estimated shipping',
-          deliveryType === 'rural' ? 'Rural delivery' : 'Standard delivery',
-          'excl. GST',
-        ].join(' · ');
+      let lineIndex = 0;
+      for (const it of items) {
+        const unit = Number(it.price);
+        if (!Number.isFinite(unit) || unit < 0) throw new Error('Invalid item price in cart');
+        const cents = Math.round(unit * 100);
+        if (cents <= 0) throw new Error('Item price must be greater than zero');
+        const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+        const label = [
+          it.type || 'Corten product',
+          it.chars ? String(it.chars) : '',
+          it.size || '',
+          it.mount || '',
+        ].filter(Boolean).join(' · ').slice(0, 120);
+
         params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
-        params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(shipCents));
-        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, shippingLabel + (deliveryType === 'rural' ? ' (rural)' : ''));
-        params.set(`line_items[${lineIndex}][price_data][product_data][description]`, desc);
-        params.set(`line_items[${lineIndex}][quantity]`, '1');
+        params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(cents));
+        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, label);
+        params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'Excl. GST · Corten Living NZ');
+        params.set(`line_items[${lineIndex}][quantity]`, String(qty));
         lineIndex++;
       }
-    }
 
-    if (gstAmount > 0) {
-      const gstCents = Math.round(gstAmount * 100);
-      if (gstCents > 0) {
-        params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
-        params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(gstCents));
-        params.set(`line_items[${lineIndex}][price_data][product_data][name]`, 'GST (15%)');
-        params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'NZ GST on goods and shipping');
-        params.set(`line_items[${lineIndex}][quantity]`, '1');
-        lineIndex++;
+      if (shippingAmount > 0) {
+        const shipCents = Math.round(shippingAmount * 100);
+        if (shipCents > 0) {
+          params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
+          params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(shipCents));
+          params.set(
+            `line_items[${lineIndex}][price_data][product_data][name]`,
+            shippingLabel + (deliveryType === 'rural' ? ' (rural)' : '')
+          );
+          params.set(
+            `line_items[${lineIndex}][price_data][product_data][description]`,
+            (weightKg != null ? `~${weightKg} kg · ` : '') + 'excl. GST'
+          );
+          params.set(`line_items[${lineIndex}][quantity]`, '1');
+          lineIndex++;
+        }
       }
+
+      if (gstAmount > 0) {
+        const gstCents = Math.round(gstAmount * 100);
+        if (gstCents > 0) {
+          params.set(`line_items[${lineIndex}][price_data][currency]`, 'nzd');
+          params.set(`line_items[${lineIndex}][price_data][unit_amount]`, String(gstCents));
+          params.set(`line_items[${lineIndex}][price_data][product_data][name]`, 'GST (15%)');
+          params.set(`line_items[${lineIndex}][price_data][product_data][description]`, 'NZ GST');
+          params.set(`line_items[${lineIndex}][quantity]`, '1');
+          lineIndex++;
+        }
+      }
+
+      return params;
     }
 
-    const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    async function createSession(withInvoice) {
+      const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: buildParams(withInvoice).toString(),
+      });
+      const data = await res.json();
+      return { res, data };
+    }
 
-    const session = await stripeRes.json();
+    // Prefer invoice_creation so Stripe can email an invoice after pay
+    let { res: stripeRes, data: session } = await createSession(true);
     if (!stripeRes.ok) {
-      // Retry without invoice_creation if that feature isn't available
-      const msg = session?.error?.message || 'Stripe Checkout failed';
-      if (String(msg).toLowerCase().includes('invoice')) {
-        // strip invoice keys and retry once
-        for (const key of [...params.keys()]) {
-          if (key.startsWith('invoice_creation')) params.delete(key);
-        }
-        const retry = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${secret}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: params.toString(),
-        });
-        const session2 = await retry.json();
-        if (!retry.ok) {
-          return json({ error: session2?.error?.message || msg, stripe: session2?.error || session?.error }, 502);
-        }
-        // notify shop + return
-        await notifyShopCheckoutStarted(env, {
-          orderId, name, email, phone, address, totalIncl,
-        });
-        return json({ ok: true, orderId, url: session2.url, sessionId: session2.id });
+      const msg = String(session?.error?.message || '');
+      // Only retry without invoice if Stripe rejects invoice_creation specifically
+      if (/invoice/i.test(msg)) {
+        ({ res: stripeRes, data: session } = await createSession(false));
       }
-      return json({ error: msg, stripe: session?.error || null }, 502);
     }
 
-    // Notify shop immediately that someone started checkout
+    if (!stripeRes.ok) {
+      return json({
+        error: session?.error?.message || 'Stripe Checkout failed',
+        stripe: session?.error || null,
+      }, 502);
+    }
+
     await notifyShopCheckoutStarted(env, {
       orderId, name, email, phone, address, totalIncl,
     });
@@ -239,6 +219,7 @@ export async function onRequestPost(context) {
       orderId,
       url: session.url,
       sessionId: session.id,
+      invoiceCreation: session.invoice_creation || null,
     });
   } catch (e) {
     return json({ error: String(e.message || e) }, 500);
