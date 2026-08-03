@@ -242,43 +242,56 @@ function normalizeNzPostResponse(data) {
 
 async function searchLinz(env, q) {
   // Layer 123113 = NZ Addresses (authoritative physical addresses from TAs)
-  // Docs: https://data.linz.govt.nz/layer/123113-nz-addresses/
+  // https://data.linz.govt.nz/layer/123113-nz-addresses/
+  // Notes: full_address is Title Case ("12 Peel Street, Gisborne") — use ILIKE token AND
+  // (whole-query LIKE fails when user omits commas).
   const layer = env.LINZ_ADDRESS_LAYER || 'layer-123113';
   const key = env.LINZ_API_KEY;
   const rawQ = String(q || '').trim();
   if (!rawQ) return [];
 
-  // LINZ address text is often Title Case / mixed — try several filters
-  const safe = rawQ.replace(/'/g, "''");
-  const upper = safe.toUpperCase();
-  const tokens = upper.split(/[\s,]+/).filter((t) => t.length >= 2).slice(0, 6);
+  const esc = (s) => String(s).replace(/'/g, "''");
+  // Drop short noise words; keep numbers and meaningful tokens
+  const tokens = rawQ
+    .split(/[\s,./]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !/^(st|rd|ave|nz|new|zealand)$/i.test(t))
+    .slice(0, 6)
+    .map(esc);
 
-  // Prefer road+number style when possible
-  const numMatch = rawQ.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
   const filters = [];
 
-  // full_address contains whole query (case-insensitive if supported)
-  filters.push(`full_address ILIKE '%${safe}%'`);
-  filters.push(`full_address LIKE '%${upper}%'`);
-  // ASCII variant used on some exports
-  filters.push(`full_address_ascii ILIKE '%${safe}%'`);
-  filters.push(`full_address_ascii LIKE '%${upper}%'`);
-
-  if (numMatch) {
-    const num = numMatch[1].replace(/'/g, "''");
-    const road = numMatch[2].replace(/'/g, "''").toUpperCase().replace(/\s+/g, ' ').trim();
-    // full_road_name is usually UPPERCASE in LDS
-    filters.push(
-      `(address_number='${num}' OR full_address_number LIKE '${num}%') AND full_road_name LIKE '%${road.split(/\s+/).slice(0, 3).join('%')}%'`
-    );
-    filters.push(`full_road_name LIKE '%${road.split(/\s+/)[0]}%' AND full_address LIKE '%${num}%'`);
-  }
-
-  // Token AND match on full_address (e.g. PEEL AND GISBORNE)
+  // Best: each significant token must appear (case-insensitive)
   if (tokens.length >= 2) {
-    const ands = tokens.map((t) => `full_address LIKE '%${t}%'`).join(' AND ');
-    filters.push(ands);
+    filters.push(tokens.map((t) => `full_address ILIKE '%${t}%'`).join(' AND '));
+    filters.push(tokens.map((t) => `full_address_ascii ILIKE '%${t}%'`).join(' AND '));
   }
+
+  // Number + road name
+  const numMatch = rawQ.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+  if (numMatch) {
+    const num = esc(numMatch[1]);
+    const roadBits = numMatch[2]
+      .split(/[\s,]+/)
+      .filter((t) => t.length >= 2 && !/^(st|street|rd|road|ave|avenue)$/i.test(t))
+      .slice(0, 3)
+      .map(esc);
+    if (roadBits.length) {
+      filters.push(
+        `(full_address_number ILIKE '${num}%' OR address_number=${parseInt(num, 10) || 0}) AND ` +
+          roadBits.map((t) => `full_road_name ILIKE '%${t}%'`).join(' AND ')
+      );
+    }
+  }
+
+  // Single-token / short query
+  if (tokens.length === 1) {
+    filters.push(`full_address ILIKE '%${tokens[0]}%'`);
+    filters.push(`full_road_name ILIKE '%${tokens[0]}%'`);
+  }
+
+  // Whole string as last resort (works if user types exact LINZ formatting)
+  filters.push(`full_address ILIKE '%${esc(rawQ)}%'`);
 
   let features = [];
   let lastErr = null;
@@ -289,20 +302,16 @@ async function searchLinz(env, q) {
         `https://data.linz.govt.nz/services;key=${encodeURIComponent(key)}/wfs` +
         `?service=WFS&version=2.0.0&request=GetFeature` +
         `&typeNames=${encodeURIComponent(layer)}` +
-        `&outputFormat=application/json` +
+        `&outputFormat=json` +
         `&count=12` +
-        `&srsName=EPSG:4326` +
         `&cql_filter=${encodeURIComponent(filter)}`;
 
-      const res = await fetch(u, {
-        headers: { Accept: 'application/json' },
-      });
+      const res = await fetch(u, { headers: { Accept: 'application/json' } });
       const text = await res.text();
       let data = {};
       try {
         data = JSON.parse(text);
       } catch {
-        // XML exception often returned
         if (/Exception|exception/i.test(text)) {
           lastErr = new Error(text.replace(/<[^>]+>/g, ' ').slice(0, 180));
           continue;
@@ -324,10 +333,7 @@ async function searchLinz(env, q) {
     }
   }
 
-  if (!features.length && lastErr) {
-    // Don't fail whole address search — just report
-    throw lastErr;
-  }
+  if (!features.length && lastErr) throw lastErr;
 
   return features.map((f) => {
     const p = f.properties || {};
@@ -342,16 +348,16 @@ async function searchLinz(env, q) {
       /\bRD\s*\d+/i.test(text) ||
       /\brural\b/i.test(text) ||
       /\bprivate\s+bag\b/i.test(text);
-    // Rank exact-ish matches higher
-    const qU = upper.replace(/\s+/g, ' ');
+    const qU = rawQ.toUpperCase().replace(/[\s,]+/g, ' ');
     const fU = text.toUpperCase();
-    let importance = 5; // base: linz beats osm in merge
+    let importance = 8; // prefer LINZ over OSM
     if (p.address_number || p.full_address_number) importance += 1;
-    if (fU.includes(qU)) importance += 2;
+    if (tokens.every((t) => fU.includes(String(t).toUpperCase()))) importance += 2;
+    if (fU.includes(qU)) importance += 1;
     return {
       source: 'linz',
       short: full,
-      display: full + (p.territorial_authority ? ` (${p.territorial_authority})` : ''),
+      display: full + (p.territorial_authority ? ` · ${p.territorial_authority}` : ''),
       rural: isRural,
       reason: isRural ? 'Rural markers in LINZ address' : '',
       postcode: p.postcode || '',
