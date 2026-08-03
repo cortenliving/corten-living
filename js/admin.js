@@ -747,19 +747,23 @@ function defaultShippingConfig() {
  freeShippingOver: null,
  ruralSurcharge: 12,
  ruralLabel: 'Rural delivery surcharge',
- defaultItemGrams: 500,
+ defaultItemGrams: 1200,
+ cortenKgPerM2: 23.55,
+ silhouetteFill: 0.32,
+ packagingGrams: 200,
  houseNumbers: {
- baseGramsPerChar: 20,
- gramsPerMmPerChar: 0.12,
- holesExtraGramsPerChar: 2,
+ baseGramsPerChar: 80,
+ gramsPerMmPerChar: 0.45,
+ holesExtraGramsPerChar: 5,
  },
  tiers: [
- { maxWeightKg: 0.3, price: 9 },
- { maxWeightKg: 0.6, price: 12 },
- { maxWeightKg: 1.0, price: 16 },
- { maxWeightKg: 2.0, price: 24 },
- { maxWeightKg: 5.0, price: 35 },
- { maxWeightKg: 999, price: 55 },
+ { maxWeightKg: 0.5, price: 9 },
+ { maxWeightKg: 1.0, price: 12 },
+ { maxWeightKg: 2.0, price: 16 },
+ { maxWeightKg: 5.0, price: 24 },
+ { maxWeightKg: 10.0, price: 35 },
+ { maxWeightKg: 20.0, price: 45 },
+ { maxWeightKg: 999, price: 65 },
  ],
  };
 }
@@ -780,6 +784,7 @@ async function loadShippingAdmin() {
 
 function fillShippingForm(cfg) {
  const c = cfg || defaultShippingConfig();
+ const d = defaultShippingConfig();
  const en = document.getElementById('ship-enabled');
  if (en) en.checked = c.enabled !== false;
  const lab = document.getElementById('ship-label');
@@ -787,18 +792,24 @@ function fillShippingForm(cfg) {
  const free = document.getElementById('ship-free-over');
  if (free) free.value = c.freeShippingOver != null && c.freeShippingOver !== '' ? c.freeShippingOver : '';
  const defG = document.getElementById('ship-default-g');
- if (defG) defG.value = c.defaultItemGrams ?? 500;
+ if (defG) defG.value = c.defaultItemGrams ?? d.defaultItemGrams;
  const ruralS = document.getElementById('ship-rural-surcharge');
  if (ruralS) ruralS.value = c.ruralSurcharge != null ? c.ruralSurcharge : 12;
  const ruralL = document.getElementById('ship-rural-label');
  if (ruralL) ruralL.value = c.ruralLabel || 'Rural delivery surcharge';
+ const kg = document.getElementById('ship-corten-kg');
+ if (kg) kg.value = c.cortenKgPerM2 != null ? c.cortenKgPerM2 : d.cortenKgPerM2;
+ const fill = document.getElementById('ship-fill');
+ if (fill) fill.value = c.silhouetteFill != null ? c.silhouetteFill : d.silhouetteFill;
+ const pack = document.getElementById('ship-pack-g');
+ if (pack) pack.value = c.packagingGrams != null ? c.packagingGrams : d.packagingGrams;
  const hn = c.houseNumbers || {};
  const b = document.getElementById('ship-hn-base');
  const m = document.getElementById('ship-hn-mm');
  const h = document.getElementById('ship-hn-holes');
- if (b) b.value = hn.baseGramsPerChar ?? 20;
- if (m) m.value = hn.gramsPerMmPerChar ?? 0.12;
- if (h) h.value = hn.holesExtraGramsPerChar ?? 2;
+ if (b) b.value = hn.baseGramsPerChar ?? d.houseNumbers.baseGramsPerChar;
+ if (m) m.value = hn.gramsPerMmPerChar ?? d.houseNumbers.gramsPerMmPerChar;
+ if (h) h.value = hn.holesExtraGramsPerChar ?? d.houseNumbers.holesExtraGramsPerChar;
  renderShipTiers(c.tiers || []);
  updateShipExamples();
 }
@@ -854,17 +865,22 @@ function collectShipTiers() {
 
 function collectShippingConfig() {
  const freeRaw = document.getElementById('ship-free-over')?.value;
+ const d = defaultShippingConfig();
  return {
  enabled: !!document.getElementById('ship-enabled')?.checked,
  label: document.getElementById('ship-label')?.value.trim() || 'NZ shipping',
  freeShippingOver: freeRaw === '' || freeRaw == null ? null : parseFloat(freeRaw),
  ruralSurcharge: parseFloat(document.getElementById('ship-rural-surcharge')?.value) || 0,
  ruralLabel: document.getElementById('ship-rural-label')?.value.trim() || 'Rural delivery surcharge',
- defaultItemGrams: parseFloat(document.getElementById('ship-default-g')?.value) || 500,
+ defaultItemGrams: parseFloat(document.getElementById('ship-default-g')?.value) || d.defaultItemGrams,
+ cortenKgPerM2: parseFloat(document.getElementById('ship-corten-kg')?.value) || d.cortenKgPerM2,
+ silhouetteFill: parseFloat(document.getElementById('ship-fill')?.value) || d.silhouetteFill,
+ packagingGrams: parseFloat(document.getElementById('ship-pack-g')?.value) || 0,
  houseNumbers: {
  baseGramsPerChar: parseFloat(document.getElementById('ship-hn-base')?.value) || 0,
  gramsPerMmPerChar: parseFloat(document.getElementById('ship-hn-mm')?.value) || 0,
  holesExtraGramsPerChar: parseFloat(document.getElementById('ship-hn-holes')?.value) || 0,
+ note: 'Weight uses 3mm Corten silhouette estimate + formula. Tweak in Admin → Shipping.',
  },
  tiers: collectShipTiers(),
  };
@@ -872,15 +888,33 @@ function collectShippingConfig() {
 
 function exampleWeight(heightMm, chars, holes) {
  const cfg = collectShippingConfig();
+ let grams;
+ if (typeof CortenShipping !== 'undefined' && CortenShipping.itemWeightGrams) {
+ grams = CortenShipping.itemWeightGrams(
+ {
+ productId: 'house-numbers',
+ type: 'House Numbers',
+ size: String(heightMm) + ' mm',
+ chars: 'X'.repeat(chars),
+ charCount: chars,
+ mount: holes ? 'holes' : 'clean',
+ qty: 1,
+ },
+ cfg
+ );
+ } else {
  const hn = cfg.houseNumbers;
  let per = hn.baseGramsPerChar + heightMm * hn.gramsPerMmPerChar;
  if (holes) per += hn.holesExtraGramsPerChar;
- const grams = Math.round(per * chars);
- // find tier
+ grams = Math.round(per * chars);
+ }
  const kg = grams / 1000;
  let price = 0;
  for (const t of cfg.tiers) {
- if (kg <= t.maxWeightKg) { price = t.price; break; }
+ if (kg <= t.maxWeightKg) {
+ price = t.price;
+ break;
+ }
  }
  return { grams, price };
 }
@@ -1077,7 +1111,19 @@ document.addEventListener('DOMContentLoaded', async () => {
  updateShipExamples();
  });
  document.getElementById('btn-save-shipping')?.addEventListener('click', () => saveShippingLive());
- ['ship-hn-base', 'ship-hn-mm', 'ship-hn-holes', 'ship-enabled', 'ship-label', 'ship-free-over', 'ship-default-g'].forEach((id) => {
+ [
+ 'ship-hn-base',
+ 'ship-hn-mm',
+ 'ship-hn-holes',
+ 'ship-corten-kg',
+ 'ship-fill',
+ 'ship-pack-g',
+ 'ship-enabled',
+ 'ship-label',
+ 'ship-free-over',
+ 'ship-default-g',
+ 'ship-rural-surcharge',
+ ].forEach((id) => {
  document.getElementById(id)?.addEventListener('input', updateShipExamples);
  document.getElementById(id)?.addEventListener('change', updateShipExamples);
  });

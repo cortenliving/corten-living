@@ -11,18 +11,22 @@ const DEFAULT_CONFIG = {
   ruralSurcharge: 12,
   ruralLabel: 'Rural delivery surcharge',
   houseNumbers: {
-    baseGramsPerChar: 20,
-    gramsPerMmPerChar: 0.12,
-    holesExtraGramsPerChar: 2,
+    baseGramsPerChar: 80,
+    gramsPerMmPerChar: 0.45,
+    holesExtraGramsPerChar: 5,
   },
-  defaultItemGrams: 500,
+  defaultItemGrams: 1200,
+  cortenKgPerM2: 23.55,
+  silhouetteFill: 0.32,
+  packagingGrams: 200,
   tiers: [
-    { maxWeightKg: 0.3, price: 9 },
-    { maxWeightKg: 0.6, price: 12 },
-    { maxWeightKg: 1.0, price: 16 },
-    { maxWeightKg: 2.0, price: 24 },
-    { maxWeightKg: 5.0, price: 35 },
-    { maxWeightKg: 999, price: 55 },
+    { maxWeightKg: 0.5, price: 9 },
+    { maxWeightKg: 1.0, price: 12 },
+    { maxWeightKg: 2.0, price: 16 },
+    { maxWeightKg: 5.0, price: 24 },
+    { maxWeightKg: 10.0, price: 35 },
+    { maxWeightKg: 20.0, price: 45 },
+    { maxWeightKg: 999, price: 65 },
   ],
 };
 
@@ -74,6 +78,19 @@ export async function onRequestPut(context) {
     }
     if (config.ruralSurcharge != null) {
       config.ruralSurcharge = Number(config.ruralSurcharge) || 0;
+    }
+    if (config.defaultItemGrams != null) {
+      config.defaultItemGrams = Number(config.defaultItemGrams) || DEFAULT_CONFIG.defaultItemGrams;
+    }
+    if (config.cortenKgPerM2 != null) {
+      config.cortenKgPerM2 = Number(config.cortenKgPerM2) || DEFAULT_CONFIG.cortenKgPerM2;
+    }
+    if (config.silhouetteFill != null) {
+      const f = Number(config.silhouetteFill);
+      config.silhouetteFill = Number.isFinite(f) ? Math.min(1, Math.max(0, f)) : DEFAULT_CONFIG.silhouetteFill;
+    }
+    if (config.packagingGrams != null) {
+      config.packagingGrams = Number(config.packagingGrams) || 0;
     }
     config.updatedAt = new Date().toISOString();
     await putJsonFile(context.env, FILE, config, 'Admin: update shipping rates');

@@ -213,8 +213,9 @@ tailwind.config = {
  <div data-tab-panel="shipping" class="hidden">
  <h1 class="font-display text-2xl font-bold text-white mb-2">Shipping rates</h1>
  <p class="text-sm text-gray-500 mb-6 max-w-2xl">
- Cart estimates parcel <strong class="text-gray-300">weight from product size</strong> (house numbers: height × characters),
- then picks a <strong class="text-gray-300">price tier</strong>. Save publishes live for the cart and Stripe.
+ Cart estimates parcel <strong class="text-gray-300">weight from product size</strong> using 3&nbsp;mm Corten
+ plate density × silhouette fill + packaging, then picks a <strong class="text-gray-300">price tier</strong>.
+ Save publishes live for the cart and Stripe.
  </p>
  <div class="grid lg:grid-cols-2 gap-6">
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
@@ -233,13 +234,13 @@ tailwind.config = {
  </div>
  <div>
  <label class="block text-xs text-gray-400 mb-1">Default weight for other products (grams each)</label>
- <input id="ship-default-g" type="number" min="1" step="1" value="500" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
+ <input id="ship-default-g" type="number" min="1" step="1" value="1200" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm">
  </div>
  <div class="pt-2 border-t border-gray-800">
  <h3 class="text-sm text-white font-medium mb-2">Rural delivery</h3>
  <p class="text-xs text-gray-500 mb-3 leading-relaxed">
- Cart lets customers pick <strong class="text-gray-400">Standard</strong> or <strong class="text-gray-400">Rural</strong>.
- Rural addresses (RD, Private Bag, etc.) cost more by this surcharge.
+ Cart auto-detects rural from the address (with an override tick).
+ Rural addresses cost more by this surcharge on top of the weight tier.
  </p>
  <div>
  <label class="block text-xs text-gray-400 mb-1">Rural surcharge ($ added on top of weight tier)</label>
@@ -252,26 +253,48 @@ tailwind.config = {
  </div>
  </div>
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
- <h2 class="font-display text-lg text-white">House number weight formula</h2>
+ <h2 class="font-display text-lg text-white">Corten plate weight</h2>
  <p class="text-xs text-gray-500 leading-relaxed">
- Weight (g) ≈ <code class="text-corten-500">characters × (base + height_mm × per_mm)</code> + holes extra per char.
+ Used for sculptures, signage and house numbers (bounding box × fill).
+ Solid 3&nbsp;mm Corten is about <strong class="text-gray-400">23.55 kg/m²</strong>; fill is how much of the box is steel (cut-outs lower it).
+ </p>
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">Corten kg / m² (solid plate)</label>
+ <input id="ship-corten-kg" type="number" step="0.01" min="0" value="23.55" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">Silhouette fill (0–1)</label>
+ <input id="ship-fill" type="number" step="0.01" min="0" max="1" value="0.32" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1">Packaging (g / item)</label>
+ <input id="ship-pack-g" type="number" step="1" min="0" value="200" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
+ </div>
+ <div class="pt-3 border-t border-gray-800">
+ <h3 class="text-sm text-white font-medium mb-2">House number formula (floor)</h3>
+ <p class="text-xs text-gray-500 leading-relaxed mb-3">
+ Cart uses the <strong class="text-gray-400">heavier</strong> of silhouette estimate vs this formula, so rates stay safe.
+ Formula: <code class="text-corten-500">chars × (base + height_mm × per_mm)</code> + holes extra.
  </p>
  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
  <div>
  <label class="block text-[10px] text-gray-500 mb-1">Base g / char</label>
- <input id="ship-hn-base" type="number" step="0.1" min="0" value="20" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ <input id="ship-hn-base" type="number" step="0.1" min="0" value="80" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
  </div>
  <div>
  <label class="block text-[10px] text-gray-500 mb-1">g per mm / char</label>
- <input id="ship-hn-mm" type="number" step="0.01" min="0" value="0.12" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ <input id="ship-hn-mm" type="number" step="0.01" min="0" value="0.45" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
  </div>
  <div>
  <label class="block text-[10px] text-gray-500 mb-1">Holes extra g / char</label>
- <input id="ship-hn-holes" type="number" step="0.1" min="0" value="2" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ <input id="ship-hn-holes" type="number" step="0.1" min="0" value="5" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-2 py-2 text-white text-sm">
+ </div>
  </div>
  </div>
  <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 text-xs text-gray-400 space-y-1">
- <p class="text-corten-400 font-medium">Live examples</p>
+ <p class="text-corten-400 font-medium">Live examples (same logic as cart)</p>
  <p id="ship-example-100">100 mm × 3 chars clean: —</p>
  <p id="ship-example-200">200 mm × 3 chars clean: —</p>
  <p id="ship-example-300">300 mm × 3 chars holes: —</p>
@@ -389,6 +412,7 @@ tailwind.config = {
 </div>
 
 <script src="/js/products.js"></script>
+<script src="/js/shipping.js"></script>
 <script src="/js/admin.js"></script>
 </body>
 </html>
