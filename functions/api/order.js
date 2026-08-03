@@ -159,12 +159,25 @@ async function sendResend(apiKey, payload) {
 async function postForminit(env, data) {
   const url = env.ORDER_FORMINIT_URL || 'https://forminit.com/f/mwpwiikqjzy';
   const fd = new FormData();
-  fd.append('fi-sender-fullName', data.name);
-  fd.append('fi-sender-email', data.email);
-  if (data.phone) fd.append('fi-text-phone', data.phone);
-  fd.append('fi-text-message', data.message);
-  const res = await fetch(url, { method: 'POST', body: fd });
-  if (!res.ok && res.status >= 400) {
-    throw new Error('Forminit ' + res.status);
+  fd.append('fi-sender-fullName', String(data.name || 'Customer').slice(0, 120));
+  fd.append('fi-sender-email', String(data.email || 'orders@corten-living.pages.dev').slice(0, 200));
+  if (data.phone) fd.append('fi-text-phone', String(data.phone).slice(0, 40));
+  const msg = data.message || '';
+  fd.append('fi-text-message', String(msg).slice(0, 8000));
+  const res = await fetch(url, {
+    method: 'POST',
+    body: fd,
+    headers: {
+      Accept: 'application/json',
+      Origin: 'https://corten-living.pages.dev',
+      Referer: 'https://corten-living.pages.dev/cart',
+    },
+  });
+  const text = await res.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  if (res.status === 429) throw new Error('Forminit rate limit — wait 30 seconds and try again');
+  if (!res.ok || (parsed && parsed.success === false)) {
+    throw new Error(parsed?.message || text.slice(0, 200) || ('Forminit ' + res.status));
   }
 }

@@ -95,15 +95,16 @@ function showReceipt(url) {
 
       if (res.ok) {
         const bits = [];
-        if (data.shopNotified) bits.push('We have been notified of your order');
+        if (data.shopNotified) bits.push('Shop notified (Forminit → cortenliving@gmail.com)');
+        else if (data.shopError || data.warning) bits.push(data.shopError || data.warning);
         if (data.stripeEmail?.invoiceSent) bits.push('Stripe invoice emailed');
-        if (data.customerEmailed) bits.push('Confirmation emailed to ' + (data.customer || 'you'));
+        if (data.customerEmailed) bits.push('Extra confirmation emailed to ' + (data.customer || 'you'));
         else if (data.customer) {
-          bits.push('Your Stripe receipt should go to ' + data.customer + ' (check spam)');
-          bits.push('Or use View Stripe receipt below');
+          bits.push('Stripe receipt email target: ' + data.customer + ' (spam folder too)');
         }
+        if (data.receiptUrl) bits.push('Use View Stripe receipt below if email is missing');
         statusEl.textContent = bits.join('. ') || 'Order recorded.';
-        statusEl.className = (data.shopNotified || data.receiptUrl)
+        statusEl.className = data.shopNotified
           ? 'mt-4 text-sm text-green-400'
           : 'mt-4 text-sm text-amber-300';
         return;
