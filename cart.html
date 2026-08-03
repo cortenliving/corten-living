@@ -103,18 +103,27 @@ tailwind.config = {
     max-height: 16rem;
     overflow-y: auto;
   }
-  .checkout-step {
-    border: 1px solid rgba(255,255,255,0.1);
+  .checkout-step .step-dot {
+    border-color: rgba(255,255,255,0.2);
     color: #9ca3af;
+    background: #1a1410;
   }
-  .checkout-step.is-active {
+  .checkout-step .step-label { color: #9ca3af; }
+  .checkout-step.is-active .step-dot {
     border-color: #e57a48;
     color: #fff;
-    background: rgba(183, 65, 14, 0.25);
+    background: linear-gradient(135deg, #b7410e, #d56f3d);
+    box-shadow: 0 0 0 4px rgba(183, 65, 14, 0.25), 0 8px 20px -6px rgba(183, 65, 14, 0.7);
   }
-  .checkout-step.is-done {
-    border-color: rgba(229, 122, 72, 0.45);
+  .checkout-step.is-active .step-label { color: #fff; }
+  .checkout-step.is-done .step-dot {
+    border-color: #e57a48;
     color: #e57a48;
+    background: rgba(183, 65, 14, 0.2);
+  }
+  .checkout-step.is-done .step-label { color: #e57a48; }
+  .step-line.is-done {
+    background: linear-gradient(90deg, #b7410e, #e57a48) !important;
   }
 </style>
 </head>
@@ -155,29 +164,33 @@ tailwind.config = {
 
 <section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
   <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-    <div class="mb-6 max-w-2xl">
+    <div class="mb-8 max-w-2xl">
       <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-2">Checkout</p>
       <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">Your <span class="text-corten-400">Cart</span></h1>
-      <p class="mt-3 text-gray-300 text-sm sm:text-base">Details → shipping address → pay. GST is added at checkout (15%).</p>
     </div>
 
-    <!-- Steps (Duroweld-style) -->
-    <div id="checkout-steps" class="hidden mb-8 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-      <button type="button" data-goto-step="1" class="checkout-step is-active rounded-sm px-3 py-3 text-left">
-        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 1</span>
-        <span class="font-display text-sm sm:text-base">Details</span>
-      </button>
-      <button type="button" data-goto-step="2" class="checkout-step rounded-sm px-3 py-3 text-left">
-        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 2</span>
-        <span class="font-display text-sm sm:text-base">Shipping</span>
-      </button>
-      <button type="button" data-goto-step="3" class="checkout-step rounded-sm px-3 py-3 text-left">
-        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 3</span>
-        <span class="font-display text-sm sm:text-base">Payment</span>
-      </button>
-      <div class="checkout-step rounded-sm px-3 py-3 text-left opacity-60 pointer-events-none">
-        <span class="block text-[10px] uppercase tracking-widest opacity-80">Step 4</span>
-        <span class="font-display text-sm sm:text-base">Completed</span>
+    <!-- Checkout steps -->
+    <div id="checkout-steps" class="hidden mb-10">
+      <div class="flex items-center justify-between gap-1 sm:gap-2 max-w-3xl">
+        <button type="button" data-goto-step="1" class="checkout-step is-active group flex-1 flex flex-col items-center gap-2 min-w-0">
+          <span class="step-dot w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-display text-sm font-bold border-2 transition">1</span>
+          <span class="step-label text-[11px] sm:text-sm font-medium tracking-wide">Details</span>
+        </button>
+        <div class="step-line flex-1 h-0.5 mb-6 sm:mb-7 rounded-full bg-white/10 min-w-[0.75rem]" data-line-after="1"></div>
+        <button type="button" data-goto-step="2" class="checkout-step group flex-1 flex flex-col items-center gap-2 min-w-0">
+          <span class="step-dot w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-display text-sm font-bold border-2 transition">2</span>
+          <span class="step-label text-[11px] sm:text-sm font-medium tracking-wide">Shipping</span>
+        </button>
+        <div class="step-line flex-1 h-0.5 mb-6 sm:mb-7 rounded-full bg-white/10 min-w-[0.75rem]" data-line-after="2"></div>
+        <button type="button" data-goto-step="3" class="checkout-step group flex-1 flex flex-col items-center gap-2 min-w-0">
+          <span class="step-dot w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-display text-sm font-bold border-2 transition">3</span>
+          <span class="step-label text-[11px] sm:text-sm font-medium tracking-wide">Payment</span>
+        </button>
+        <div class="step-line flex-1 h-0.5 mb-6 sm:mb-7 rounded-full bg-white/10 min-w-[0.75rem]" data-line-after="3"></div>
+        <div class="checkout-step flex-1 flex flex-col items-center gap-2 min-w-0 pointer-events-none opacity-50" data-step-final>
+          <span class="step-dot w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-display text-sm font-bold border-2 border-white/20 text-gray-500">4</span>
+          <span class="step-label text-[11px] sm:text-sm font-medium tracking-wide text-gray-500">Done</span>
+        </div>
       </div>
     </div>
 
@@ -453,6 +466,10 @@ function setCheckoutStep(step) {
     const n = parseInt(btn.getAttribute('data-goto-step'), 10);
     btn.classList.toggle('is-active', n === step);
     btn.classList.toggle('is-done', n < step);
+  });
+  document.querySelectorAll('[data-line-after]').forEach((line) => {
+    const n = parseInt(line.getAttribute('data-line-after'), 10);
+    line.classList.toggle('is-done', n < step);
   });
   updateShippingTotals();
   window.scrollTo({ top: 0, behavior: 'smooth' });

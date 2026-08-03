@@ -35,8 +35,8 @@ tailwind.config = {
     <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Payment successful</p>
     <p id="order-ref" class="text-white font-medium mb-4"></p>
     <p class="text-sm text-gray-400 leading-relaxed">
-      Thanks — Stripe has confirmed your payment. You’ll get a receipt by email from Stripe.
-      We’ll be in touch about production and dispatch.
+      Thanks — Stripe has confirmed your payment. A confirmation is being sent to your email
+      (and a Stripe receipt if receipts are enabled in Stripe). We’ll be in touch about production and dispatch.
     </p>
     <p class="text-xs text-gray-600 mt-4">Questions? 027 383 8178 · cortenliving@gmail.com</p>
     <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
@@ -57,6 +57,18 @@ const el = document.getElementById('order-ref');
 if (order) el.textContent = 'Order ' + order;
 else if (session) el.textContent = 'Checkout ' + session.slice(0, 20) + '…';
 else el.textContent = 'Your order is confirmed';
+
+// Email shop + customer confirmation (Stripe Checkout does not email us by itself)
+(async function notifyPaidOrder() {
+  if (!session) return;
+  try {
+    await fetch('/api/confirm-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ sessionId: session }),
+    });
+  } catch (_) {}
+})();
 </script>
 </body>
 </html>

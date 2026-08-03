@@ -6,19 +6,23 @@
   "ruralSurcharge": 12,
   "ruralLabel": "Rural delivery surcharge",
   "houseNumbers": {
-    "baseGramsPerChar": 20,
-    "gramsPerMmPerChar": 0.12,
-    "holesExtraGramsPerChar": 2,
-    "note": "Weight ≈ chars × (base + heightMm × gramsPerMm). Tweak until it matches real parcels."
+    "baseGramsPerChar": 80,
+    "gramsPerMmPerChar": 0.45,
+    "holesExtraGramsPerChar": 5,
+    "note": "Weight uses 3mm Corten silhouette estimate + formula. Tweak in Admin → Shipping."
   },
-  "defaultItemGrams": 500,
+  "defaultItemGrams": 1200,
+  "cortenKgPerM2": 23.55,
+  "silhouetteFill": 0.32,
+  "packagingGrams": 200,
   "tiers": [
-    { "maxWeightKg": 0.3, "price": 9 },
-    { "maxWeightKg": 0.6, "price": 12 },
-    { "maxWeightKg": 1.0, "price": 16 },
-    { "maxWeightKg": 2.0, "price": 24 },
-    { "maxWeightKg": 5.0, "price": 35 },
-    { "maxWeightKg": 999, "price": 55 }
+    { "maxWeightKg": 0.5, "price": 9 },
+    { "maxWeightKg": 1.0, "price": 12 },
+    { "maxWeightKg": 2.0, "price": 16 },
+    { "maxWeightKg": 5.0, "price": 24 },
+    { "maxWeightKg": 10.0, "price": 35 },
+    { "maxWeightKg": 20.0, "price": 45 },
+    { "maxWeightKg": 999, "price": 65 }
   ],
-  "updatedAt": null
+  "updatedAt": "2026-08-03T00:00:00.000Z"
 }

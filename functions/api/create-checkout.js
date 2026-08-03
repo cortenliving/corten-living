@@ -72,6 +72,8 @@ export async function onRequestPost(context) {
     params.set('customer_email', email);
     params.set('billing_address_collection', 'auto');
     params.set('phone_number_collection[enabled]', 'true');
+    // Stripe payment receipt email to customer (also enable receipts in Stripe Dashboard → Settings → Customer emails)
+    params.set('payment_intent_data[receipt_email]', email);
     params.set('metadata[order_id]', orderId);
     params.set('metadata[customer_name]', name.slice(0, 400));
     params.set('metadata[phone]', phone.slice(0, 100));
@@ -81,8 +83,15 @@ export async function onRequestPost(context) {
     params.set('metadata[delivery_type]', deliveryType);
     params.set('metadata[gst]', String(gstAmount));
     params.set('metadata[subtotal_excl]', String(subtotalExcl));
+    // Store items summary for post-payment email (confirm-payment)
+    const itemsSummary = items.slice(0, 20).map((it) => {
+      const qty = it.qty || 1;
+      return `${it.type || 'Item'}: ${it.chars || ''} · ${it.size || ''} · ${it.mount || ''} ×${qty} — $${it.price || 0}`;
+    }).join('\n');
+    params.set('metadata[items]', itemsSummary.slice(0, 450));
     if (weightKg != null) params.set('metadata[weight_kg]', String(weightKg));
     params.set('payment_intent_data[metadata][order_id]', orderId);
+    params.set('payment_intent_data[metadata][customer_email]', email);
 
     let lineIndex = 0;
     for (const it of items) {
