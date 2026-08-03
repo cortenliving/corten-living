@@ -35,9 +35,9 @@ tailwind.config = {
     <p class="text-corten-400 font-display text-2xl sm:text-3xl mb-2">Payment successful</p>
     <p id="order-ref" class="text-white font-medium mb-4"></p>
     <p class="text-sm text-gray-400 leading-relaxed">
-      Thanks — Stripe has confirmed your payment. A confirmation is being sent to your email
-      (and a Stripe receipt if receipts are enabled in Stripe). We’ll be in touch about production and dispatch.
+      Thanks — Stripe has confirmed your payment. We’re sending a confirmation email now.
     </p>
+    <p id="email-status" class="mt-4 text-sm text-gray-500">Sending confirmation…</p>
     <p class="text-xs text-gray-600 mt-4">Questions? 027 383 8178 · cortenliving@gmail.com</p>
     <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
       <a href="/house-numbers" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Order more numbers</a>
@@ -46,28 +46,59 @@ tailwind.config = {
   </div>
 </main>
 <script>
-// Clear cart after successful Stripe payment
-try {
-  localStorage.removeItem('cortenCart');
-} catch (e) {}
+try { localStorage.removeItem('cortenCart'); } catch (e) {}
+
 const params = new URLSearchParams(location.search);
 const order = params.get('order');
 const session = params.get('session_id');
 const el = document.getElementById('order-ref');
+const statusEl = document.getElementById('email-status');
+
 if (order) el.textContent = 'Order ' + order;
-else if (session) el.textContent = 'Checkout ' + session.slice(0, 20) + '…';
+else if (session) el.textContent = 'Checkout confirmed';
 else el.textContent = 'Your order is confirmed';
 
-// Email shop + customer confirmation (Stripe Checkout does not email us by itself)
 (async function notifyPaidOrder() {
-  if (!session) return;
-  try {
-    await fetch('/api/confirm-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ sessionId: session }),
-    });
-  } catch (_) {}
+  if (!session) {
+    statusEl.textContent = 'No session id — email may not have been triggered. Contact us if you need a receipt.';
+    statusEl.className = 'mt-4 text-sm text-amber-400';
+    return;
+  }
+
+  // Retry a few times (Stripe session can lag briefly)
+  let lastErr = '';
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    try {
+      const res = await fetch('/api/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ sessionId: session }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.emailed) {
+        statusEl.textContent = data.customer
+          ? ('Confirmation sent to ' + data.customer + (data.warning ? ' — ' + data.warning : ''))
+          : 'Confirmation email sent.';
+        statusEl.className = 'mt-4 text-sm text-green-400';
+        if (data.warning) statusEl.className = 'mt-4 text-sm text-amber-300';
+        return;
+      }
+      if (res.ok && data.emailed === false) {
+        lastErr = data.warning || data.error || 'Email service did not send';
+        continue;
+      }
+      lastErr = data.error || data.warning || ('HTTP ' + res.status);
+    } catch (e) {
+      lastErr = e.message || 'Network error';
+    }
+  }
+
+  statusEl.innerHTML =
+    'Could not send confirmation automatically. ' +
+    'Please check spam, or email <a class="text-corten-400 underline" href="mailto:cortenliving@gmail.com">cortenliving@gmail.com</a> with your order ref. ' +
+    (lastErr ? '<span class="block mt-1 text-xs text-gray-600">' + lastErr + '</span>' : '');
+  statusEl.className = 'mt-4 text-sm text-amber-400';
 })();
 </script>
 </body>
