@@ -100,9 +100,19 @@ tailwind.config = {
     background: #1a1410;
     border: 1px solid rgba(229, 122, 72, 0.4);
     box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);
-    max-height: 16rem;
+    max-height: 18rem;
     overflow-y: auto;
   }
+  .addr-opt mark {
+    background: rgba(183, 65, 14, 0.45);
+    color: #ffd4b8;
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin { animation: spin 0.7s linear infinite; }
   .checkout-step .step-dot {
     border-color: rgba(255,255,255,0.2);
     color: #9ca3af;
@@ -251,7 +261,10 @@ tailwind.config = {
                 placeholder="Start typing your NZ address…"
                 class="c-input w-full rounded-sm px-3 py-3 text-white">
               <div id="address-dropdown" class="addr-dropdown hidden absolute z-30 left-0 right-0 mt-1 rounded-sm" role="listbox"></div>
-              <p class="mt-1.5 text-[11px] text-gray-500 leading-relaxed">Type at least 3 characters and choose from the dropdown. Shipping type is set automatically from your address (standard or rural).</p>
+              <p class="mt-1.5 text-[11px] text-gray-500 leading-relaxed">
+                Start with street number + name (e.g. <span class="text-gray-400">12 Peel St Gisborne</span>).
+                Use ↑↓ and Enter to pick. Shipping (standard/rural) is set automatically — include <span class="text-gray-400">RD</span> if you have one.
+              </p>
             </div>
             <div id="delivery-status" class="rounded-sm border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-300">
               Enter and select an address to calculate shipping.
