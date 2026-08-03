@@ -56,6 +56,41 @@ Cart has **Pay now with card** (Stripe Checkout) and **Place order without payme
 
 Quotes can still use **Payment Links** from the Stripe Dashboard (no code).
 
+## NZ address autocomplete (NZ Post / LINZ)
+
+Cart shipping uses `/api/address-search`:
+
+| Provider | Secrets | Notes |
+|----------|---------|--------|
+| **NZ Post** (best) | `NZ_POST_CLIENT_ID` + `NZ_POST_CLIENT_SECRET` | Real postal database + rural flag. Needs NZ Post business account + API access. First 1,000 lookups/month free on demo. |
+| **LINZ** (good free) | `LINZ_API_KEY` | Official NZ physical addresses from [data.linz.govt.nz](https://data.linz.govt.nz) (free API key). |
+| **Map data** (default) | none | Photon + OpenStreetMap — free, not full NZ Post rural list. |
+
+### Connect NZ Post Address Checker
+
+1. Register at [NZ Post](https://www.nzpost.co.nz) / Developer Centre ([docs.nzpost.co.nz](https://docs.nzpost.co.nz) / [api.nzpost.co.nz](https://api.nzpost.co.nz))
+2. Request **Address Checker** / **Parcel Address** API access (needs business account starting with 9 or 5, or call 0800 COURIER)
+3. Create OAuth app → copy **client id** + **client secret**
+4. Cloudflare → secrets:
+
+| Secret | Value |
+|--------|--------|
+| `NZ_POST_CLIENT_ID` | from NZ Post |
+| `NZ_POST_CLIENT_SECRET` | from NZ Post |
+
+Optional: `NZ_POST_TOKEN_URL`, `NZ_POST_ADDRESS_URL`, `NZ_POST_OAUTH_SCOPE` if NZ Post gives non-default URLs.
+
+5. Redeploy. Dropdown footer should show **NZ Post** when connected.
+
+### Connect LINZ (free, no NZ Post account)
+
+1. Create free account at [data.linz.govt.nz](https://data.linz.govt.nz)
+2. Generate API key
+3. Cloudflare secret `LINZ_API_KEY` = your key
+4. Redeploy
+
+Customers can still tick **“This is a rural delivery (RD) address”** if auto-detect is wrong.
+
 ## Colour palette
 
 | Role | Hex |
