@@ -98,11 +98,12 @@ function showReceipt(url) {
         if (data.shopNotified) bits.push('We have been notified of your order');
         if (data.stripeEmail?.invoiceSent) bits.push('Stripe invoice emailed');
         if (data.customerEmailed) bits.push('Confirmation emailed to ' + (data.customer || 'you'));
-        else if (data.customer) bits.push('If no email arrives, use the receipt button below');
-        if (data.warning) bits.push(data.warning);
-
+        else if (data.customer) {
+          bits.push('Your Stripe receipt should go to ' + data.customer + ' (check spam)');
+          bits.push('Or use View Stripe receipt below');
+        }
         statusEl.textContent = bits.join('. ') || 'Order recorded.';
-        statusEl.className = (data.customerEmailed || data.receiptUrl)
+        statusEl.className = (data.shopNotified || data.receiptUrl)
           ? 'mt-4 text-sm text-green-400'
           : 'mt-4 text-sm text-amber-300';
         return;

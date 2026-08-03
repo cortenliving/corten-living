@@ -96,7 +96,7 @@ export async function onRequestPost(context) {
       'cortenliving@gmail.com',
     ].filter(Boolean).join('\n');
 
-    // Prefer Resend if configured
+    // Prefer Resend if configured (optional)
     if (env.RESEND_API_KEY) {
       const from = env.ORDER_FROM_EMAIL || 'Corten Living <onboarding@resend.dev>';
       await sendResend(env.RESEND_API_KEY, {
@@ -116,54 +116,26 @@ export async function onRequestPost(context) {
       return json({ ok: true, orderId, emailed: true, provider: 'resend' });
     }
 
-    // FormSubmit.co — free, notifies shop + autoresponse to customer
-    // First use: FormSubmit may send an activation email to the shop address.
-    const fsRes = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(shopEmail)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
+    // Forminit only (same as contact form — no FormSubmit)
+    try {
+      await postForminit(env, {
         name,
         email,
         phone,
-        address,
-        _subject: `New order ${orderId} — Corten Living`,
-        _template: 'table',
-        _replyto: email,
-        _autoresponse: customerConfirm,
-        message: summary,
+        message: summary + '\n\n--- Customer confirmation text ---\n' + customerConfirm,
         orderId,
-        total: `$${total}`,
-        items: lines,
-      }),
-    });
-
-    if (!fsRes.ok) {
-      const errText = await fsRes.text();
-      // Fallback: Forminit (business only) if FormSubmit fails
-      if (env.ORDER_FORMINIT_URL || true) {
-        try {
-          await postForminit(env, {
-            name, email, phone, message: summary, orderId, total,
-          });
-          return json({
-            ok: true,
-            orderId,
-            emailed: true,
-            provider: 'forminit-fallback',
-            warning: 'Customer auto-email may need FormSubmit activation. Shop was notified.',
-            detail: errText.slice(0, 200),
-          });
-        } catch (e2) {
-          return json({ error: 'Could not send order email: ' + (e2.message || errText) }, 502);
-        }
-      }
-      return json({ error: 'Email service error', detail: errText.slice(0, 300) }, 502);
+        total,
+      });
+      return json({
+        ok: true,
+        orderId,
+        emailed: true,
+        provider: 'forminit',
+        warning: 'Shop notified via Forminit. Customer payment receipts come from Stripe when they pay by card.',
+      });
+    } catch (e2) {
+      return json({ error: 'Could not send order email: ' + (e2.message || e2) }, 502);
     }
-
-    return json({ ok: true, orderId, emailed: true, provider: 'formsubmit' });
   } catch (e) {
     return json({ error: String(e.message || e) }, 500);
   }
