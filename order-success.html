@@ -61,7 +61,6 @@ const params = new URLSearchParams(location.search);
 const order = params.get('order');
 const session = params.get('session_id');
 const el = document.getElementById('order-ref');
-const statusEl = document.getElementById('email-status');
 const receiptWrap = document.getElementById('receipt-wrap');
 const receiptLink = document.getElementById('receipt-link');
 
@@ -75,14 +74,9 @@ function showReceipt(url) {
   receiptWrap.classList.remove('hidden');
 }
 
+// Quietly notify shop + load receipt link — no technical status for customers
 (async function notifyPaidOrder() {
-  if (!session) {
-    statusEl.textContent = 'No session id — contact us if you need a receipt.';
-    statusEl.className = 'mt-4 text-sm text-amber-400';
-    return;
-  }
-
-  let lastErr = '';
+  if (!session) return;
   for (let attempt = 0; attempt < 4; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
     try {
@@ -92,41 +86,10 @@ function showReceipt(url) {
         body: JSON.stringify({ sessionId: session }),
       });
       const data = await res.json().catch(() => ({}));
-
       if (data.receiptUrl) showReceipt(data.receiptUrl);
-
-      if (res.ok) {
-        const bits = [];
-        if (data.shopNotified) bits.push('Shop notified (Forminit → cortenliving@gmail.com)');
-        else if (data.shopError || data.warning) bits.push(data.shopError || data.warning);
-        if (data.stripeEmail?.invoiceSent) bits.push('Stripe invoice emailed');
-        if (data.customerEmailed) bits.push('Confirmation emailed to ' + (data.customer || 'you'));
-        else if (data.customer) {
-          // Stripe test mode only auto-emails verified account addresses — not random test emails
-          bits.push(
-            'Stripe automatic receipts to any customer work in LIVE mode. ' +
-            'In TEST mode they often only go to your Stripe account email. ' +
-            'Use View Stripe receipt below, or open the payment in Stripe → Send receipt.'
-          );
-        }
-        statusEl.textContent = bits.join(' ') || 'Order recorded.';
-        statusEl.className = data.shopNotified || data.receiptUrl
-          ? 'mt-4 text-sm text-green-400'
-          : 'mt-4 text-sm text-amber-300';
-        return;
-      }
-      lastErr = data.error || data.warning || ('HTTP ' + res.status);
-    } catch (e) {
-      lastErr = e.message || 'Network error';
-    }
+      if (res.ok) return;
+    } catch (_) {}
   }
-
-  statusEl.innerHTML =
-    'Could not finish automatic emails. Email us at ' +
-    '<a class="text-corten-400 underline" href="mailto:cortenliving@gmail.com">cortenliving@gmail.com</a> ' +
-    'with your order number.' +
-    (lastErr ? '<span class="block mt-1 text-xs text-gray-600">' + lastErr + '</span>' : '');
-  statusEl.className = 'mt-4 text-sm text-amber-400';
 })();
 </script>
 </body>
