@@ -1,28 +1,48 @@
 {
   "enabled": true,
   "label": "NZ shipping",
-  "currency": "NZD",
   "freeShippingOver": null,
-  "ruralSurcharge": 12,
+  "ruralSurcharge": 6,
   "ruralLabel": "Rural delivery surcharge",
+  "defaultItemGrams": 1000,
+  "cortenKgPerM2": 23.55,
+  "silhouetteFill": 0.3,
+  "packagingGrams": 50,
   "houseNumbers": {
     "baseGramsPerChar": 80,
     "gramsPerMmPerChar": 0.45,
     "holesExtraGramsPerChar": 5,
     "note": "Weight uses 3mm Corten silhouette estimate + formula. Tweak in Admin → Shipping."
   },
-  "defaultItemGrams": 1200,
-  "cortenKgPerM2": 23.55,
-  "silhouetteFill": 0.32,
-  "packagingGrams": 200,
   "tiers": [
-    { "maxWeightKg": 0.5, "price": 9 },
-    { "maxWeightKg": 1.0, "price": 12 },
-    { "maxWeightKg": 2.0, "price": 16 },
-    { "maxWeightKg": 5.0, "price": 24 },
-    { "maxWeightKg": 10.0, "price": 35 },
-    { "maxWeightKg": 20.0, "price": 45 },
-    { "maxWeightKg": 999, "price": 65 }
+    {
+      "maxWeightKg": 0.5,
+      "price": 5.23
+    },
+    {
+      "maxWeightKg": 1,
+      "price": 5.23
+    },
+    {
+      "maxWeightKg": 2,
+      "price": 5.23
+    },
+    {
+      "maxWeightKg": 3,
+      "price": 5.23
+    },
+    {
+      "maxWeightKg": 4,
+      "price": 8
+    },
+    {
+      "maxWeightKg": 20,
+      "price": 45
+    },
+    {
+      "maxWeightKg": 999,
+      "price": 65
+    }
   ],
-  "updatedAt": "2026-08-03T00:00:00.000Z"
+  "updatedAt": "2026-08-04T07:06:59.232Z"
 }
