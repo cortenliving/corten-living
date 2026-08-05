@@ -668,12 +668,19 @@ document.getElementById('btn-to-step-3')?.addEventListener('click', () => {
     el.classList.remove('hidden');
     return;
   }
-  // Re-detect rural from current address before payment
-  const addr = document.getElementById('order-address').value.trim();
-  if (window.NzAddress) {
+  // Keep NZ Post / override rural — do NOT re-parse address text only
+  // (physical lines like "21A … Makauri" have no "RD" in the string).
+  if (ruralLockedFromPick) {
+    applyDeliveryFromAddress(autoRural, deliveryReason);
+  } else if (window.NzAddress) {
+    const addr = document.getElementById('order-address').value.trim();
     const det = NzAddress.detectRural(addr);
-    applyDeliveryFromAddress(!!det.rural, det.reason || '');
+    // Prefer already-set rural (checkbox) over text false-negatives
+    if (det.rural || getRural()) {
+      applyDeliveryFromAddress(!!(det.rural || autoRural || getRural()), det.reason || deliveryReason);
+    }
   }
+  refreshRuralFromAutoAndOverride();
   el.classList.add('hidden');
   setCheckoutStep(3);
 });
