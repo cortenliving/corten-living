@@ -296,9 +296,12 @@ async function handleFiles(fileList) {
     try {
       const text = await file.text();
       const summary = DxfParse.parseDxf(text);
-      if (!summary.entityCount) {
-        toast(file.name + ': no cut entities found', true);
+      if (!summary.entityCount && !summary.pathCount) {
+        toast(file.name + ': no cut geometry found (try export as R12/ASCII DXF)', true);
         continue;
+      }
+      if ((summary.pathCount || 0) < 2 && (summary.entityCount || 0) < 3) {
+        console.warn('DXF low geometry', file.name, summary);
       }
       const item = {
         id: uid(),
@@ -308,13 +311,14 @@ async function handleFiles(fileList) {
         heightMm: summary.heightMm,
         cutLengthMm: summary.cutLengthMm,
         entityCount: summary.entityCount,
+        pathCount: summary.pathCount,
         areaMm2: summary.areaMm2,
         linked: true,
         paths: summary.paths,
         polylines: summary.polylines,
         bounds: summary.bounds,
-        // keep a modest copy for re-open; strip if huge on save API-side
-        dxfText: text.length < 500000 ? text : '',
+        // keep for re-preview; strip if huge on save
+        dxfText: text.length < 800000 ? text : '',
       };
       state.items.push(item);
       state.selectedItemId = item.id;
@@ -350,8 +354,8 @@ function renderItems() {
             <span class="shrink-0 w-6 h-6 rounded bg-ink-950 text-white text-[10px] font-bold flex items-center justify-center">${idx + 1}</span>
             <div class="min-w-0">
               <p class="text-sm font-medium truncate">${esc(it.fileName)}</p>
-              <p class="text-[11px] text-gray-500">${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm · ${it.entityCount || 0} entities · cut ~${fmt(it.cutLengthMm)} mm</p>
-              <p class="text-[11px] text-ink-900 font-medium mt-0.5">3 mm Corten · ~${fmt(wt.weightKg)} kg <span class="text-gray-400 font-normal">(fill ${(wt.fill * 100).toFixed(0)}%)</span></p>
+              <p class="text-[11px] text-gray-500">${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm · ${it.pathCount || it.entityCount || 0} paths · cut ~${fmt(it.cutLengthMm)} mm</p>
+              <p class="text-[11px] text-ink-900 font-medium mt-0.5">~${fmt(wt.weightKg)} kg · ${wt.solidAreaM2.toFixed(4)} m² steel @ 3 mm</p>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -519,6 +523,18 @@ function recalc(fromOverrides) {
     };
   }
 
+  const mb = result.materialBreakdown;
+  const matNote = document.getElementById('mat-breakdown');
+  if (matNote) {
+    if (mb && mb.steelM2 > 0) {
+      matNote.textContent =
+        `${mb.steelM2.toFixed(4)} m² steel × $${fmt(mb.ratePerM2)}/m²` +
+        `  (plate ${mb.plateM2.toFixed(4)} m² × fill ${(mb.fill * 100).toFixed(0)}%)`;
+    } else {
+      matNote.textContent = 'Add a DXF — material = m² × $/m² rate';
+    }
+  }
+
   state.freightId = result.freightTier?.id || state.freightId;
   document.getElementById('freight-label').textContent = result.freightTier?.label || '—';
   document.getElementById('q-price').textContent = fmt(result.priceExcl);
@@ -530,10 +546,8 @@ function recalc(fromOverrides) {
     if (result.weightKg > 0) {
       wEl.innerHTML =
         `<span class="text-ink-900 font-medium">Part weight (3 mm Corten): ~${fmt(result.weightKg)} kg</span>` +
-        `<span class="block text-gray-400">Silhouette fill ${(Number(settings.material?.silhouetteFill) * 100 || 32).toFixed(0)}% · ${fmt(result.cortenKgPerM2 || 23.55)} kg/m²` +
-        (result.plateWeightKg
-          ? ` · full box would be ~${fmt(result.plateWeightKg)} kg`
-          : '') +
+        `<span class="block text-gray-400">${fmt(result.cortenKgPerM2 || 23.55)} kg/m² × steel m²` +
+        (mb ? ` (${mb.steelM2.toFixed(4)} m²)` : '') +
         `</span>`;
     } else {
       wEl.textContent = '';

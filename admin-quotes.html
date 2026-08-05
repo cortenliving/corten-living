@@ -219,10 +219,13 @@ tailwind.config = {
               <button type="button" id="btn-reset-cost" class="text-[11px] text-corten-600 hover:underline">Reset</button>
             </div>
             <div class="space-y-2 text-sm">
-              <label class="flex justify-between items-center gap-2">
-                <span class="text-gray-600">Material</span>
-                <span class="flex items-center gap-1">$ <input id="cost-material" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
-              </label>
+              <div>
+                <label class="flex justify-between items-center gap-2">
+                  <span class="text-gray-600">Material</span>
+                  <span class="flex items-center gap-1">$ <input id="cost-material" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
+                </label>
+                <p id="mat-breakdown" class="text-[10px] text-gray-400 mt-0.5 leading-snug"></p>
+              </div>
               <label class="flex justify-between items-center gap-2">
                 <span class="text-gray-600">Laser cutting</span>
                 <span class="flex items-center gap-1">$ <input id="cost-laser" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
@@ -283,13 +286,20 @@ tailwind.config = {
     <p class="text-sm text-gray-500 mb-6">Default rates used when you drop a DXF. Cost lines stay editable per quote.</p>
     <div class="panel p-6 space-y-4">
       <div class="grid sm:grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-gray-500">Material rate ($ / m² solid box × fill)</label>
-          <input id="set-mat-rate" type="number" step="0.01" class="input mt-1">
+        <div class="sm:col-span-2 text-xs text-gray-500 leading-relaxed border border-gray-200 rounded p-3 bg-paper-50">
+          <strong class="text-ink-900">Material cost</strong> =
+          (width × height in m²) × <em>fill</em> × <em>$/m² rate</em> × qty.<br>
+          Example: 200×100 mm plate, fill 0.35, $95/m² → 0.02 × 0.35 × 95 = <strong>$0.67</strong>.
+          Use fill 1.0 to charge full rectangle plate area.
         </div>
         <div>
-          <label class="text-xs text-gray-500">Silhouette fill (0–1)</label>
-          <input id="set-fill" type="number" step="0.01" min="0" max="1" class="input mt-1">
+          <label class="text-xs text-gray-500">Material sheet rate ($ / m²)</label>
+          <input id="set-mat-rate" type="number" step="0.01" class="input mt-1" placeholder="e.g. 95">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Steel fill of bounding box (0–1)</label>
+          <input id="set-fill" type="number" step="0.01" min="0" max="1" class="input mt-1" placeholder="0.32">
+          <p class="text-[10px] text-gray-400 mt-0.5">1 = full plate · 0.3 ≈ open silhouette / numbers</p>
         </div>
         <div>
           <label class="text-xs text-gray-500">Laser rate ($ / metre cut)</label>

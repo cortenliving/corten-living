@@ -55,14 +55,29 @@
     };
   }
 
+  /**
+   * Material = steel area (m²) × $/m² rate.
+   * steel m² = (width_mm × height_mm / 1e6) × fill × qty
+   * fill = how much of the bounding box is solid steel (holes/cutouts lower it).
+   */
   function calcMaterial(items, settings) {
     const rate = Number(settings.material?.ratePerM2) || 0;
     let total = 0;
+    let steelM2 = 0;
+    let plateM2 = 0;
     (items || []).forEach((it) => {
       const m = itemMetrics(it, settings);
+      steelM2 += m.areaM2;
+      plateM2 += m.plateAreaM2;
       total += m.areaM2 * rate;
     });
-    return money(total);
+    return {
+      amount: money(total),
+      steelM2: Math.round(steelM2 * 10000) / 10000,
+      plateM2: Math.round(plateM2 * 10000) / 10000,
+      ratePerM2: rate,
+      fill: Number(settings.material?.silhouetteFill) || 0.32,
+    };
   }
 
   function calcLaser(items, settings) {
@@ -115,7 +130,8 @@
     }
 
     const items = opts.items || [];
-    const autoMaterial = calcMaterial(items, settings);
+    const matCalc = calcMaterial(items, settings);
+    const autoMaterial = matCalc.amount;
     const autoLaser = calcLaser(items, settings);
     const autoSetup = items.length ? Number(settings.setup?.amount) || 0 : 0;
     const weightKg = totalWeightKg(items, settings);
@@ -154,6 +170,17 @@
         freightTier: tier,
         weightKg: money(weightKg),
         plateWeightKg: money(plateWeightKg),
+      },
+      materialBreakdown: {
+        steelM2: matCalc.steelM2,
+        plateM2: matCalc.plateM2,
+        ratePerM2: matCalc.ratePerM2,
+        fill: matCalc.fill,
+        amount: material,
+        formula:
+          matCalc.steelM2 > 0
+            ? `${matCalc.steelM2.toFixed(4)} m² × $${money(matCalc.ratePerM2).toFixed(2)}/m²`
+            : '',
       },
       costings: { material, laser, setup, freight },
       costExcl,
