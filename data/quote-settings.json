@@ -1,40 +1,65 @@
 {
-  "currency": "NZD",
   "gstRate": 0.15,
-  "defaultMarginPercent": 35,
-  "quoteValidDays": 14,
-  "quoteNumberPrefix": "CL",
+  "defaultMarginPercent": 30,
   "material": {
     "label": "Material (3 mm Corten)",
-    "ratePerM2": 95,
-    "silhouetteFill": 0.32,
+    "ratePerM2": 69,
+    "silhouetteFill": 0.3,
     "note": "Bounding box area × fill × rate"
   },
   "laser": {
     "label": "Laser cutting",
     "ratePerMetre": 2.8,
-    "minCharge": 12
+    "minCharge": 8
   },
   "setup": {
     "label": "Setup (once per quote)",
-    "amount": 28
+    "amount": 10
   },
   "freight": {
     "label": "Freight",
     "tiers": [
-      { "id": "small", "label": "Small", "maxKg": 2, "price": 15 },
-      { "id": "medium", "label": "Medium", "maxKg": 10, "price": 25 },
-      { "id": "large", "label": "Large", "maxKg": 30, "price": 45 },
-      { "id": "xl", "label": "XL / rural", "maxKg": 999, "price": 65 }
+      {
+        "id": "small",
+        "label": "Small",
+        "maxKg": 2,
+        "price": 15
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "maxKg": 10,
+        "price": 25
+      },
+      {
+        "id": "large",
+        "label": "Large",
+        "maxKg": 30,
+        "price": 45
+      },
+      {
+        "id": "xl",
+        "label": "XL / rural",
+        "maxKg": 999,
+        "price": 65
+      }
     ]
   },
-  "leadTimes": ["3–5 days", "1–2 weeks", "2–3 weeks", "3–4 weeks"],
+  "cortenKgPerM2": 23.55,
+  "currency": "NZD",
+  "quoteValidDays": 14,
+  "quoteNumberPrefix": "CL",
+  "leadTimes": [
+    "3–5 days",
+    "1–2 weeks",
+    "2–3 weeks",
+    "3–4 weeks"
+  ],
   "paymentTerms": [
     "Credit card payment portal",
     "Invoice 7 days",
     "Invoice 14 days",
     "50% deposit, balance on completion"
   ],
-  "cortenKgPerM2": 23.55,
-  "updatedAt": "2026-08-05T00:00:00.000Z"
+  "updatedAt": "2026-08-05T08:31:54.253Z"
 }
