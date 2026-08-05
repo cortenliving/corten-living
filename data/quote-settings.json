@@ -4,7 +4,7 @@
   "material": {
     "label": "Material (3 mm Corten)",
     "ratePerM2": 69,
-    "silhouetteFill": 0.3,
+    "silhouetteFill": 0.32,
     "note": "Bounding box area × fill × rate"
   },
   "laser": {
@@ -61,5 +61,5 @@
     "Invoice 14 days",
     "50% deposit, balance on completion"
   ],
-  "updatedAt": "2026-08-05T08:31:54.253Z"
+  "updatedAt": "2026-08-05T08:42:30.700Z"
 }
