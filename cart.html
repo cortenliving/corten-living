@@ -324,12 +324,12 @@ tailwind.config = {
             <span class="text-gray-300">Subtotal (excl. GST)</span>
             <span id="cart-subtotal" class="text-white font-semibold">$0.00</span>
           </div>
-          <div class="flex justify-between items-center text-sm">
+          <div id="shipping-summary-row" class="flex justify-between items-center text-sm">
             <span class="text-gray-300" id="shipping-label">NZ shipping (excl. GST)</span>
-            <span id="cart-shipping" class="text-white font-semibold">$0.00</span>
+            <span id="cart-shipping" class="text-white font-semibold text-gray-500">—</span>
           </div>
           <p id="shipping-breakdown" class="hidden text-xs text-gray-400"></p>
-          <p id="shipping-weight" class="text-xs text-gray-400"></p>
+          <p id="shipping-weight" class="hidden text-xs text-gray-400"></p>
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-300">GST (15%)</span>
             <span id="cart-gst" class="text-white font-semibold">$0.00</span>
@@ -338,7 +338,6 @@ tailwind.config = {
             <span class="text-white font-medium">Total (incl. GST)</span>
             <span id="cart-total" class="text-3xl sm:text-4xl font-display font-bold text-white drop-shadow">$0.00</span>
           </div>
-          <p class="text-xs text-gray-400 leading-relaxed">Shipping is estimated from parcel weight. Rural surcharge is applied automatically when your address is rural (RD, etc.).</p>
         </div>
         <button type="button" id="clear-cart" class="w-full text-sm text-gray-500 hover:text-corten-300 py-2">Clear cart</button>
       </div>
@@ -408,9 +407,15 @@ function refreshRuralFromAutoAndOverride() {
   updateShippingTotals();
 }
 
-function computeShip(cart, subtotal) {
+/** True once customer has picked an address from the dropdown */
+function hasChosenAddress() {
+  return !!addressSelected;
+}
+
+function computeShip(cart, subtotal, options = {}) {
   const cfg = window.CortenShipping ? CortenShipping.getCachedConfig() : null;
   const rural = getRural();
+  const includeShipping = options.includeShipping !== false && hasChosenAddress();
   let ship;
   if (window.CortenShipping) {
     ship = CortenShipping.calculateShipping(cart, subtotal, cfg, { rural });
@@ -421,6 +426,17 @@ function computeShip(cart, subtotal) {
       deliveryType: rural ? 'rural' : 'standard', rural,
     };
   }
+  if (!includeShipping) {
+    ship = {
+      ...ship,
+      shipping: 0,
+      baseShipping: 0,
+      ruralSurcharge: 0,
+      freeShipping: false,
+      label: 'NZ shipping',
+      shippingPending: true,
+    };
+  }
   // GST on products + shipping (excl. amounts)
   const excl = money((ship.subtotal || 0) + (ship.shipping || 0));
   const gst = money(excl * GST_RATE);
@@ -429,6 +445,7 @@ function computeShip(cart, subtotal) {
     ...ship,
     exclSubtotal: money(ship.subtotal || 0),
     exclShipping: money(ship.shipping || 0),
+    shippingPending: !includeShipping,
     gst,
     gstRate: GST_RATE,
     totalExcl: excl,
@@ -448,45 +465,60 @@ function updateShippingTotals() {
   if (subEl) subEl.textContent = fmtMoney(ship.exclSubtotal);
 
   const labelEl = document.getElementById('shipping-label');
-  if (labelEl) {
-    labelEl.textContent = (ship.label || 'NZ shipping') + ' (excl. GST)';
-  }
-
   const shipEl = document.getElementById('cart-shipping');
-  if (shipEl) {
-    if (ship.freeShipping && !ship.ruralSurcharge) {
-      shipEl.textContent = 'FREE';
-    } else if (ship.freeShipping && ship.ruralSurcharge > 0) {
-      shipEl.textContent = fmtMoney(ship.exclShipping) + ' (rural only)';
-    } else {
-      shipEl.textContent = fmtMoney(ship.exclShipping);
-    }
-    // Flash so rural change is obvious in the sticky summary
-    shipEl.classList.remove('ship-flash');
-    void shipEl.offsetWidth;
-    shipEl.classList.add('ship-flash');
-  }
-
   const bd = document.getElementById('shipping-breakdown');
-  if (bd) {
-    if (ship.rural && ship.ruralSurcharge > 0) {
-      const basePart = ship.freeShipping ? 'Base free' : ('Base ' + fmtMoney(ship.baseShipping));
-      bd.textContent = basePart + ' + rural ' + fmtMoney(ship.ruralSurcharge) + ' (excl. GST)';
-      bd.classList.remove('hidden');
-    } else if (ship.rural && !ship.ruralSurcharge) {
-      bd.textContent = 'Rural address (no surcharge configured)';
-      bd.classList.remove('hidden');
-    } else {
+  const wt = document.getElementById('shipping-weight');
+
+  if (ship.shippingPending) {
+    if (labelEl) labelEl.textContent = 'NZ shipping (excl. GST)';
+    if (shipEl) {
+      shipEl.textContent = '—';
+      shipEl.classList.add('text-gray-500');
+      shipEl.classList.remove('text-white', 'ship-flash');
+    }
+    if (bd) {
       bd.textContent = '';
       bd.classList.add('hidden');
     }
-  }
-
-  const wt = document.getElementById('shipping-weight');
-  if (wt) {
-    wt.textContent = ship.weightGrams
-      ? `Est. parcel weight: ~${ship.weightGrams} g (${ship.weightKg} kg)`
-      : '';
+    if (wt) {
+      wt.textContent = '';
+      wt.classList.add('hidden');
+    }
+  } else {
+    if (labelEl) labelEl.textContent = (ship.label || 'NZ shipping') + ' (excl. GST)';
+    if (shipEl) {
+      shipEl.classList.remove('text-gray-500');
+      shipEl.classList.add('text-white');
+      if (ship.freeShipping && !ship.ruralSurcharge) {
+        shipEl.textContent = 'FREE';
+      } else if (ship.freeShipping && ship.ruralSurcharge > 0) {
+        shipEl.textContent = fmtMoney(ship.exclShipping) + ' (rural only)';
+      } else {
+        shipEl.textContent = fmtMoney(ship.exclShipping);
+      }
+      shipEl.classList.remove('ship-flash');
+      void shipEl.offsetWidth;
+      shipEl.classList.add('ship-flash');
+    }
+    if (bd) {
+      if (ship.rural && ship.ruralSurcharge > 0) {
+        const basePart = ship.freeShipping ? 'Base free' : ('Base ' + fmtMoney(ship.baseShipping));
+        bd.textContent = basePart + ' + rural ' + fmtMoney(ship.ruralSurcharge) + ' (excl. GST)';
+        bd.classList.remove('hidden');
+      } else {
+        bd.textContent = '';
+        bd.classList.add('hidden');
+      }
+    }
+    if (wt) {
+      if (ship.weightGrams) {
+        wt.textContent = `~${ship.weightGrams} g (${ship.weightKg} kg)`;
+        wt.classList.remove('hidden');
+      } else {
+        wt.textContent = '';
+        wt.classList.add('hidden');
+      }
+    }
   }
 
   const gstEl = document.getElementById('cart-gst');
@@ -496,9 +528,13 @@ function updateShippingTotals() {
 
   const payDel = document.getElementById('pay-delivery-preview');
   if (payDel) {
-    payDel.textContent = ship.rural
-      ? ('Rural' + (deliveryReason ? ' · ' + deliveryReason : ''))
-      : 'Standard';
+    if (ship.shippingPending) {
+      payDel.textContent = '—';
+    } else {
+      payDel.textContent = ship.rural
+        ? ('Rural' + (deliveryReason ? ' · ' + deliveryReason : ''))
+        : 'Standard';
+    }
   }
   const payAddr = document.getElementById('pay-address-preview');
   if (payAddr) {
