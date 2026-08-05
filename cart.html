@@ -356,6 +356,7 @@ tailwind.config = {
 <script src="/js/address-nz.js"></script>
 <script>
 const GST_RATE = 0.15;
+const CHECKOUT_DRAFT_KEY = 'cortenCheckoutDraft';
 let lastShip = null;
 let isRuralDelivery = false;
 let deliveryReason = '';
@@ -365,12 +366,96 @@ let addressSelected = false;
 let ruralLockedFromPick = false;
 /** Exact text from last dropdown pick — used so blur/change does not clear shipping */
 let lastPickedAddress = '';
+let saveDraftTimer = null;
 
 function money(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
 }
 function fmtMoney(n) {
   return '$' + money(n).toFixed(2);
+}
+
+function clearCheckoutDraft() {
+  try {
+    localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+  } catch (_) {}
+}
+
+function saveCheckoutDraft() {
+  try {
+    const draft = {
+      name: document.getElementById('order-name')?.value || '',
+      email: document.getElementById('order-email')?.value || '',
+      phone: document.getElementById('order-phone')?.value || '',
+      address: document.getElementById('order-address')?.value || '',
+      notes: document.getElementById('order-notes')?.value || '',
+      step: checkoutStep,
+      autoRural: !!autoRural,
+      deliveryReason: deliveryReason || '',
+      ruralOverride: !!document.getElementById('rural-override')?.checked,
+      addressSelected: !!addressSelected,
+      ruralLockedFromPick: !!ruralLockedFromPick,
+      lastPickedAddress: lastPickedAddress || '',
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft));
+  } catch (_) {}
+}
+
+function scheduleSaveCheckoutDraft() {
+  clearTimeout(saveDraftTimer);
+  saveDraftTimer = setTimeout(saveCheckoutDraft, 200);
+}
+
+function loadCheckoutDraft() {
+  try {
+    const raw = localStorage.getItem(CHECKOUT_DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    if (!draft || typeof draft !== 'object') return null;
+    // Drop drafts older than 14 days
+    if (draft.savedAt && Date.now() - Number(draft.savedAt) > 14 * 24 * 60 * 60 * 1000) {
+      clearCheckoutDraft();
+      return null;
+    }
+    return draft;
+  } catch (_) {
+    return null;
+  }
+}
+
+function restoreCheckoutDraft(draft) {
+  if (!draft) return;
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = String(val);
+  };
+  set('order-name', draft.name);
+  set('order-email', draft.email);
+  set('order-phone', draft.phone);
+  set('order-address', draft.address);
+  set('order-notes', draft.notes);
+
+  lastPickedAddress = String(draft.lastPickedAddress || draft.address || '').trim();
+  addressSelected = !!(draft.addressSelected || (lastPickedAddress && draft.address === lastPickedAddress));
+  ruralLockedFromPick = !!draft.ruralLockedFromPick || addressSelected;
+  autoRural = !!draft.autoRural;
+  deliveryReason = draft.deliveryReason || '';
+
+  const box = document.getElementById('rural-override');
+  if (box) box.checked = !!draft.ruralOverride;
+
+  const wrap = document.getElementById('rural-override-wrap');
+  if (wrap && (draft.address || '').trim().length >= 5) wrap.classList.remove('hidden');
+
+  applyDeliveryFromAddress(autoRural, deliveryReason);
+
+  let step = parseInt(draft.step, 10) || 1;
+  if (step < 1 || step > 3) step = 1;
+  // Only restore advanced steps if required fields still make sense
+  if (step >= 2 && validateDetails()) step = 1;
+  if (step >= 3 && validateShipping()) step = 2;
+  setCheckoutStep(step);
 }
 
 function getRural() {
@@ -407,6 +492,7 @@ function refreshRuralFromAutoAndOverride() {
     }
   }
   updateShippingTotals();
+  scheduleSaveCheckoutDraft();
 }
 
 /** True once customer has picked an address from the dropdown */
@@ -421,12 +507,14 @@ function hasChosenAddress() {
 function markAddressPicked(text) {
   lastPickedAddress = String(text || '').trim();
   addressSelected = lastPickedAddress.length >= 5;
+  scheduleSaveCheckoutDraft();
 }
 
 function clearAddressPick() {
   addressSelected = false;
   ruralLockedFromPick = false;
   lastPickedAddress = '';
+  scheduleSaveCheckoutDraft();
 }
 
 function computeShip(cart, subtotal, options = {}) {
@@ -560,7 +648,7 @@ function updateShippingTotals() {
   }
 }
 
-function setCheckoutStep(step) {
+function setCheckoutStep(step, opts) {
   checkoutStep = step;
   document.querySelectorAll('[data-step-panel]').forEach((panel) => {
     const n = parseInt(panel.getAttribute('data-step-panel'), 10);
@@ -576,7 +664,10 @@ function setCheckoutStep(step) {
     line.classList.toggle('is-done', n < step);
   });
   updateShippingTotals();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  scheduleSaveCheckoutDraft();
+  if (!opts || opts.scroll !== false) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function renderCart() {
@@ -695,6 +786,18 @@ function validateShipping() {
 document.getElementById('clear-cart')?.addEventListener('click', () => {
   if (typeof setCart === 'function') setCart([]);
   else localStorage.removeItem('cortenCart');
+  clearCheckoutDraft();
+  clearAddressPick();
+  ['order-name', 'order-email', 'order-phone', 'order-address', 'order-notes'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const box = document.getElementById('rural-override');
+  if (box) box.checked = false;
+  autoRural = false;
+  deliveryReason = '';
+  isRuralDelivery = false;
+  setCheckoutStep(1, { scroll: false });
   renderCart();
 });
 
@@ -789,6 +892,8 @@ document.getElementById('pay-stripe-btn')?.addEventListener('click', async () =>
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Could not start checkout');
     if (!data.url) throw new Error('No checkout URL returned');
+    // Keep draft until Stripe success page; cancel can resume checkout
+    saveCheckoutDraft();
     window.location.href = data.url;
   } catch (e) {
     errEl.textContent = e.message || 'Stripe checkout failed. Check STRIPE_SECRET_KEY is set, or use “Place order without payment”.';
@@ -830,6 +935,7 @@ document.getElementById('order-form')?.addEventListener('submit', async (e) => {
 
     if (typeof setCart === 'function') setCart([]);
     else localStorage.removeItem('cortenCart');
+    clearCheckoutDraft();
     if (typeof updateCartCount === 'function') updateCartCount();
 
     document.getElementById('cart-flow').classList.add('hidden');
@@ -866,6 +972,7 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
         markAddressPicked(text);
         ruralLockedFromPick = true;
         applyDeliveryFromAddress(!!result.rural, result.reason || '');
+        scheduleSaveCheckoutDraft();
         return;
       }
       // Blur/change after a pick often fires as "manual" — keep pick if text unchanged
@@ -878,6 +985,7 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
       if (result.manual && text !== lastPickedAddress) {
         clearAddressPick();
         applyDeliveryFromAddress(!!result.rural, result.reason || '');
+        scheduleSaveCheckoutDraft();
         return;
       }
       applyDeliveryFromAddress(!!result.rural, result.reason || '');
@@ -887,6 +995,7 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
       // Only clear pick when user actually changes the chosen address
       if (lastPickedAddress && v === lastPickedAddress) {
         addressSelected = true;
+        scheduleSaveCheckoutDraft();
         return;
       }
       if (lastPickedAddress && v !== lastPickedAddress) {
@@ -896,12 +1005,14 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
       }
       const det = NzAddress.detectRural(addrInput.value);
       applyDeliveryFromAddress(!!det.rural, det.reason || '');
+      scheduleSaveCheckoutDraft();
     });
     addrInput.addEventListener('change', () => {
       const v = addrInput.value.trim();
       if (lastPickedAddress && v === lastPickedAddress) {
         addressSelected = true;
         applyDeliveryFromAddress(autoRural, deliveryReason);
+        scheduleSaveCheckoutDraft();
         return;
       }
       if (ruralLockedFromPick && v === lastPickedAddress) {
@@ -910,6 +1021,7 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
       }
       const det = NzAddress.detectRural(addrInput.value);
       applyDeliveryFromAddress(!!det.rural, det.reason || '');
+      scheduleSaveCheckoutDraft();
     });
   }
 
@@ -917,8 +1029,22 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
     refreshRuralFromAutoAndOverride();
   });
 
-  setCheckoutStep(1);
+  // Persist name / email / phone / notes as user types
+  ['order-name', 'order-email', 'order-phone', 'order-notes'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', scheduleSaveCheckoutDraft);
+    el.addEventListener('change', scheduleSaveCheckoutDraft);
+  });
+
   renderCart();
+
+  const draft = loadCheckoutDraft();
+  if (draft && (typeof getCart === 'function' ? getCart() : []).length) {
+    restoreCheckoutDraft(draft);
+  } else {
+    setCheckoutStep(1, { scroll: false });
+  }
 })();
 </script>
 </body>

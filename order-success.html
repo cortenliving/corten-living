@@ -55,7 +55,10 @@ tailwind.config = {
   </div>
 </main>
 <script>
-try { localStorage.removeItem('cortenCart'); } catch (e) {}
+try {
+  localStorage.removeItem('cortenCart');
+  localStorage.removeItem('cortenCheckoutDraft');
+} catch (e) {}
 
 const params = new URLSearchParams(location.search);
 const order = params.get('order');
