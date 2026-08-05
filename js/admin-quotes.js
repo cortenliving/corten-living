@@ -920,9 +920,15 @@ function printCustomerQuote() {
     return;
   }
   buildCustomerPrint();
-  // Allow layout paint then print
+  document.body.classList.add('printing-quote');
+  const done = () => {
+    document.body.classList.remove('printing-quote');
+    window.removeEventListener('afterprint', done);
+  };
+  window.addEventListener('afterprint', done);
+  // Allow layout paint then print (avoids blank first page from hidden admin UI)
   requestAnimationFrame(() => {
-    setTimeout(() => window.print(), 50);
+    setTimeout(() => window.print(), 80);
   });
 }
 

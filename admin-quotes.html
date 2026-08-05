@@ -49,20 +49,42 @@ tailwind.config = {
   /* Screen: hide customer print sheet */
   #customer-print { display: none; }
   @media print {
-    .no-print { display: none !important; }
-    body { background: #fff !important; }
-    #login-screen, #app > header, #list-view, #builder, #customers-view, #settings-view, #toast {
+    /* Avoid blank first page: collapse everything except the customer sheet */
+    html, body {
+      background: #fff !important;
+      height: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+    body * {
+      visibility: hidden;
+    }
+    #customer-print,
+    #customer-print * {
+      visibility: visible !important;
+    }
+    #login-screen,
+    #app,
+    #toast {
       display: none !important;
+      height: 0 !important;
+      overflow: hidden !important;
     }
     #customer-print {
       display: block !important;
-      max-width: 800px;
-      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      max-width: none;
+      margin: 0;
       padding: 12mm 14mm;
       color: #1a1814;
       font-size: 11pt;
+      box-sizing: border-box;
     }
-    #customer-print h1 { font-size: 22pt; margin: 0 0 4px; }
     #customer-print table { width: 100%; border-collapse: collapse; }
     #customer-print th, #customer-print td {
       border-bottom: 1px solid #e5ddd0; padding: 8px 6px; text-align: left; font-size: 10pt;
@@ -70,10 +92,11 @@ tailwind.config = {
     #customer-print th { color: #666; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; }
     #customer-print .totals td { border: none; padding: 4px 6px; }
     #customer-print .totals .grand td { font-weight: 700; font-size: 13pt; padding-top: 10px; }
+    @page { margin: 12mm; size: auto; }
   }
 </style>
 </head>
-<body class="font-sans text-ink-900 antialiased min-h-screen">
+<body class="font-sans text-ink-900 antialiased min-h-screen print:min-h-0">
 
 <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-ink-900 text-white text-sm rounded shadow-lg opacity-0 pointer-events-none transition-opacity"></div>
 
