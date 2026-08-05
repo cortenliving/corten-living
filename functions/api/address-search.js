@@ -33,10 +33,13 @@ export async function onRequestGet(context) {
           : env.NZ_POST_API_KEY;
       const d = await fetchNzPostDetails(env, token, dpid);
       if (!d) return json({ details: null, error: 'No details for DPID' }, 200);
-      const lines = [d.AddressLine1, d.AddressLine2, d.AddressLine3, d.AddressLine4, d.AddressLine5]
-        .filter(Boolean)
-        .join(', ');
-      const info = ruralFromNzFields(d, lines);
+      const lines = detailsLines(d);
+      let info = ruralFromNzFields(d, lines);
+      // Physical 21A Makauri style — link to postal RD sibling
+      if (!info.rural && String(d.Physical || '').toUpperCase() === 'Y') {
+        const sib = await findRuralSibling(env, token, d);
+        if (sib && sib.rural) info = sib;
+      }
       return json({
         details: {
           dpid: d.DPID || dpid,
@@ -227,6 +230,127 @@ async function fetchNzPostDetails(env, token, dpid) {
   return null;
 }
 
+function detailsLines(d) {
+  return [d.AddressLine1, d.AddressLine2, d.AddressLine3, d.AddressLine4, d.AddressLine5]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function streetKeyFromDetails(d) {
+  if (!d || d.StreetNumber == null || !d.RoadName) return '';
+  return `${Number(d.StreetNumber)}|${String(d.RoadName).toLowerCase().trim()}`;
+}
+
+/** Suggest only (no details enrich) — used for RD sibling lookup */
+async function suggestNzPostRaw(env, token, q) {
+  const u = new URL(env.NZ_POST_ADDRESS_URL || 'https://api.nzpost.co.nz/addresschecker/1.0/suggest');
+  u.searchParams.set('q', q);
+  u.searchParams.set('max', '8');
+  const res = await fetch(u.toString(), { headers: nzPostHeaders(env, token) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return [];
+  return normalizeNzPostResponse(data);
+}
+
+/**
+ * NZ Post often has TWO records for the same rural property:
+ *  - Postal: "21 Cameron Road, RD 1, Gisborne" (RuralDelivery set)
+ *  - Physical: "21A Cameron Road, Makauri, Gisborne" (Physical=Y, RuralDelivery null)
+ * Link physical → rural when same street number + road has an RD postal sibling.
+ */
+async function findRuralSibling(env, token, d) {
+  if (!d || d.StreetNumber == null || !d.RoadName) return null;
+  const num = Number(d.StreetNumber);
+  const road = String(d.RoadName).trim();
+  const roadType = String(d.RoadTypeName || '').trim();
+  const place = String(d.MailTown || d.CityTown || d.Suburb || '').trim();
+  const alpha = d.StreetAlpha ? String(d.StreetAlpha) : '';
+
+  const queries = [
+    `${num} ${road} ${roadType} RD ${place}`,
+    `${num}${alpha} ${road} ${roadType} RD ${place}`,
+    `${num} ${road} RD ${place}`,
+    `${num} ${road} ${roadType} RD`,
+  ]
+    .map((s) => s.replace(/\s+/g, ' ').trim())
+    .filter((s, i, arr) => s.length > 5 && arr.indexOf(s) === i);
+
+  for (const q of queries) {
+    try {
+      const suggestions = await suggestNzPostRaw(env, token, q);
+      for (const s of suggestions.slice(0, 5)) {
+        if (!s.dpid || String(s.dpid) === String(d.DPID || d.dpid)) continue;
+        // Quick text hit
+        const textInfo = ruralFromNzFields(s.raw || {}, s.display || s.short || '');
+        if (textInfo.rural && sameStreetFromText(s, num, road)) {
+          return textInfo;
+        }
+        const sd = await fetchNzPostDetails(env, token, s.dpid);
+        if (!sd) continue;
+        if (Number(sd.StreetNumber) !== num) continue;
+        if (String(sd.RoadName || '').toLowerCase() !== road.toLowerCase()) continue;
+        const info = ruralFromNzFields(sd, detailsLines(sd));
+        if (info.rural) {
+          return {
+            rural: true,
+            reason: (info.reason || 'NZ Post RD') + ' (same property postal address)',
+            siblingDpid: sd.DPID || s.dpid,
+          };
+        }
+      }
+    } catch (_) {
+      /* try next query */
+    }
+  }
+  return null;
+}
+
+function sameStreetFromText(item, num, road) {
+  const t = String(item.display || item.short || '');
+  const re = new RegExp(
+    '\\b' + num + '[A-Za-z]?\\b[\\s,].*' + road.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    'i'
+  );
+  return re.test(t);
+}
+
+/** If any result is rural RD, mark same street-number physical rows rural too */
+function propagateRuralWithinList(list) {
+  const ruralStreets = new Set();
+  for (const item of list || []) {
+    if (!item.rural) continue;
+    const d = item.raw?.details;
+    const key = streetKeyFromDetails(d);
+    if (key) ruralStreets.add(key);
+    // Parse "21 Cameron Road, RD 1" style
+    const m = String(item.display || item.short || '').match(
+      /^(\d+)\s*[A-Za-z]?\s+([A-Za-z][A-Za-z\s'-]+?)(?:\s+Road|\s+Street|\s+Ave|\s+Lane|\s+Drive|\s+Place|\s+Crescent|\s+Terrace)?\s*,/i
+    );
+    if (m) ruralStreets.add(`${Number(m[1])}|${m[2].trim().toLowerCase()}`);
+  }
+  if (!ruralStreets.size) return list;
+
+  for (const item of list || []) {
+    if (item.rural) continue;
+    const d = item.raw?.details;
+    const key = streetKeyFromDetails(d);
+    if (key && ruralStreets.has(key)) {
+      item.rural = true;
+      item.reason = item.reason || 'Same street number as NZ Post RD address';
+      item.importance = 0.9;
+      continue;
+    }
+    const t = String(item.display || item.short || '');
+    const m = t.match(/^(\d+)\s*[A-Za-z]?\s+([A-Za-z][A-Za-z\s'-]+?)(?:\s+Road|\s+Street)?\s*,/i);
+    if (m && ruralStreets.has(`${Number(m[1])}|${m[2].trim().toLowerCase()}`)) {
+      item.rural = true;
+      item.reason = 'Same street number as NZ Post RD address';
+      item.importance = 0.9;
+    }
+  }
+  return list;
+}
+
 /** Enrich top suggestions with Address Details (authoritative RuralDelivery) */
 async function enrichNzPostRural(env, token, list) {
   const targets = (list || []).filter((x) => x.dpid).slice(0, 8);
@@ -235,27 +359,42 @@ async function enrichNzPostRural(env, token, list) {
       try {
         const d = await fetchNzPostDetails(env, token, item.dpid);
         if (!d) return;
-        const lines = [d.AddressLine1, d.AddressLine2, d.AddressLine3, d.AddressLine4, d.AddressLine5]
-          .filter(Boolean)
-          .join(', ');
+        const lines = detailsLines(d);
         const full = lines || item.display || item.short;
-        const info = ruralFromNzFields(d, full);
+        let info = ruralFromNzFields(d, full);
         item.raw = { ...(item.raw || {}), details: d };
+
+        // Physical-only record with no RD → look up postal RD sibling (21A Makauri vs 21 RD 1)
+        if (!info.rural && String(d.Physical || '').toUpperCase() === 'Y') {
+          const sib = await findRuralSibling(env, token, d);
+          if (sib && sib.rural) {
+            info = sib;
+            item.raw.ruralSibling = sib;
+          }
+        }
+
         if (info.rural) {
           item.rural = true;
           item.reason = info.reason;
           item.importance = 0.9;
         }
         if (d.Postcode || d.postcode) item.postcode = d.Postcode || d.postcode;
-        if (lines) {
-          item.display = full;
-          if (!item.short || item.short === item.display) item.short = full;
+        // Keep human-friendly short (physical suburb) but ensure display usable
+        if (lines && !item.short) item.short = lines;
+        if (lines && (!item.display || item.rural)) {
+          // Prefer postal form in display when rural so RD is visible
+          if (info.rural && d.RuralDelivery) {
+            item.display = lines;
+          } else if (!item.display) {
+            item.display = full;
+          }
         }
       } catch (_) {
         /* keep suggest-level rural guess */
       }
     })
   );
+  propagateRuralWithinList(list);
   return list;
 }
 
