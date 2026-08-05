@@ -10,10 +10,12 @@
     const tests = [
       { re: /\bR\.?\s*D\.?\s*\d+\b/i, reason: 'Rural Delivery (RD) number' },
       { re: /\bRD\s*\d+\b/i, reason: 'RD number' },
+      { re: /\bRD\d+\b/i, reason: 'RD number' },
       { re: /\brural\s+delivery\b/i, reason: 'Rural Delivery' },
       { re: /\bprivate\s+bag\b/i, reason: 'Private Bag' },
       { re: /\bP\.?\s*B\.?\s*\d+/i, reason: 'Private Bag' },
       { re: /\bRMB\b/i, reason: 'Roadside Mail Box' },
+      { re: /,\s*RD\b/i, reason: 'RD in address' },
       { re: /\brural\b/i, reason: 'Contains “rural”' },
       { re: /\bfarm\b/i, reason: 'Farm address' },
     ];
@@ -23,11 +25,23 @@
     return { rural: false, reason: '' };
   }
 
+  /**
+   * Prefer NZ Post rural=true; still run text heuristics if API says false
+   * (AddressChecker suggest often omits rural flags until details are loaded).
+   */
   function detectRural(address, item) {
-    if (item && typeof item.rural === 'boolean') {
-      return { rural: item.rural, reason: item.reason || (item.rural ? 'Postal rural address' : '') };
+    const fromText = detectRuralFromText(
+      [address, item?.display, item?.short, item?.reason].filter(Boolean).join(' ')
+    );
+    if (item && item.rural === true) {
+      return {
+        rural: true,
+        reason: item.reason || fromText.reason || 'NZ Post rural address',
+      };
     }
-    return detectRuralFromText(address);
+    if (fromText.rural) return fromText;
+    if (item && item.rural === false) return { rural: false, reason: '' };
+    return fromText;
   }
 
   function escapeHtml(s) {
@@ -107,9 +121,36 @@
       });
     }
 
-    function pick(item) {
+    async function pick(item) {
       if (!item) return;
-      const ruralInfo = detectRural(item.display || item.short, item);
+      let ruralInfo = detectRural(item.display || item.short, item);
+      // If NZ Post DPID present, confirm rural via details (RuralDelivery field)
+      if (item.dpid && (item.source === 'nzpost' || item.source === 'nzpost-legacy' || hasNzPost)) {
+        try {
+          const res = await fetch(
+            '/api/address-search?dpid=' + encodeURIComponent(item.dpid),
+            { headers: { Accept: 'application/json' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.details) {
+              const d = data.details;
+              if (typeof d.rural === 'boolean') {
+                ruralInfo = {
+                  rural: d.rural,
+                  reason: d.reason || ruralInfo.reason,
+                };
+              }
+              if (d.display || d.fullAddress) {
+                item.display = d.display || d.fullAddress;
+                item.short = d.short || d.display || item.short;
+              }
+            }
+          }
+        } catch (_) {
+          /* keep suggest-level rural */
+        }
+      }
       input.value = item.short || item.display || '';
       hide();
       onSelect({

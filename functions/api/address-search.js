@@ -19,6 +19,43 @@ export async function onRequestOptions() {
 export async function onRequestGet(context) {
   const { env, request } = context;
   const url = new URL(request.url);
+
+  // Single-address details (rural flag) when cart picks a NZ Post DPID
+  const dpid = String(url.searchParams.get('dpid') || '').trim();
+  if (dpid) {
+    if (!(env.NZ_POST_CLIENT_ID && env.NZ_POST_CLIENT_SECRET) && !env.NZ_POST_API_KEY) {
+      return json({ error: 'NZ Post not configured', details: null }, 200);
+    }
+    try {
+      const token =
+        env.NZ_POST_CLIENT_ID && env.NZ_POST_CLIENT_SECRET
+          ? await getNzPostToken(env)
+          : env.NZ_POST_API_KEY;
+      const d = await fetchNzPostDetails(env, token, dpid);
+      if (!d) return json({ details: null, error: 'No details for DPID' }, 200);
+      const lines = [d.AddressLine1, d.AddressLine2, d.AddressLine3, d.AddressLine4, d.AddressLine5]
+        .filter(Boolean)
+        .join(', ');
+      const info = ruralFromNzFields(d, lines);
+      return json({
+        details: {
+          dpid: d.DPID || dpid,
+          display: lines,
+          short: lines,
+          fullAddress: lines,
+          rural: info.rural,
+          reason: info.reason,
+          ruralDelivery: d.RuralDelivery ?? d.rural_delivery ?? null,
+          postcode: d.Postcode || d.postcode || '',
+          source: 'nzpost',
+          raw: d,
+        },
+      });
+    } catch (e) {
+      return json({ details: null, error: String(e.message || e) }, 200);
+    }
+  }
+
   const q = String(url.searchParams.get('q') || '').trim();
   if (q.length < 2) {
     return json({ results: [], provider: 'none', hint: 'Type at least 2 characters' });
@@ -120,40 +157,137 @@ async function getNzPostToken(env) {
   return cachedToken.value;
 }
 
+function nzPostHeaders(env, token) {
+  return {
+    Authorization: 'Bearer ' + token,
+    Accept: 'application/json',
+    client_id: env.NZ_POST_CLIENT_ID,
+  };
+}
+
+/** AddressChecker suggest has no rural flag — RuralDelivery is on /details */
+function ruralFromNzFields(a, fullText) {
+  const full = String(fullText || '');
+  const rd =
+    a.RuralDelivery ??
+    a.rural_delivery ??
+    a.rd_number ??
+    a.RDNumber ??
+    a.rd_no ??
+    a.RdNumber ??
+    null;
+  if (rd != null && String(rd).trim() !== '' && String(rd).toLowerCase() !== 'null') {
+    return { rural: true, reason: 'NZ Post Rural Delivery RD ' + String(rd).trim() };
+  }
+
+  const bag = String(a.BoxBagType || a.box_bag_type || a.DeliveryServiceType || '');
+  if (/rural|private\s*bag|cmb\s*rural|community\s*mail/i.test(bag)) {
+    return { rural: true, reason: 'NZ Post ' + bag };
+  }
+
+  const type = String(
+    a.address_type || a.AddressType || a.type || a.delivery_type || a.SourceDesc || a.source_desc || ''
+  ).toLowerCase();
+  // AddressChecker: rural postal often SourceDesc "Postal" only; urban is "Postal\Physical"
+  if (type === 'postal' || type.includes('rural')) {
+    // "Postal" alone is a strong rural-mail hint when FullAddress also has RD/bag markers
+    if (type.includes('rural') || /\br\.?\s*d\.?\s*\d+/i.test(full) || /\brd\s*\d+/i.test(full)) {
+      return { rural: true, reason: type.includes('rural') ? 'NZ Post rural type' : 'NZ Post RD in address' };
+    }
+  }
+  if (a.is_rural_delivery === true || a.is_rural === true || a.rural === true) {
+    return { rural: true, reason: 'NZ Post rural address' };
+  }
+  // MailTown set with no urban suburb is often rural distribution
+  if ((a.MailTown || a.mailtown) && !(a.Suburb || a.suburb) && /\brd\b/i.test(full)) {
+    return { rural: true, reason: 'NZ Post rural mailtown' };
+  }
+
+  if (/\bR\.?\s*D\.?\s*\d+\b/i.test(full) || /\bRD\s*\d+\b/i.test(full) || /,\s*RD\b/i.test(full)) {
+    return { rural: true, reason: 'RD number in address' };
+  }
+  if (/\bprivate\s+bag\b/i.test(full) || /\brural\s+delivery\b/i.test(full)) {
+    return { rural: true, reason: 'Rural postal wording in address' };
+  }
+  return { rural: false, reason: '' };
+}
+
+async function fetchNzPostDetails(env, token, dpid) {
+  if (!dpid) return null;
+  const u = new URL(env.NZ_POST_DETAILS_URL || 'https://api.nzpost.co.nz/addresschecker/1.0/details');
+  u.searchParams.set('dpid', String(dpid));
+  const res = await fetch(u.toString(), { headers: nzPostHeaders(env, token) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) return null;
+  const details = data.details;
+  if (Array.isArray(details) && details.length) return details[0];
+  if (details && typeof details === 'object') return details;
+  return null;
+}
+
+/** Enrich top suggestions with Address Details (authoritative RuralDelivery) */
+async function enrichNzPostRural(env, token, list) {
+  const targets = (list || []).filter((x) => x.dpid).slice(0, 8);
+  await Promise.all(
+    targets.map(async (item) => {
+      try {
+        const d = await fetchNzPostDetails(env, token, item.dpid);
+        if (!d) return;
+        const lines = [d.AddressLine1, d.AddressLine2, d.AddressLine3, d.AddressLine4, d.AddressLine5]
+          .filter(Boolean)
+          .join(', ');
+        const full = lines || item.display || item.short;
+        const info = ruralFromNzFields(d, full);
+        item.raw = { ...(item.raw || {}), details: d };
+        if (info.rural) {
+          item.rural = true;
+          item.reason = info.reason;
+          item.importance = 0.9;
+        }
+        if (d.Postcode || d.postcode) item.postcode = d.Postcode || d.postcode;
+        if (lines) {
+          item.display = full;
+          if (!item.short || item.short === item.display) item.short = full;
+        }
+      } catch (_) {
+        /* keep suggest-level rural guess */
+      }
+    })
+  );
+  return list;
+}
+
 async function searchNzPost(env, q) {
   const token = await getNzPostToken(env);
-  // ParcelAddress domestic suggest (common NZ Post ecommerce API)
-  // Also try AddressChecker path if configured
+  // Prefer AddressChecker (what most accounts have), then ParcelAddress
   const endpoints = [
-    env.NZ_POST_ADDRESS_URL ||
-      'https://api.nzpost.co.nz/parceladdress/2.0/domestic/addresses',
-    'https://api.nzpost.co.nz/addresschecker/1.0/suggest',
+    env.NZ_POST_ADDRESS_URL || 'https://api.nzpost.co.nz/addresschecker/1.0/suggest',
+    'https://api.nzpost.co.nz/parceladdress/2.0/domestic/addresses',
   ];
 
   let lastErr = null;
   for (const base of endpoints) {
     try {
       const u = new URL(base);
-      if (!u.searchParams.has('q') && !u.searchParams.has('count')) {
-        u.searchParams.set('q', q);
-        u.searchParams.set('count', '10');
+      u.searchParams.set('q', q);
+      // AddressChecker uses max; ParcelAddress uses count
+      if (/addresschecker/i.test(base)) {
+        u.searchParams.set('max', '10');
       } else {
-        u.searchParams.set('q', q);
+        u.searchParams.set('count', '10');
       }
-      const res = await fetch(u.toString(), {
-        headers: {
-          Authorization: 'Bearer ' + token,
-          Accept: 'application/json',
-          'client_id': env.NZ_POST_CLIENT_ID,
-        },
-      });
+      const res = await fetch(u.toString(), { headers: nzPostHeaders(env, token) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        lastErr = new Error(data.message || data.error || ('HTTP ' + res.status));
+        lastErr = new Error(data.message || data.error || data.status || ('HTTP ' + res.status));
         continue;
       }
-      const list = normalizeNzPostResponse(data);
-      if (list.length) return list;
+      let list = normalizeNzPostResponse(data);
+      if (list.length) {
+        // Details API has RuralDelivery — required for reliable rural detection
+        list = await enrichNzPostRural(env, token, list);
+        return list;
+      }
     } catch (e) {
       lastErr = e;
     }
@@ -165,15 +299,16 @@ async function searchNzPost(env, q) {
 async function searchNzPostLegacyKey(env, q) {
   // Some older keys use query param
   const u = new URL(
-    env.NZ_POST_ADDRESS_URL || 'https://api.nzpost.co.nz/parceladdress/2.0/domestic/addresses'
+    env.NZ_POST_ADDRESS_URL || 'https://api.nzpost.co.nz/addresschecker/1.0/suggest'
   );
   u.searchParams.set('q', q);
-  u.searchParams.set('count', '10');
+  if (/addresschecker/i.test(u.pathname)) u.searchParams.set('max', '10');
+  else u.searchParams.set('count', '10');
   const res = await fetch(u.toString(), {
     headers: {
       Accept: 'application/json',
-      'Authorization': 'Bearer ' + env.NZ_POST_API_KEY,
-      'client_id': env.NZ_POST_CLIENT_ID || '',
+      Authorization: 'Bearer ' + env.NZ_POST_API_KEY,
+      client_id: env.NZ_POST_CLIENT_ID || '',
     },
   });
   const data = await res.json().catch(() => ({}));
@@ -196,26 +331,17 @@ function normalizeNzPostResponse(data) {
       a.FullAddress ||
       a.formatted_address ||
       a.address ||
-      [a.address_line_1, a.address_line_2, a.suburb, a.city, a.postcode]
+      [a.AddressLine1 || a.address_line_1, a.AddressLine2 || a.address_line_2, a.Suburb || a.suburb, a.City || a.city, a.Postcode || a.postcode]
         .filter(Boolean)
         .join(', ');
 
-    const type = String(
-      a.address_type || a.AddressType || a.type || a.delivery_type || ''
-    ).toLowerCase();
-    const isRural =
-      type.includes('rural') ||
-      a.is_rural_delivery === true ||
-      a.is_rural === true ||
-      a.rural === true ||
-      !!(a.rd_number || a.RDNumber || a.rd_no) ||
-      /\brd\s*\d+/i.test(full);
+    const info = ruralFromNzFields(a, full);
 
     const short = [
       a.address_line_1 || a.AddressLine1 || a.street || '',
       a.suburb || a.Suburb || '',
-      a.city || a.City || a.mailtown || a.Mailtown || '',
-      a.postcode || a.PostCode || '',
+      a.city || a.City || a.mailtown || a.MailTown || a.Mailtown || '',
+      a.postcode || a.PostCode || a.Postcode || '',
     ]
       .filter(Boolean)
       .join(', ');
@@ -224,16 +350,12 @@ function normalizeNzPostResponse(data) {
       source: 'nzpost',
       short: short || full,
       display: full,
-      rural: isRural,
-      reason: isRural
-        ? a.rd_number || a.RDNumber
-          ? 'NZ Post Rural Delivery RD ' + (a.rd_number || a.RDNumber)
-          : 'NZ Post rural address'
-        : '',
-      postcode: a.postcode || a.PostCode || '',
+      rural: info.rural,
+      reason: info.reason,
+      postcode: a.postcode || a.PostCode || a.Postcode || '',
       dpid: a.dpid || a.DPID || a.unique_id || null,
       raw: a,
-      importance: isRural ? 0.9 : 1,
+      importance: info.rural ? 0.9 : 1,
     };
   });
 }
