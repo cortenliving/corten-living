@@ -121,16 +121,41 @@
       });
     }
 
+    let suppressChange = false;
+    let pickSeq = 0;
+
+    function emitSelect(item, ruralInfo, extra) {
+      input.value = item.short || item.display || '';
+      onSelect({
+        display: item.display || item.short,
+        short: input.value,
+        rural: !!ruralInfo.rural,
+        reason: ruralInfo.reason || '',
+        raw: item,
+        source: item.source || '',
+        dpid: item.dpid || null,
+        fromPick: true,
+        ...(extra || {}),
+      });
+    }
+
     async function pick(item) {
       if (!item) return;
+      const seq = ++pickSeq;
+      // Immediate rural from suggest list so order summary updates right away
       let ruralInfo = detectRural(item.display || item.short, item);
-      // If NZ Post DPID present, confirm rural via details (RuralDelivery field)
+      suppressChange = true;
+      hide();
+      emitSelect(item, ruralInfo);
+
+      // Confirm RuralDelivery via Address Details (authoritative)
       if (item.dpid && (item.source === 'nzpost' || item.source === 'nzpost-legacy' || hasNzPost)) {
         try {
           const res = await fetch(
             '/api/address-search?dpid=' + encodeURIComponent(item.dpid),
             { headers: { Accept: 'application/json' } }
           );
+          if (seq !== pickSeq) return;
           if (res.ok) {
             const data = await res.json();
             if (data && data.details) {
@@ -145,23 +170,17 @@
                 item.display = d.display || d.fullAddress;
                 item.short = d.short || d.display || item.short;
               }
+              // Refresh summary if details changed rural/address
+              emitSelect(item, ruralInfo, { detailsConfirmed: true });
             }
           }
         } catch (_) {
           /* keep suggest-level rural */
         }
       }
-      input.value = item.short || item.display || '';
-      hide();
-      onSelect({
-        display: item.display || item.short,
-        short: input.value,
-        rural: ruralInfo.rural,
-        reason: ruralInfo.reason,
-        raw: item,
-        source: item.source || '',
-        dpid: item.dpid || null,
-      });
+      setTimeout(() => {
+        if (seq === pickSeq) suppressChange = false;
+      }, 400);
     }
 
     function renderList(q) {
@@ -264,6 +283,8 @@
     input.addEventListener('blur', () => setTimeout(hide, 180));
 
     input.addEventListener('change', () => {
+      // Don't overwrite a dropdown pick (API rural) with text-only heuristics
+      if (suppressChange) return;
       const rural = detectRuralFromText(input.value);
       onSelect({
         display: input.value,
@@ -272,6 +293,7 @@
         reason: rural.reason,
         raw: null,
         manual: true,
+        fromPick: false,
       });
     });
   }

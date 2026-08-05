@@ -87,6 +87,11 @@ tailwind.config = {
     border: 1px solid rgba(229, 122, 72, 0.55);
     box-shadow: 0 0 40px -10px rgba(213, 111, 61, 0.5);
   }
+  @keyframes shipFlash {
+    0% { color: #fbbf24; transform: scale(1.06); }
+    100% { color: #fff; transform: scale(1); }
+  }
+  .ship-flash { animation: shipFlash 0.55s ease; }
   .c-cta {
     box-shadow: 0 10px 30px -8px rgba(183, 65, 14, 0.75);
     transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
@@ -365,6 +370,8 @@ let isRuralDelivery = false;
 let deliveryReason = '';
 let checkoutStep = 1;
 let addressSelected = false;
+/** When true, keep NZ Post rural flag until user edits the address field */
+let ruralLockedFromPick = false;
 
 function money(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
@@ -448,17 +455,27 @@ function updateShippingTotals() {
   const ship = computeShip(cart, subtotal);
   lastShip = ship;
 
-  document.getElementById('cart-subtotal').textContent = fmtMoney(ship.exclSubtotal);
-  document.getElementById('shipping-label').textContent =
-    (ship.label || 'NZ shipping') + ' (excl. GST)';
+  const subEl = document.getElementById('cart-subtotal');
+  if (subEl) subEl.textContent = fmtMoney(ship.exclSubtotal);
+
+  const labelEl = document.getElementById('shipping-label');
+  if (labelEl) {
+    labelEl.textContent = (ship.label || 'NZ shipping') + ' (excl. GST)';
+  }
 
   const shipEl = document.getElementById('cart-shipping');
-  if (ship.freeShipping && !ship.ruralSurcharge) {
-    shipEl.textContent = 'FREE';
-  } else if (ship.freeShipping && ship.ruralSurcharge > 0) {
-    shipEl.textContent = fmtMoney(ship.exclShipping) + ' (rural only)';
-  } else {
-    shipEl.textContent = fmtMoney(ship.exclShipping);
+  if (shipEl) {
+    if (ship.freeShipping && !ship.ruralSurcharge) {
+      shipEl.textContent = 'FREE';
+    } else if (ship.freeShipping && ship.ruralSurcharge > 0) {
+      shipEl.textContent = fmtMoney(ship.exclShipping) + ' (rural only)';
+    } else {
+      shipEl.textContent = fmtMoney(ship.exclShipping);
+    }
+    // Flash so rural change is obvious in the sticky summary
+    shipEl.classList.remove('ship-flash');
+    void shipEl.offsetWidth;
+    shipEl.classList.add('ship-flash');
   }
 
   const bd = document.getElementById('shipping-breakdown');
@@ -467,19 +484,26 @@ function updateShippingTotals() {
       const basePart = ship.freeShipping ? 'Base free' : ('Base ' + fmtMoney(ship.baseShipping));
       bd.textContent = basePart + ' + rural ' + fmtMoney(ship.ruralSurcharge) + ' (excl. GST)';
       bd.classList.remove('hidden');
+    } else if (ship.rural && !ship.ruralSurcharge) {
+      bd.textContent = 'Rural address (no surcharge configured)';
+      bd.classList.remove('hidden');
     } else {
       bd.textContent = '';
       bd.classList.add('hidden');
     }
   }
 
-  document.getElementById('shipping-weight').textContent = ship.weightGrams
-    ? `Est. parcel weight: ~${ship.weightGrams} g (${ship.weightKg} kg)`
-    : '';
+  const wt = document.getElementById('shipping-weight');
+  if (wt) {
+    wt.textContent = ship.weightGrams
+      ? `Est. parcel weight: ~${ship.weightGrams} g (${ship.weightKg} kg)`
+      : '';
+  }
 
   const gstEl = document.getElementById('cart-gst');
   if (gstEl) gstEl.textContent = fmtMoney(ship.gst);
-  document.getElementById('cart-total').textContent = fmtMoney(ship.totalIncl);
+  const totEl = document.getElementById('cart-total');
+  if (totEl) totEl.textContent = fmtMoney(ship.totalIncl);
 
   const payDel = document.getElementById('pay-delivery-preview');
   if (payDel) {
@@ -788,14 +812,23 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
   const addrDrop = document.getElementById('address-dropdown');
   if (window.NzAddress && addrInput && addrDrop) {
     NzAddress.attachAutocomplete(addrInput, addrDrop, (result) => {
-      addressSelected = !result.manual;
+      addressSelected = !!(result.fromPick || (!result.manual && result.dpid));
+      if (result.fromPick) {
+        ruralLockedFromPick = true;
+      } else if (result.manual) {
+        ruralLockedFromPick = false;
+      }
       applyDeliveryFromAddress(!!result.rural, result.reason || '');
       const src = document.getElementById('address-data-source');
       if (src) {
         const s = result.source || result.raw?.source || '';
         if (s === 'nzpost' || s === 'nzpost-legacy') {
-          src.textContent = 'Address from NZ Post database';
-          src.className = 'text-[10px] text-emerald-500/80';
+          src.textContent = result.rural
+            ? 'NZ Post · rural delivery detected — surcharge applied in order summary'
+            : 'Address from NZ Post database';
+          src.className = result.rural
+            ? 'text-[10px] text-amber-400'
+            : 'text-[10px] text-emerald-500/80';
         } else if (s === 'linz') {
           src.textContent = 'Address from LINZ (official NZ addresses)';
           src.className = 'text-[10px] text-gray-500';
@@ -806,11 +839,18 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
       }
     });
     addrInput.addEventListener('input', () => {
+      // User is typing again — unlock and re-detect from text
       addressSelected = false;
+      ruralLockedFromPick = false;
       const det = NzAddress.detectRural(addrInput.value);
       applyDeliveryFromAddress(!!det.rural, det.reason || '');
     });
     addrInput.addEventListener('change', () => {
+      // Keep NZ Post pick rural; text-only change must not wipe surcharge
+      if (ruralLockedFromPick) {
+        applyDeliveryFromAddress(autoRural, deliveryReason);
+        return;
+      }
       const det = NzAddress.detectRural(addrInput.value);
       applyDeliveryFromAddress(!!det.rural, det.reason || '');
     });
