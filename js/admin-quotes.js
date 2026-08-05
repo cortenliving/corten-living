@@ -1,0 +1,784 @@
+/* Corten Living — Admin Quotes Phase 1 */
+
+const STORAGE_SESSION = 'cortenAdminSession';
+const STORAGE_PASS = 'cortenAdminPass';
+
+let settings = QuoteCost.defaultSettings();
+let customers = [];
+let quoteList = [];
+let nextSeq = 1843;
+
+/** Current builder state */
+let state = {
+  id: null,
+  number: '',
+  items: [],
+  selectedItemId: null,
+  overrides: {},
+  marginPercent: 35,
+  gstOn: true,
+  freightId: null,
+  leadTime: '',
+  paymentTerms: '',
+  costManual: false,
+};
+
+function isLoggedIn() {
+  return sessionStorage.getItem(STORAGE_SESSION) === '1';
+}
+function getAdminPassword() {
+  return sessionStorage.getItem(STORAGE_PASS) || '';
+}
+function setLoggedIn(password) {
+  sessionStorage.setItem(STORAGE_SESSION, '1');
+  if (password) sessionStorage.setItem(STORAGE_PASS, password);
+}
+function clearSession() {
+  sessionStorage.removeItem(STORAGE_SESSION);
+  sessionStorage.removeItem(STORAGE_PASS);
+}
+function adminHeaders() {
+  const h = { 'Content-Type': 'application/json', Accept: 'application/json' };
+  const pass = getAdminPassword();
+  if (pass) h['X-Admin-Password'] = pass;
+  return h;
+}
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { ...adminHeaders(), ...options.headers },
+  });
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  return { res, data, ok: res.ok };
+}
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('opacity-0', 'pointer-events-none');
+  el.style.background = isError ? '#7f1d1d' : '#1a1814';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add('opacity-0', 'pointer-events-none'), 3000);
+}
+function money(n) {
+  return QuoteCost.money(n);
+}
+function fmt(n) {
+  return money(n).toFixed(2);
+}
+function uid() {
+  return 'i_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+/* ── Views ── */
+function showView(name) {
+  document.getElementById('list-view')?.classList.toggle('hidden', name !== 'quotes');
+  document.getElementById('builder')?.classList.toggle('hidden', name !== 'builder');
+  document.getElementById('customers-view')?.classList.toggle('hidden', name !== 'customers');
+  document.getElementById('settings-view')?.classList.toggle('hidden', name !== 'settings');
+  document.querySelectorAll('.nav-btn').forEach((btn) => {
+    const v = btn.getAttribute('data-view');
+    const on = (name === 'builder' ? 'quotes' : name) === v;
+    btn.classList.toggle('border-corten-500', on);
+    btn.classList.toggle('text-white', on);
+    btn.classList.toggle('border-transparent', !on);
+    btn.classList.toggle('text-gray-400', !on);
+  });
+  if (name === 'quotes') renderQuoteList();
+  if (name === 'customers') renderCustomerList();
+  if (name === 'settings') fillSettingsForm();
+}
+
+/* ── Load cloud data ── */
+async function loadAll() {
+  const [s, c, q] = await Promise.all([
+    api('/api/quote-settings'),
+    api('/api/customers'),
+    api('/api/quotes'),
+  ]);
+  if (s.data?.settings) settings = { ...QuoteCost.defaultSettings(), ...s.data.settings };
+  if (Array.isArray(c.data?.customers)) customers = c.data.customers;
+  if (Array.isArray(q.data?.quotes)) quoteList = q.data.quotes;
+  if (q.data?.nextSeq) nextSeq = q.data.nextSeq;
+  fillCustomerSelect();
+  fillLeadPaySelects();
+  document.getElementById('q-valid-days').textContent = settings.quoteValidDays || 14;
+  state.marginPercent = settings.defaultMarginPercent ?? 35;
+  document.getElementById('margin-range').value = state.marginPercent;
+  document.getElementById('margin-label').textContent = state.marginPercent + '%';
+  renderQuoteList();
+}
+
+function fillLeadPaySelects() {
+  const lead = document.getElementById('q-lead');
+  const pay = document.getElementById('q-pay');
+  const leads = settings.leadTimes || ['1–2 weeks'];
+  const pays = settings.paymentTerms || ['Invoice 7 days'];
+  lead.innerHTML = leads.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  pay.innerHTML = pays.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  state.leadTime = leads[0] || '';
+  state.paymentTerms = pays[0] || '';
+}
+
+function fillCustomerSelect() {
+  const sel = document.getElementById('customer-select');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML =
+    '<option value="">Select saved customer</option>' +
+    customers
+      .map(
+        (c) =>
+          `<option value="${esc(c.id)}">${esc(c.name || 'Unnamed')}${c.company ? ' · ' + esc(c.company) : ''}</option>`
+      )
+      .join('');
+  if (cur) sel.value = cur;
+}
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Quote list ── */
+function renderQuoteList() {
+  const el = document.getElementById('quote-list');
+  if (!el) return;
+  if (!quoteList.length) {
+    el.innerHTML = '<p class="p-8 text-sm text-gray-500 text-center">No saved quotes yet. Create one with + New quote.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table class="w-full text-sm text-left">
+      <thead class="text-xs text-gray-500 uppercase bg-paper-100 border-b border-gray-200">
+        <tr>
+          <th class="px-4 py-3">Quote</th>
+          <th class="px-4 py-3">Customer</th>
+          <th class="px-4 py-3">Items</th>
+          <th class="px-4 py-3">Price excl.</th>
+          <th class="px-4 py-3">Updated</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${quoteList
+          .map(
+            (q) => `
+          <tr class="border-b border-gray-100 hover:bg-paper-50">
+            <td class="px-4 py-3 font-medium">${esc(q.number)}</td>
+            <td class="px-4 py-3">${esc(q.customerName || '—')}${q.company ? '<span class="text-gray-400"> · ' + esc(q.company) + '</span>' : ''}</td>
+            <td class="px-4 py-3 text-gray-500">${q.itemCount || 0}</td>
+            <td class="px-4 py-3">${q.priceExcl != null ? '$' + fmt(q.priceExcl) : '—'}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">${q.updatedAt ? new Date(q.updatedAt).toLocaleDateString() : '—'}</td>
+            <td class="px-4 py-3 text-right">
+              <button type="button" data-open-quote="${esc(q.id)}" class="text-corten-600 hover:underline text-xs font-medium">Open</button>
+            </td>
+          </tr>`
+          )
+          .join('')}
+      </tbody>
+    </table>`;
+  el.querySelectorAll('[data-open-quote]').forEach((btn) => {
+    btn.addEventListener('click', () => openQuote(btn.getAttribute('data-open-quote')));
+  });
+}
+
+async function openQuote(id) {
+  const { ok, data } = await api('/api/quotes?id=' + encodeURIComponent(id));
+  if (!ok || !data?.quote) {
+    toast(data?.error || 'Could not load quote', true);
+    return;
+  }
+  loadQuoteIntoBuilder(data.quote);
+  showView('builder');
+}
+
+function loadQuoteIntoBuilder(q) {
+  state.id = q.id;
+  state.number = q.number || '';
+  state.items = Array.isArray(q.items) ? q.items : [];
+  state.selectedItemId = state.items[0]?.id || null;
+  state.overrides = q.overrides || {};
+  state.costManual = !!(q.overrides && Object.keys(q.overrides).length);
+  state.marginPercent = q.marginPercent ?? settings.defaultMarginPercent ?? 35;
+  state.gstOn = q.gstOn !== false;
+  state.freightId = q.freightId || null;
+  state.leadTime = q.leadTime || '';
+  state.paymentTerms = q.paymentTerms || '';
+
+  document.getElementById('c-name').value = q.customer?.name || '';
+  document.getElementById('c-company').value = q.customer?.company || '';
+  document.getElementById('c-email').value = q.customer?.email || '';
+  document.getElementById('c-phone').value = q.customer?.phone || '';
+  document.getElementById('c-address').value = q.customer?.address || '';
+  document.getElementById('margin-range').value = state.marginPercent;
+  document.getElementById('margin-label').textContent = state.marginPercent + '%';
+  document.getElementById('q-number').textContent = state.number || 'CL-…';
+  if (state.leadTime) document.getElementById('q-lead').value = state.leadTime;
+  if (state.paymentTerms) document.getElementById('q-pay').value = state.paymentTerms;
+  updateGstButton();
+  renderItems();
+  recalc(true);
+  previewSelected();
+}
+
+function newQuote() {
+  const year = new Date().getFullYear();
+  state = {
+    id: null,
+    number: `CL-${year}-${nextSeq}`,
+    items: [],
+    selectedItemId: null,
+    overrides: {},
+    marginPercent: settings.defaultMarginPercent ?? 35,
+    gstOn: true,
+    freightId: null,
+    leadTime: (settings.leadTimes || [])[0] || '',
+    paymentTerms: (settings.paymentTerms || [])[0] || '',
+    costManual: false,
+  };
+  ['c-name', 'c-company', 'c-email', 'c-phone', 'c-address'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('customer-select').value = '';
+  document.getElementById('margin-range').value = state.marginPercent;
+  document.getElementById('margin-label').textContent = state.marginPercent + '%';
+  document.getElementById('q-number').textContent = state.number;
+  updateGstButton();
+  renderItems();
+  recalc(false);
+  document.getElementById('preview-stage').innerHTML =
+    '<p class="text-sm text-gray-400">Upload a DXF to preview</p>';
+  document.getElementById('preview-size-label').textContent = '—';
+  showView('builder');
+}
+
+/* ── DXF upload ── */
+function setupDropzone() {
+  const zone = document.getElementById('dxf-drop');
+  const input = document.getElementById('dxf-input');
+  if (!zone || !input) return;
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('drag');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    handleFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => {
+    handleFiles(input.files);
+    input.value = '';
+  });
+}
+
+async function handleFiles(fileList) {
+  const files = Array.from(fileList || []).filter((f) =>
+    /\.dxf$/i.test(f.name) || /dxf/i.test(f.type || '')
+  );
+  if (!files.length) {
+    toast('Please drop .dxf files', true);
+    return;
+  }
+  for (const file of files) {
+    try {
+      const text = await file.text();
+      const summary = DxfParse.parseDxf(text);
+      if (!summary.entityCount) {
+        toast(file.name + ': no cut entities found', true);
+        continue;
+      }
+      const item = {
+        id: uid(),
+        fileName: file.name,
+        qty: 1,
+        widthMm: summary.widthMm,
+        heightMm: summary.heightMm,
+        cutLengthMm: summary.cutLengthMm,
+        entityCount: summary.entityCount,
+        areaMm2: summary.areaMm2,
+        linked: true,
+        paths: summary.paths,
+        bounds: summary.bounds,
+        // keep a modest copy for re-open; strip if huge on save API-side
+        dxfText: text.length < 500000 ? text : '',
+      };
+      state.items.push(item);
+      state.selectedItemId = item.id;
+      state.costManual = false;
+      state.overrides = {};
+    } catch (e) {
+      toast(file.name + ': ' + (e.message || 'parse failed'), true);
+    }
+  }
+  renderItems();
+  recalc(false);
+  previewSelected();
+}
+
+function renderItems() {
+  const host = document.getElementById('job-items');
+  if (!host) return;
+  if (!state.items.length) {
+    host.innerHTML = '';
+    return;
+  }
+  host.innerHTML = state.items
+    .map((it, idx) => {
+      const active = it.id === state.selectedItemId;
+      return `
+      <div class="border rounded p-3 ${active ? 'border-corten-500 bg-orange-50/40' : 'border-gray-200 bg-white'}" data-item="${esc(it.id)}">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex gap-2 min-w-0">
+            <span class="shrink-0 w-6 h-6 rounded bg-ink-950 text-white text-[10px] font-bold flex items-center justify-center">${idx + 1}</span>
+            <div class="min-w-0">
+              <p class="text-sm font-medium truncate">${esc(it.fileName)}</p>
+              <p class="text-[11px] text-gray-500">${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm · ${it.entityCount || 0} entities · cut ~${fmt(it.cutLengthMm)} mm</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="text-[10px] text-gray-500">Qty
+              <input type="number" min="1" step="1" value="${it.qty}" data-qty="${esc(it.id)}" class="input w-14 py-1 text-center ml-1">
+            </label>
+            <button type="button" data-del="${esc(it.id)}" class="text-gray-400 hover:text-red-600 text-lg leading-none px-1">×</button>
+          </div>
+        </div>
+        <div class="mt-2 grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+          <div>
+            <label class="text-[10px] text-gray-500">Width mm</label>
+            <input type="number" step="0.1" min="0.1" value="${it.widthMm}" data-w="${esc(it.id)}" class="input py-1">
+          </div>
+          <button type="button" data-link="${esc(it.id)}" class="mb-0.5 px-2 py-1.5 text-[10px] font-semibold rounded border ${it.linked ? 'border-emerald-500 text-emerald-700 bg-emerald-50' : 'border-gray-300 text-gray-500'}">${it.linked ? 'LINKED' : 'FREE'}</button>
+          <div>
+            <label class="text-[10px] text-gray-500">Height mm</label>
+            <input type="number" step="0.1" min="0.1" value="${it.heightMm}" data-h="${esc(it.id)}" class="input py-1">
+          </div>
+        </div>
+      </div>`;
+    })
+    .join('');
+
+  host.querySelectorAll('[data-item]').forEach((row) => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('input,button')) return;
+      state.selectedItemId = row.getAttribute('data-item');
+      renderItems();
+      previewSelected();
+    });
+  });
+  host.querySelectorAll('[data-del]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-del');
+      state.items = state.items.filter((x) => x.id !== id);
+      if (state.selectedItemId === id) state.selectedItemId = state.items[0]?.id || null;
+      state.costManual = false;
+      state.overrides = {};
+      renderItems();
+      recalc(false);
+      previewSelected();
+    });
+  });
+  host.querySelectorAll('[data-qty]').forEach((inp) => {
+    inp.addEventListener('change', () => {
+      const it = state.items.find((x) => x.id === inp.getAttribute('data-qty'));
+      if (!it) return;
+      it.qty = Math.max(1, parseInt(inp.value, 10) || 1);
+      state.costManual = false;
+      state.overrides = {};
+      recalc(false);
+    });
+  });
+  host.querySelectorAll('[data-w]').forEach((inp) => {
+    inp.addEventListener('change', () => scaleItem(inp.getAttribute('data-w'), 'w', parseFloat(inp.value)));
+  });
+  host.querySelectorAll('[data-h]').forEach((inp) => {
+    inp.addEventListener('change', () => scaleItem(inp.getAttribute('data-h'), 'h', parseFloat(inp.value)));
+  });
+  host.querySelectorAll('[data-link]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const it = state.items.find((x) => x.id === btn.getAttribute('data-link'));
+      if (!it) return;
+      it.linked = !it.linked;
+      renderItems();
+    });
+  });
+}
+
+function scaleItem(id, which, value) {
+  const it = state.items.find((x) => x.id === id);
+  if (!it || !(value > 0)) return;
+  const baseW = it.widthMm || 1;
+  const baseH = it.heightMm || 1;
+  const baseCut = it.cutLengthMm || 0;
+  // Use ratio against previous size
+  if (it.linked) {
+    if (which === 'w') {
+      const s = value / baseW;
+      it.widthMm = money(value);
+      it.heightMm = money(baseH * s);
+      it.cutLengthMm = money(baseCut * s);
+    } else {
+      const s = value / baseH;
+      it.heightMm = money(value);
+      it.widthMm = money(baseW * s);
+      it.cutLengthMm = money(baseCut * s);
+    }
+  } else {
+    if (which === 'w') {
+      const s = value / baseW;
+      it.widthMm = money(value);
+      it.cutLengthMm = money(baseCut * ((s + 1) / 2));
+    } else {
+      const s = value / baseH;
+      it.heightMm = money(value);
+      it.cutLengthMm = money(baseCut * ((s + 1) / 2));
+    }
+  }
+  it.areaMm2 = money(it.widthMm * it.heightMm);
+  state.costManual = false;
+  state.overrides = {};
+  renderItems();
+  recalc(false);
+  previewSelected();
+}
+
+function previewSelected() {
+  const stage = document.getElementById('preview-stage');
+  const label = document.getElementById('preview-size-label');
+  const it = state.items.find((x) => x.id === state.selectedItemId) || state.items[0];
+  if (!it || !it.paths || !it.paths.length) {
+    stage.innerHTML = '<p class="text-sm text-gray-400">Upload a DXF to preview</p>';
+    label.textContent = '—';
+    return;
+  }
+  label.textContent = `${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm`;
+  const summary = {
+    widthMm: it.widthMm,
+    heightMm: it.heightMm,
+    paths: it.paths,
+    bounds: it.bounds || { minX: 0, minY: 0, maxX: it.widthMm, maxY: it.heightMm },
+  };
+  const { svg } = DxfParse.toSvg(summary, { stroke: '#b7410e', strokeWidth: 1.2, pad: 4 });
+  stage.innerHTML = `<div class="w-full h-full">${svg}</div>`;
+}
+
+/* ── Costing ── */
+function recalc(fromOverrides) {
+  const result = QuoteCost.calculateQuote({
+    items: state.items,
+    settings,
+    marginPercent: state.marginPercent,
+    overrides: state.costManual ? state.overrides : {},
+    freightId: state.freightId,
+    gstOn: state.gstOn,
+  });
+
+  if (!fromOverrides && !state.costManual) {
+    document.getElementById('cost-material').value = result.auto.material;
+    document.getElementById('cost-laser').value = result.auto.laser;
+    document.getElementById('cost-setup').value = result.auto.setup;
+    document.getElementById('cost-freight').value = result.auto.freight;
+    state.overrides = {
+      material: result.auto.material,
+      laser: result.auto.laser,
+      setup: result.auto.setup,
+      freight: result.auto.freight,
+    };
+  }
+
+  state.freightId = result.freightTier?.id || state.freightId;
+  document.getElementById('freight-label').textContent = result.freightTier?.label || '—';
+  document.getElementById('q-price').textContent = fmt(result.priceExcl);
+  document.getElementById('q-subtotal').textContent = '$' + fmt(result.priceExcl);
+  document.getElementById('q-gst').textContent = '$' + fmt(result.gst);
+  document.getElementById('q-total').textContent = '$' + fmt(result.priceIncl);
+  document.getElementById('q-weight').textContent = result.weightKg
+    ? `Est. steel ~${fmt(result.weightKg)} kg (silhouette fill applied)`
+    : '';
+
+  state._lastCalc = result;
+  return result;
+}
+
+function readCostInputs() {
+  state.costManual = true;
+  state.overrides = {
+    material: parseFloat(document.getElementById('cost-material').value) || 0,
+    laser: parseFloat(document.getElementById('cost-laser').value) || 0,
+    setup: parseFloat(document.getElementById('cost-setup').value) || 0,
+    freight: parseFloat(document.getElementById('cost-freight').value) || 0,
+  };
+  recalc(true);
+}
+
+function updateGstButton() {
+  const btn = document.getElementById('btn-gst');
+  if (!btn) return;
+  if (state.gstOn) {
+    btn.textContent = 'GST ON';
+    btn.className = 'px-3 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200';
+  } else {
+    btn.textContent = 'GST OFF';
+    btn.className = 'px-3 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200';
+  }
+}
+
+/* ── Save quote / customer ── */
+function collectCustomer() {
+  return {
+    name: document.getElementById('c-name').value.trim(),
+    company: document.getElementById('c-company').value.trim(),
+    email: document.getElementById('c-email').value.trim(),
+    phone: document.getElementById('c-phone').value.trim(),
+    address: document.getElementById('c-address').value.trim(),
+  };
+}
+
+async function saveCustomer() {
+  const c = collectCustomer();
+  if (!c.name) {
+    toast('Customer name required', true);
+    return;
+  }
+  const sel = document.getElementById('customer-select');
+  if (sel.value) c.id = sel.value;
+  const { ok, data } = await api('/api/customers', {
+    method: 'PUT',
+    body: JSON.stringify({ customer: c }),
+  });
+  if (!ok) {
+    toast(data?.error || 'Save failed', true);
+    return;
+  }
+  customers = data.customers || customers;
+  fillCustomerSelect();
+  if (c.id || data.customers?.[0]?.id) {
+    const id = c.id || data.customers[0].id;
+    document.getElementById('customer-select').value = id;
+  }
+  toast('Customer saved');
+}
+
+async function saveQuote() {
+  if (!state.items.length) {
+    toast('Add at least one DXF', true);
+    return;
+  }
+  const calc = recalc(true);
+  const quote = {
+    id: state.id || undefined,
+    number: state.number,
+    status: 'saved',
+    customer: collectCustomer(),
+    items: state.items.map((it) => ({
+      id: it.id,
+      fileName: it.fileName,
+      qty: it.qty,
+      widthMm: it.widthMm,
+      heightMm: it.heightMm,
+      cutLengthMm: it.cutLengthMm,
+      entityCount: it.entityCount,
+      areaMm2: it.areaMm2,
+      linked: it.linked,
+      paths: it.paths,
+      bounds: it.bounds,
+    })),
+    overrides: state.overrides,
+    marginPercent: state.marginPercent,
+    gstOn: state.gstOn,
+    freightId: state.freightId,
+    leadTime: document.getElementById('q-lead').value,
+    paymentTerms: document.getElementById('q-pay').value,
+    totals: {
+      costExcl: calc.costExcl,
+      priceExcl: calc.priceExcl,
+      gst: calc.gst,
+      priceIncl: calc.priceIncl,
+      weightKg: calc.weightKg,
+      costings: calc.costings,
+    },
+  };
+
+  const { ok, data } = await api('/api/quotes', {
+    method: 'PUT',
+    body: JSON.stringify({ quote }),
+  });
+  if (!ok) {
+    toast(data?.error || 'Save failed — check cloud (GITHUB_TOKEN)', true);
+    return;
+  }
+  if (data.quote) {
+    state.id = data.quote.id;
+    state.number = data.quote.number;
+    document.getElementById('q-number').textContent = state.number;
+  }
+  if (data.nextSeq) nextSeq = data.nextSeq;
+  // refresh list
+  const list = await api('/api/quotes');
+  if (list.data?.quotes) quoteList = list.data.quotes;
+  toast('Quote saved');
+}
+
+/* ── Customers view ── */
+function renderCustomerList() {
+  const el = document.getElementById('customer-list');
+  if (!el) return;
+  if (!customers.length) {
+    el.innerHTML = '<p class="p-8 text-sm text-gray-500 text-center">No customers yet. Save one from a quote.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table class="w-full text-sm">
+      <thead class="text-xs text-gray-500 uppercase bg-paper-100 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left">Name</th>
+          <th class="px-4 py-3 text-left">Company</th>
+          <th class="px-4 py-3 text-left">Email</th>
+          <th class="px-4 py-3 text-left">Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${customers
+          .map(
+            (c) => `
+          <tr class="border-b border-gray-100">
+            <td class="px-4 py-3 font-medium">${esc(c.name)}</td>
+            <td class="px-4 py-3 text-gray-600">${esc(c.company || '—')}</td>
+            <td class="px-4 py-3 text-gray-600">${esc(c.email || '—')}</td>
+            <td class="px-4 py-3 text-gray-600">${esc(c.phone || '—')}</td>
+          </tr>`
+          )
+          .join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ── Settings ── */
+function fillSettingsForm() {
+  document.getElementById('set-mat-rate').value = settings.material?.ratePerM2 ?? 95;
+  document.getElementById('set-fill').value = settings.material?.silhouetteFill ?? 0.32;
+  document.getElementById('set-laser-rate').value = settings.laser?.ratePerMetre ?? 2.8;
+  document.getElementById('set-laser-min').value = settings.laser?.minCharge ?? 12;
+  document.getElementById('set-setup').value = settings.setup?.amount ?? 28;
+  document.getElementById('set-margin').value = settings.defaultMarginPercent ?? 35;
+}
+
+async function saveSettings() {
+  const next = {
+    ...settings,
+    material: {
+      ...(settings.material || {}),
+      ratePerM2: parseFloat(document.getElementById('set-mat-rate').value) || 0,
+      silhouetteFill: parseFloat(document.getElementById('set-fill').value) || 0.32,
+    },
+    laser: {
+      ...(settings.laser || {}),
+      ratePerMetre: parseFloat(document.getElementById('set-laser-rate').value) || 0,
+      minCharge: parseFloat(document.getElementById('set-laser-min').value) || 0,
+    },
+    setup: {
+      ...(settings.setup || {}),
+      amount: parseFloat(document.getElementById('set-setup').value) || 0,
+    },
+    defaultMarginPercent: parseFloat(document.getElementById('set-margin').value) || 35,
+  };
+  const msg = document.getElementById('settings-msg');
+  msg.textContent = 'Saving…';
+  const { ok, data } = await api('/api/quote-settings', {
+    method: 'PUT',
+    body: JSON.stringify({ settings: next }),
+  });
+  if (!ok) {
+    msg.textContent = data?.error || 'Failed';
+    toast(data?.error || 'Settings save failed', true);
+    return;
+  }
+  settings = data.settings || next;
+  msg.textContent = 'Saved live';
+  toast('Quote settings saved');
+}
+
+/* ── Init ── */
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  loadAll();
+}
+
+document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  setLoggedIn(pass);
+  const { res, ok, data } = await api('/api/customers');
+  if (res.status === 401 || /unauthor/i.test(String(data?.error || ''))) {
+    clearSession();
+    err.classList.remove('hidden');
+    return;
+  }
+  // 503 ADMIN_PASSWORD missing, or network — still open UI (local draft / setup)
+  err.classList.add('hidden');
+  showApp();
+});
+
+document.getElementById('btn-logout')?.addEventListener('click', () => {
+  clearSession();
+  location.reload();
+});
+
+document.querySelectorAll('.nav-btn').forEach((btn) => {
+  btn.addEventListener('click', () => showView(btn.getAttribute('data-view')));
+});
+
+document.getElementById('btn-new-quote')?.addEventListener('click', newQuote);
+document.getElementById('btn-back-list')?.addEventListener('click', () => showView('quotes'));
+document.getElementById('btn-print')?.addEventListener('click', () => window.print());
+document.getElementById('btn-save-quote')?.addEventListener('click', saveQuote);
+document.getElementById('btn-save-customer')?.addEventListener('click', saveCustomer);
+document.getElementById('btn-save-settings')?.addEventListener('click', saveSettings);
+document.getElementById('btn-reset-cost')?.addEventListener('click', () => {
+  state.costManual = false;
+  state.overrides = {};
+  recalc(false);
+});
+document.getElementById('btn-gst')?.addEventListener('click', () => {
+  state.gstOn = !state.gstOn;
+  updateGstButton();
+  recalc(true);
+});
+document.getElementById('margin-range')?.addEventListener('input', (e) => {
+  state.marginPercent = parseInt(e.target.value, 10) || 0;
+  document.getElementById('margin-label').textContent = state.marginPercent + '%';
+  recalc(true);
+});
+['cost-material', 'cost-laser', 'cost-setup', 'cost-freight'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', readCostInputs);
+});
+
+document.getElementById('customer-select')?.addEventListener('change', (e) => {
+  const c = customers.find((x) => x.id === e.target.value);
+  if (!c) return;
+  document.getElementById('c-name').value = c.name || '';
+  document.getElementById('c-company').value = c.company || '';
+  document.getElementById('c-email').value = c.email || '';
+  document.getElementById('c-phone').value = c.phone || '';
+  document.getElementById('c-address').value = c.address || '';
+});
+
+setupDropzone();
+
+if (isLoggedIn()) {
+  showApp();
+}

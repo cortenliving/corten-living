@@ -56,6 +56,19 @@ Cart has **Pay now with card** (Stripe Checkout) and **Place order without payme
 
 Quotes can still use **Payment Links** from the Stripe Dashboard (no code).
 
+## Fabrication quotes (Admin Phase 1)
+
+Open **[/admin-quotes](https://corten-living.pages.dev/admin-quotes)** (same admin password).
+
+- Drop **DXF** files → size, cut length, live preview  
+- Costing: material ($/m² × silhouette fill), laser ($/m), setup, freight tiers  
+- Target **margin %** → customer price + GST  
+- Save **customers** and **quotes** to GitHub (`data/customers.json`, `data/quotes.json`)  
+- Tune defaults under Quotes → **Settings** (`data/quote-settings.json`)  
+
+Linked from main **Admin** nav → Quotes.  
+Later: photo → clean DXF (Phase 3).
+
 ## NZ address autocomplete (NZ Post / LINZ)
 
 Cart shipping uses `/api/address-search`:

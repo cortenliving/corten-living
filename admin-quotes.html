@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quotes | Corten Living Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c'},
+        ink: {950:'#1a1814',900:'#2a241c',800:'#3d342a'},
+        paper: {50:'#f7f4ef',100:'#f0ebe3',200:'#e5ddd0'},
+      },
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'], display: ['Oswald','Inter','sans-serif'] }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { background: #f3efe8; }
+  .grid-preview {
+    background-color: #ece7df;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .panel { background: #fff; border: 1px solid #e0d8cc; border-radius: 4px; }
+  .btn-primary { background: #b7410e; color: #fff; }
+  .btn-primary:hover { background: #9c340b; }
+  .input {
+    width: 100%; border: 1px solid #d4cbc0; border-radius: 4px;
+    padding: 0.5rem 0.75rem; background: #fff; font-size: 0.875rem;
+  }
+  .input:focus { outline: none; border-color: #b7410e; box-shadow: 0 0 0 2px rgba(183,65,14,0.15); }
+  .dropzone {
+    border: 2px dashed #cfc4b4; border-radius: 6px; background: #faf8f5;
+    transition: border-color .15s, background .15s;
+  }
+  .dropzone.drag { border-color: #b7410e; background: #fff5ef; }
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff; }
+    #builder { display: block !important; }
+    #list-view { display: none !important; }
+  }
+</style>
+</head>
+<body class="font-sans text-ink-900 antialiased min-h-screen">
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-ink-900 text-white text-sm rounded shadow-lg opacity-0 pointer-events-none transition-opacity"></div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center px-4 no-print">
+  <div class="w-full max-w-md panel p-8 shadow-sm">
+    <div class="flex items-center gap-3 mb-6">
+      <img src="/images/logo.svg" alt="" class="w-10 h-10">
+      <div>
+        <p class="font-display text-xl tracking-wide text-ink-950">CORTEN LIVING</p>
+        <p class="text-xs text-gray-500">Quotes · admin</p>
+      </div>
+    </div>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1.5">Password</label>
+        <input type="password" id="login-pass" required class="input" autocomplete="current-password" placeholder="Admin password">
+      </div>
+      <p id="login-error" class="hidden text-sm text-red-600">Incorrect password</p>
+      <button type="submit" class="w-full py-2.5 btn-primary rounded font-semibold text-sm">Sign in</button>
+    </form>
+    <a href="/admin" class="inline-block mt-4 text-sm text-corten-600 hover:underline">← Site admin</a>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden min-h-screen">
+  <header class="no-print sticky top-0 z-40 bg-ink-950 text-white border-b border-black/20">
+    <div class="max-w-[1600px] mx-auto px-4 h-12 flex items-center justify-between gap-4">
+      <nav class="flex items-center gap-1 text-sm">
+        <button type="button" data-view="quotes" class="nav-btn px-3 py-2 border-b-2 border-corten-500 text-white font-medium">Quotes</button>
+        <button type="button" data-view="customers" class="nav-btn px-3 py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Customers</button>
+        <button type="button" data-view="settings" class="nav-btn px-3 py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Settings</button>
+      </nav>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="/admin" class="text-gray-400 hover:text-white">Site admin</a>
+        <button type="button" id="btn-logout" class="text-gray-500 hover:text-white">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LIST -->
+  <div id="list-view" class="max-w-[1600px] mx-auto px-4 py-8 no-print">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <p class="text-[10px] uppercase tracking-widest text-corten-600 font-semibold">Fabrication quotes</p>
+        <h1 class="font-display text-3xl text-ink-950 mt-1">Quotes</h1>
+      </div>
+      <button type="button" id="btn-new-quote" class="px-4 py-2.5 btn-primary rounded text-sm font-semibold">+ New quote</button>
+    </div>
+    <div id="quote-list" class="panel overflow-hidden">
+      <p class="p-6 text-sm text-gray-500">Loading…</p>
+    </div>
+  </div>
+
+  <!-- BUILDER -->
+  <div id="builder" class="hidden max-w-[1600px] mx-auto px-4 py-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 no-print">
+      <div>
+        <p class="text-[10px] uppercase tracking-widest text-corten-600 font-semibold">New fabrication quote</p>
+        <h1 class="font-display text-3xl text-ink-950">Build a quote</h1>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="btn-back-list" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">← All quotes</button>
+        <button type="button" id="btn-print" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">Print</button>
+        <button type="button" id="btn-save-quote" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save quote</button>
+      </div>
+    </div>
+
+    <div class="grid xl:grid-cols-12 gap-4 items-start">
+      <!-- LEFT -->
+      <div class="xl:col-span-4 space-y-4">
+        <section class="panel p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-ink-950">Add customer</h2>
+              <p class="text-xs text-gray-500">Customer details and delivery address</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <select id="customer-select" class="input flex-1">
+              <option value="">Select saved customer</option>
+            </select>
+            <button type="button" id="btn-save-customer" class="px-3 py-2 border border-gray-300 rounded text-xs whitespace-nowrap bg-white hover:bg-paper-50">Save to list</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] uppercase tracking-wide text-gray-500">Customer name</label>
+              <input id="c-name" class="input mt-0.5" placeholder="Full name">
+            </div>
+            <div>
+              <label class="text-[10px] uppercase tracking-wide text-gray-500">Company</label>
+              <input id="c-company" class="input mt-0.5" placeholder="Company">
+            </div>
+            <div>
+              <label class="text-[10px] uppercase tracking-wide text-gray-500">Email</label>
+              <input id="c-email" type="email" class="input mt-0.5" placeholder="name@email.co.nz">
+            </div>
+            <div>
+              <label class="text-[10px] uppercase tracking-wide text-gray-500">Phone</label>
+              <input id="c-phone" class="input mt-0.5" placeholder="021 000 0000">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] uppercase tracking-wide text-gray-500">Delivery address</label>
+            <input id="c-address" class="input mt-0.5" placeholder="Street, town, postcode">
+          </div>
+        </section>
+
+        <section class="panel p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <span class="shrink-0 w-8 h-8 rounded bg-ink-950 text-white text-xs font-bold flex items-center justify-center">01</span>
+            <div>
+              <h2 class="text-sm font-semibold text-ink-950">Job details</h2>
+              <p class="text-xs text-gray-500">Upload DXF files — dimensions in millimetres</p>
+            </div>
+          </div>
+
+          <div id="dxf-drop" class="dropzone p-6 text-center cursor-pointer">
+            <input type="file" id="dxf-input" accept=".dxf,application/dxf,image/vnd.dxf" multiple class="hidden">
+            <p class="text-sm font-medium text-ink-900">Drop DXF files here</p>
+            <p class="text-xs text-gray-500 mt-1">or click to browse · multiple files OK</p>
+          </div>
+
+          <div id="job-items" class="space-y-3"></div>
+        </section>
+      </div>
+
+      <!-- CENTRE PREVIEW -->
+      <div class="xl:col-span-5">
+        <section class="panel overflow-hidden sticky top-16">
+          <div class="px-4 py-2 border-b border-gray-200 flex justify-between items-center text-xs text-gray-500">
+            <span>LIVE PREVIEW</span>
+            <span id="preview-size-label">—</span>
+            <span>1 : 1</span>
+          </div>
+          <div id="preview-stage" class="grid-preview h-[420px] xl:h-[560px] flex items-center justify-center p-4">
+            <p class="text-sm text-gray-400">Upload a DXF to preview</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT COSTING -->
+      <div class="xl:col-span-3">
+        <section class="panel p-4 space-y-4 sticky top-16">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-[10px] uppercase tracking-widest text-corten-600 font-semibold">Quote</p>
+              <p class="text-xs text-gray-500">Valid for <span id="q-valid-days">14</span> days</p>
+            </div>
+            <p id="q-number" class="font-display text-lg text-ink-950">CL-…</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">Customer price</p>
+            <p class="font-display text-4xl text-ink-950 leading-none mt-1">$<span id="q-price">0.00</span></p>
+            <p class="text-xs text-gray-400 mt-1">excl. GST</p>
+          </div>
+
+          <div class="border-t border-gray-200 pt-3">
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-xs font-semibold text-ink-900">Editable costings</p>
+              <button type="button" id="btn-reset-cost" class="text-[11px] text-corten-600 hover:underline">Reset</button>
+            </div>
+            <div class="space-y-2 text-sm">
+              <label class="flex justify-between items-center gap-2">
+                <span class="text-gray-600">Material</span>
+                <span class="flex items-center gap-1">$ <input id="cost-material" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
+              </label>
+              <label class="flex justify-between items-center gap-2">
+                <span class="text-gray-600">Laser cutting</span>
+                <span class="flex items-center gap-1">$ <input id="cost-laser" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
+              </label>
+              <label class="flex justify-between items-center gap-2">
+                <span class="text-gray-600">Setup (once)</span>
+                <span class="flex items-center gap-1">$ <input id="cost-setup" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
+              </label>
+              <label class="flex justify-between items-center gap-2">
+                <span class="text-gray-600">Freight (<span id="freight-label">—</span>)</span>
+                <span class="flex items-center gap-1">$ <input id="cost-freight" type="number" step="0.01" min="0" class="input w-24 text-right py-1"></span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs text-gray-600 mb-1">
+              <span>Target margin</span>
+              <span id="margin-label">35%</span>
+            </div>
+            <input id="margin-range" type="range" min="10" max="65" value="35" class="w-full accent-corten-600">
+          </div>
+
+          <div>
+            <label class="text-[10px] uppercase tracking-wide text-gray-500">Lead time</label>
+            <select id="q-lead" class="input mt-0.5"></select>
+          </div>
+          <div>
+            <label class="text-[10px] uppercase tracking-wide text-gray-500">Payment terms</label>
+            <select id="q-pay" class="input mt-0.5"></select>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">GST</span>
+            <button type="button" id="btn-gst" class="px-3 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">GST ON</button>
+          </div>
+
+          <div class="border-t border-gray-200 pt-3 space-y-1 text-sm">
+            <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span id="q-subtotal">$0.00</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">GST (15%)</span><span id="q-gst">$0.00</span></div>
+            <div class="flex justify-between font-semibold text-base pt-1"><span>Total incl. GST</span><span id="q-total">$0.00</span></div>
+          </div>
+          <p id="q-weight" class="text-[11px] text-gray-400"></p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS VIEW -->
+  <div id="customers-view" class="hidden max-w-[1000px] mx-auto px-4 py-8 no-print">
+    <h1 class="font-display text-3xl text-ink-950 mb-4">Customers</h1>
+    <div id="customer-list" class="panel overflow-hidden"></div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="settings-view" class="hidden max-w-[720px] mx-auto px-4 py-8 no-print">
+    <h1 class="font-display text-3xl text-ink-950 mb-2">Quote settings</h1>
+    <p class="text-sm text-gray-500 mb-6">Default rates used when you drop a DXF. Cost lines stay editable per quote.</p>
+    <div class="panel p-6 space-y-4">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500">Material rate ($ / m² solid box × fill)</label>
+          <input id="set-mat-rate" type="number" step="0.01" class="input mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Silhouette fill (0–1)</label>
+          <input id="set-fill" type="number" step="0.01" min="0" max="1" class="input mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Laser rate ($ / metre cut)</label>
+          <input id="set-laser-rate" type="number" step="0.01" class="input mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Laser min charge ($)</label>
+          <input id="set-laser-min" type="number" step="0.01" class="input mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Setup charge ($)</label>
+          <input id="set-setup" type="number" step="0.01" class="input mt-1">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Default margin %</label>
+          <input id="set-margin" type="number" step="1" min="0" max="90" class="input mt-1">
+        </div>
+      </div>
+      <button type="button" id="btn-save-settings" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save settings live</button>
+      <p id="settings-msg" class="text-xs text-gray-500"></p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dxf-parse.js"></script>
+<script src="/js/quote-cost.js"></script>
+<script src="/js/admin-quotes.js"></script>
+</body>
+</html>
