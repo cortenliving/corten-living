@@ -236,9 +236,82 @@ function detailsLines(d) {
     .join(', ');
 }
 
-function streetKeyFromDetails(d) {
+function normPlace(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** Locality tokens for matching physical ↔ postal (same property only) */
+function localityTokens(d, textFallback) {
+  const tokens = new Set();
+  const add = (v) => {
+    const n = normPlace(v);
+    if (n && n.length >= 3) tokens.add(n);
+  };
+  if (d) {
+    add(d.Postcode || d.postcode);
+    add(d.Suburb);
+    add(d.CityTown);
+    add(d.MailTown);
+    add(d.mailtown);
+  }
+  const t = String(textFallback || '');
+  const pc = t.match(/\b(\d{4})\b/);
+  if (pc) add(pc[1]);
+  // last place-like words after commas
+  t.split(',').slice(1).forEach((part) => {
+    const cleaned = part.replace(/\b\d{4}\b/g, '').trim();
+    if (cleaned) add(cleaned);
+  });
+  return tokens;
+}
+
+function localitiesOverlap(aTokens, bTokens) {
+  if (!aTokens.size || !bTokens.size) return false;
+  for (const t of aTokens) {
+    if (bTokens.has(t)) return true;
+    // partial: "gisborne" in "gisborne 4071" already normalized
+    for (const u of bTokens) {
+      if (t.includes(u) || u.includes(t)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Key for same-property rural linking.
+ * MUST include locality — "21|cameron" alone marks every Cameron Rd in NZ rural.
+ */
+function propertyKeyFromDetails(d) {
   if (!d || d.StreetNumber == null || !d.RoadName) return '';
-  return `${Number(d.StreetNumber)}|${String(d.RoadName).toLowerCase().trim()}`;
+  const road = String(d.RoadName).toLowerCase().trim();
+  const num = Number(d.StreetNumber);
+  const pc = String(d.Postcode || d.postcode || '').trim();
+  if (pc) return `${num}|${road}|pc:${pc}`;
+  const place = normPlace(d.MailTown || d.CityTown || d.Suburb || '');
+  if (place) return `${num}|${road}|pl:${place}`;
+  return ''; // no locality → never propagate by key alone
+}
+
+function propertyKeyFromText(text) {
+  const t = String(text || '');
+  const m = t.match(
+    /^(\d+)\s*[A-Za-z]?\s+([A-Za-z][A-Za-z\s'-]+?)(?:\s+(?:Road|Street|Ave|Avenue|Lane|Drive|Place|Crescent|Terrace|Way|Close))?\s*,/i
+  );
+  if (!m) return '';
+  const num = Number(m[1]);
+  const road = m[2].trim().toLowerCase();
+  const pc = t.match(/\b(\d{4})\b/);
+  if (pc) return `${num}|${road}|pc:${pc[1]}`;
+  // place after last comma-ish segment without postcode
+  const parts = t.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const place = normPlace(parts[parts.length - 1].replace(/\b\d{4}\b/g, ''));
+    if (place) return `${num}|${road}|pl:${place}`;
+  }
+  return '';
 }
 
 /** Suggest only (no details enrich) — used for RD sibling lookup */
@@ -256,7 +329,7 @@ async function suggestNzPostRaw(env, token, q) {
  * NZ Post often has TWO records for the same rural property:
  *  - Postal: "21 Cameron Road, RD 1, Gisborne" (RuralDelivery set)
  *  - Physical: "21A Cameron Road, Makauri, Gisborne" (Physical=Y, RuralDelivery null)
- * Link physical → rural when same street number + road has an RD postal sibling.
+ * Only link when street number + road AND locality (postcode / city / suburb) match.
  */
 async function findRuralSibling(env, token, d) {
   if (!d || d.StreetNumber == null || !d.RoadName) return null;
@@ -264,31 +337,42 @@ async function findRuralSibling(env, token, d) {
   const road = String(d.RoadName).trim();
   const roadType = String(d.RoadTypeName || '').trim();
   const place = String(d.MailTown || d.CityTown || d.Suburb || '').trim();
+  const postcode = String(d.Postcode || d.postcode || '').trim();
   const alpha = d.StreetAlpha ? String(d.StreetAlpha) : '';
+  const hereLocality = localityTokens(d);
 
+  // Always include place or postcode in the query — never bare "21 Cameron Road RD"
   const queries = [
-    `${num} ${road} ${roadType} RD ${place}`,
-    `${num}${alpha} ${road} ${roadType} RD ${place}`,
-    `${num} ${road} RD ${place}`,
-    `${num} ${road} ${roadType} RD`,
+    postcode ? `${num} ${road} ${roadType} RD ${postcode}` : '',
+    place ? `${num} ${road} ${roadType} RD ${place}` : '',
+    place ? `${num}${alpha} ${road} ${roadType} RD ${place}` : '',
+    place ? `${num} ${road} RD ${place}` : '',
+    postcode ? `${num} ${road} RD ${postcode}` : '',
   ]
     .map((s) => s.replace(/\s+/g, ' ').trim())
-    .filter((s, i, arr) => s.length > 5 && arr.indexOf(s) === i);
+    .filter((s, i, arr) => s.length > 8 && arr.indexOf(s) === i);
+
+  if (!queries.length) return null;
 
   for (const q of queries) {
     try {
       const suggestions = await suggestNzPostRaw(env, token, q);
       for (const s of suggestions.slice(0, 5)) {
         if (!s.dpid || String(s.dpid) === String(d.DPID || d.dpid)) continue;
-        // Quick text hit
-        const textInfo = ruralFromNzFields(s.raw || {}, s.display || s.short || '');
-        if (textInfo.rural && sameStreetFromText(s, num, road)) {
-          return textInfo;
-        }
+
+        // Text must look like same street AND share locality (Gisborne ≠ Hamilton)
+        const sugText = s.display || s.short || '';
+        if (!sameStreetFromText(s, num, road)) continue;
+        const sugLocality = localityTokens(null, sugText);
+        if (!localitiesOverlap(hereLocality, sugLocality)) continue;
+
         const sd = await fetchNzPostDetails(env, token, s.dpid);
         if (!sd) continue;
         if (Number(sd.StreetNumber) !== num) continue;
         if (String(sd.RoadName || '').toLowerCase() !== road.toLowerCase()) continue;
+        const sibLocality = localityTokens(sd, detailsLines(sd));
+        if (!localitiesOverlap(hereLocality, sibLocality)) continue;
+
         const info = ruralFromNzFields(sd, detailsLines(sd));
         if (info.rural) {
           return {
@@ -314,37 +398,24 @@ function sameStreetFromText(item, num, road) {
   return re.test(t);
 }
 
-/** If any result is rural RD, mark same street-number physical rows rural too */
+/** If any result is rural RD, mark same property physical rows rural too (same locality only) */
 function propagateRuralWithinList(list) {
-  const ruralStreets = new Set();
+  const ruralKeys = new Set();
   for (const item of list || []) {
     if (!item.rural) continue;
     const d = item.raw?.details;
-    const key = streetKeyFromDetails(d);
-    if (key) ruralStreets.add(key);
-    // Parse "21 Cameron Road, RD 1" style
-    const m = String(item.display || item.short || '').match(
-      /^(\d+)\s*[A-Za-z]?\s+([A-Za-z][A-Za-z\s'-]+?)(?:\s+Road|\s+Street|\s+Ave|\s+Lane|\s+Drive|\s+Place|\s+Crescent|\s+Terrace)?\s*,/i
-    );
-    if (m) ruralStreets.add(`${Number(m[1])}|${m[2].trim().toLowerCase()}`);
+    const key = propertyKeyFromDetails(d) || propertyKeyFromText(item.display || item.short);
+    if (key) ruralKeys.add(key);
   }
-  if (!ruralStreets.size) return list;
+  if (!ruralKeys.size) return list;
 
   for (const item of list || []) {
     if (item.rural) continue;
     const d = item.raw?.details;
-    const key = streetKeyFromDetails(d);
-    if (key && ruralStreets.has(key)) {
+    const key = propertyKeyFromDetails(d) || propertyKeyFromText(item.display || item.short);
+    if (key && ruralKeys.has(key)) {
       item.rural = true;
-      item.reason = item.reason || 'Same street number as NZ Post RD address';
-      item.importance = 0.9;
-      continue;
-    }
-    const t = String(item.display || item.short || '');
-    const m = t.match(/^(\d+)\s*[A-Za-z]?\s+([A-Za-z][A-Za-z\s'-]+?)(?:\s+Road|\s+Street)?\s*,/i);
-    if (m && ruralStreets.has(`${Number(m[1])}|${m[2].trim().toLowerCase()}`)) {
-      item.rural = true;
-      item.reason = 'Same street number as NZ Post RD address';
+      item.reason = item.reason || 'Same property as NZ Post RD address';
       item.importance = 0.9;
     }
   }
