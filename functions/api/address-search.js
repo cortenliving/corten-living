@@ -177,7 +177,9 @@ function ruralFromNzFields(a, fullText) {
     a.RdNumber ??
     null;
   if (rd != null && String(rd).trim() !== '' && String(rd).toLowerCase() !== 'null') {
-    return { rural: true, reason: 'NZ Post Rural Delivery RD ' + String(rd).trim() };
+    const rdStr = String(rd).trim();
+    const label = /^rd\b/i.test(rdStr) ? rdStr : 'RD ' + rdStr;
+    return { rural: true, reason: 'NZ Post Rural Delivery ' + label };
   }
 
   const bag = String(a.BoxBagType || a.box_bag_type || a.DeliveryServiceType || '');
@@ -572,31 +574,38 @@ async function searchOsm(q) {
   return out;
 }
 
+function scoreItem(item) {
+  let s = 0;
+  if (item.source === 'nzpost' || item.source === 'nzpost-legacy') s += 20;
+  else if (item.source === 'linz') s += 8;
+  else s += 2;
+  if (item.rural) s += 12; // surface rural NZ Post above bare physical LINZ
+  if (item.dpid) s += 3;
+  s += Number(item.importance) || 0;
+  // Prefer lines that include RD wording (postal mail format)
+  const t = String(item.display || item.short || '');
+  if (/\bRD\s*\d+/i.test(t) || /,\s*RD\b/i.test(t)) s += 5;
+  return s;
+}
+
+/** Normalize key so "10 Foo Rd, RD 1, Town" and "10 Foo Rd, Town" can compete */
+function addressKey(item) {
+  return String(item.short || item.display || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/,?\s*rd\s*\d+/gi, '')
+    .replace(/\s+\d{4}\s*$/, '')
+    .trim();
+}
+
 function dedupeAndRank(list) {
   const map = new Map();
   for (const item of list) {
-    const key = String(item.short || item.display || '')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim();
+    const key = addressKey(item);
     if (!key) continue;
-    // Prefer nzpost over others
-    const score =
-      (item.source === 'nzpost' || item.source === 'nzpost-legacy' ? 10 : 0) +
-      (item.source === 'linz' ? 5 : 0) +
-      (item.importance || 0);
+    const score = scoreItem(item);
     const prev = map.get(key);
-    const prevScore =
-      prev
-        ? (prev.source === 'nzpost' || prev.source === 'nzpost-legacy' ? 10 : 0) +
-          (prev.source === 'linz' ? 5 : 0) +
-          (prev.importance || 0)
-        : -1;
-    if (!prev || score > prevScore) map.set(key, item);
+    if (!prev || score > scoreItem(prev)) map.set(key, item);
   }
-  return [...map.values()].sort((a, b) => {
-    const as = (a.source === 'nzpost' ? 10 : a.source === 'linz' ? 5 : 0) + (a.importance || 0);
-    const bs = (b.source === 'nzpost' ? 10 : b.source === 'linz' ? 5 : 0) + (b.importance || 0);
-    return bs - as;
-  });
+  return [...map.values()].sort((a, b) => scoreItem(b) - scoreItem(a));
 }
