@@ -29,6 +29,20 @@ const DEFAULTS = {
     '50% deposit, balance on completion',
   ],
   cortenKgPerM2: 23.55,
+  print: {
+    companyName: 'CORTEN LIVING',
+    tagline: 'Profile-cut 3 mm Corten · Made in Gisborne, NZ',
+    contact: '027 383 8178 · cortenliving@gmail.com\nGisborne, New Zealand',
+    intro:
+      'Thank you for your enquiry. This quote is for custom laser-cut 3 mm Corten steel as described below.',
+    footer:
+      'Prices in NZD. This quote is valid for the period stated unless withdrawn earlier. Payment terms as listed.',
+    showSize: true,
+    showLeadTime: true,
+    showPaymentTerms: true,
+    showWeight: false,
+    showLogo: true,
+  },
 };
 
 export async function onRequestOptions() {

@@ -101,7 +101,18 @@ async function loadAll() {
     api('/api/customers'),
     api('/api/quotes'),
   ]);
-  if (s.data?.settings) settings = { ...QuoteCost.defaultSettings(), ...s.data.settings };
+  if (s.data?.settings) {
+    const def = QuoteCost.defaultSettings();
+    settings = {
+      ...def,
+      ...s.data.settings,
+      material: { ...def.material, ...(s.data.settings.material || {}) },
+      laser: { ...def.laser, ...(s.data.settings.laser || {}) },
+      setup: { ...def.setup, ...(s.data.settings.setup || {}) },
+      freight: { ...def.freight, ...(s.data.settings.freight || {}) },
+      print: { ...def.print, ...(s.data.settings.print || {}) },
+    };
+  }
   if (Array.isArray(c.data?.customers)) customers = c.data.customers;
   if (Array.isArray(q.data?.quotes)) quoteList = q.data.quotes;
   if (q.data?.nextSeq) nextSeq = q.data.nextSeq;
@@ -721,6 +732,27 @@ function renderCustomerList() {
 }
 
 /* ── Settings ── */
+function printDefaults() {
+  return (
+    QuoteCost.defaultSettings().print || {
+      companyName: 'CORTEN LIVING',
+      tagline: 'Profile-cut 3 mm Corten · Made in Gisborne, NZ',
+      contact: '027 383 8178 · cortenliving@gmail.com\nGisborne, New Zealand',
+      intro: '',
+      footer: '',
+      showSize: true,
+      showLeadTime: true,
+      showPaymentTerms: true,
+      showWeight: false,
+      showLogo: true,
+    }
+  );
+}
+
+function getPrintSettings() {
+  return { ...printDefaults(), ...(settings.print || {}) };
+}
+
 function fillSettingsForm() {
   document.getElementById('set-mat-rate').value = settings.material?.ratePerM2 ?? 95;
   document.getElementById('set-fill').value = settings.material?.silhouetteFill ?? 0.32;
@@ -728,6 +760,18 @@ function fillSettingsForm() {
   document.getElementById('set-laser-min').value = settings.laser?.minCharge ?? 12;
   document.getElementById('set-setup').value = settings.setup?.amount ?? 28;
   document.getElementById('set-margin').value = settings.defaultMarginPercent ?? 35;
+
+  const p = getPrintSettings();
+  document.getElementById('set-print-company').value = p.companyName || '';
+  document.getElementById('set-print-tagline').value = p.tagline || '';
+  document.getElementById('set-print-contact').value = p.contact || '';
+  document.getElementById('set-print-intro').value = p.intro || '';
+  document.getElementById('set-print-footer').value = p.footer || '';
+  document.getElementById('set-print-show-size').checked = p.showSize !== false;
+  document.getElementById('set-print-show-lead').checked = p.showLeadTime !== false;
+  document.getElementById('set-print-show-pay').checked = p.showPaymentTerms !== false;
+  document.getElementById('set-print-show-weight').checked = !!p.showWeight;
+  document.getElementById('set-print-show-logo').checked = p.showLogo !== false;
 }
 
 async function saveSettings() {
@@ -748,6 +792,18 @@ async function saveSettings() {
       amount: parseFloat(document.getElementById('set-setup').value) || 0,
     },
     defaultMarginPercent: parseFloat(document.getElementById('set-margin').value) || 35,
+    print: {
+      companyName: document.getElementById('set-print-company').value.trim() || 'CORTEN LIVING',
+      tagline: document.getElementById('set-print-tagline').value.trim(),
+      contact: document.getElementById('set-print-contact').value.trim(),
+      intro: document.getElementById('set-print-intro').value.trim(),
+      footer: document.getElementById('set-print-footer').value.trim(),
+      showSize: !!document.getElementById('set-print-show-size').checked,
+      showLeadTime: !!document.getElementById('set-print-show-lead').checked,
+      showPaymentTerms: !!document.getElementById('set-print-show-pay').checked,
+      showWeight: !!document.getElementById('set-print-show-weight').checked,
+      showLogo: !!document.getElementById('set-print-show-logo').checked,
+    },
   };
   const msg = document.getElementById('settings-msg');
   msg.textContent = 'Saving…';
@@ -760,9 +816,114 @@ async function saveSettings() {
     toast(data?.error || 'Settings save failed', true);
     return;
   }
-  settings = data.settings || next;
+  settings = { ...next, ...(data.settings || {}) };
+  if (data.settings?.print) settings.print = data.settings.print;
+  else settings.print = next.print;
   msg.textContent = 'Saved live';
   toast('Quote settings saved');
+}
+
+/** Build customer-facing print sheet — no internal costings */
+function buildCustomerPrint() {
+  const p = getPrintSettings();
+  const calc = state._lastCalc || recalc(true);
+  const cust = collectCustomer();
+  const days = settings.quoteValidDays || 14;
+  const lead = document.getElementById('q-lead')?.value || state.leadTime || '';
+  const pay = document.getElementById('q-pay')?.value || state.paymentTerms || '';
+
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val || '';
+  };
+
+  const logo = document.getElementById('print-logo');
+  if (logo) logo.style.display = p.showLogo === false ? 'none' : '';
+
+  setText('print-company', p.companyName || 'CORTEN LIVING');
+  setText('print-tagline', p.tagline || '');
+  setText('print-contact', p.contact || '');
+  setText('print-intro', p.intro || '');
+  setText('print-footer', p.footer || '');
+  setText('print-number', state.number || '—');
+  setText(
+    'print-date',
+    'Date: ' +
+      new Date().toLocaleDateString('en-NZ', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+  );
+  setText('print-valid', 'Valid for ' + days + ' days');
+
+  const lines = [];
+  if (cust.name) lines.push(cust.name);
+  if (cust.company) lines.push(cust.company);
+  if (cust.email) lines.push(cust.email);
+  if (cust.phone) lines.push(cust.phone);
+  if (cust.address) lines.push(cust.address);
+  setText('print-customer', lines.length ? lines.join('\n') : '—');
+
+  const meta = [];
+  if (p.showLeadTime !== false && lead) meta.push('Lead time: ' + lead);
+  if (p.showPaymentTerms !== false && pay) meta.push('Payment: ' + pay);
+  if (p.showWeight && calc.weightKg > 0) {
+    meta.push('Est. part weight: ~' + fmt(calc.weightKg) + ' kg (3 mm Corten)');
+  }
+  setText('print-meta', meta.join('\n') || 'Custom laser-cut Corten');
+  const metaWrap = document.getElementById('print-meta-wrap');
+  if (metaWrap) metaWrap.style.display = meta.length ? '' : 'none';
+
+  const thSize = document.getElementById('print-th-size');
+  if (thSize) thSize.style.display = p.showSize === false ? 'none' : '';
+
+  const tbody = document.getElementById('print-items');
+  if (tbody) {
+    if (!state.items.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="4" style="color:#888;">No line items</td></tr>';
+    } else {
+      tbody.innerHTML = state.items
+        .map((it, idx) => {
+          const size =
+            p.showSize === false
+              ? ''
+              : `<td style="text-align:right;">${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm</td>`;
+          const name = (it.fileName || 'Part').replace(/\.dxf$/i, '');
+          return `<tr>
+            <td>${idx + 1}</td>
+            <td>Laser-cut 3 mm Corten — ${esc(name)}</td>
+            <td style="text-align:right;">${it.qty || 1}</td>
+            ${size}
+          </tr>`;
+        })
+        .join('');
+    }
+  }
+
+  setText('print-subtotal', '$' + fmt(calc.priceExcl));
+  const gstRow = document.getElementById('print-gst-row');
+  if (gstRow) gstRow.style.display = calc.gstOn === false ? 'none' : '';
+  setText('print-gst', '$' + fmt(calc.gst));
+  setText(
+    'print-total',
+    calc.gstOn === false ? '$' + fmt(calc.priceExcl) + ' excl. GST' : '$' + fmt(calc.priceIncl) + ' incl. GST'
+  );
+
+  setText('print-notes', '');
+}
+
+function printCustomerQuote() {
+  if (!state.items.length) {
+    toast('Add a DXF before printing a customer quote', true);
+    return;
+  }
+  buildCustomerPrint();
+  // Allow layout paint then print
+  requestAnimationFrame(() => {
+    setTimeout(() => window.print(), 50);
+  });
 }
 
 /* ── Init ── */
@@ -799,7 +960,7 @@ document.querySelectorAll('.nav-btn').forEach((btn) => {
 
 document.getElementById('btn-new-quote')?.addEventListener('click', newQuote);
 document.getElementById('btn-back-list')?.addEventListener('click', () => showView('quotes'));
-document.getElementById('btn-print')?.addEventListener('click', () => window.print());
+document.getElementById('btn-print')?.addEventListener('click', printCustomerQuote);
 document.getElementById('btn-save-quote')?.addEventListener('click', saveQuote);
 document.getElementById('btn-save-customer')?.addEventListener('click', saveCustomer);
 document.getElementById('btn-save-settings')?.addEventListener('click', saveSettings);

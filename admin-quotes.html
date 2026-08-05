@@ -46,11 +46,30 @@ tailwind.config = {
     transition: border-color .15s, background .15s;
   }
   .dropzone.drag { border-color: #b7410e; background: #fff5ef; }
+  /* Screen: hide customer print sheet */
+  #customer-print { display: none; }
   @media print {
     .no-print { display: none !important; }
-    body { background: #fff; }
-    #builder { display: block !important; }
-    #list-view { display: none !important; }
+    body { background: #fff !important; }
+    #login-screen, #app > header, #list-view, #builder, #customers-view, #settings-view, #toast {
+      display: none !important;
+    }
+    #customer-print {
+      display: block !important;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 12mm 14mm;
+      color: #1a1814;
+      font-size: 11pt;
+    }
+    #customer-print h1 { font-size: 22pt; margin: 0 0 4px; }
+    #customer-print table { width: 100%; border-collapse: collapse; }
+    #customer-print th, #customer-print td {
+      border-bottom: 1px solid #e5ddd0; padding: 8px 6px; text-align: left; font-size: 10pt;
+    }
+    #customer-print th { color: #666; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; }
+    #customer-print .totals td { border: none; padding: 4px 6px; }
+    #customer-print .totals .grand td { font-weight: 700; font-size: 13pt; padding-top: 10px; }
   }
 </style>
 </head>
@@ -281,16 +300,17 @@ tailwind.config = {
   </div>
 
   <!-- SETTINGS VIEW -->
-  <div id="settings-view" class="hidden max-w-[720px] mx-auto px-4 py-8 no-print">
+  <div id="settings-view" class="hidden max-w-[800px] mx-auto px-4 py-8 no-print">
     <h1 class="font-display text-3xl text-ink-950 mb-2">Quote settings</h1>
-    <p class="text-sm text-gray-500 mb-6">Default rates used when you drop a DXF. Cost lines stay editable per quote.</p>
-    <div class="panel p-6 space-y-4">
+    <p class="text-sm text-gray-500 mb-6">Default rates (admin only) and the customer print page.</p>
+
+    <div class="panel p-6 space-y-4 mb-6">
+      <h2 class="text-sm font-semibold text-ink-950">Costing defaults (not shown to customers)</h2>
       <div class="grid sm:grid-cols-2 gap-3">
         <div class="sm:col-span-2 text-xs text-gray-500 leading-relaxed border border-gray-200 rounded p-3 bg-paper-50">
           <strong class="text-ink-900">Material cost</strong> =
-          (width × height in m²) × <em>fill</em> × <em>$/m² rate</em> × qty.<br>
-          Example: 200×100 mm plate, fill 0.35, $95/m² → 0.02 × 0.35 × 95 = <strong>$0.67</strong>.
-          Use fill 1.0 to charge full rectangle plate area.
+          (width × height in m²) × <em>fill</em> × <em>$/m² rate</em> × qty.
+          Use fill 1.0 to charge full plate rectangle.
         </div>
         <div>
           <label class="text-xs text-gray-500">Material sheet rate ($ / m²)</label>
@@ -299,7 +319,6 @@ tailwind.config = {
         <div>
           <label class="text-xs text-gray-500">Steel fill of bounding box (0–1)</label>
           <input id="set-fill" type="number" step="0.01" min="0" max="1" class="input mt-1" placeholder="0.32">
-          <p class="text-[10px] text-gray-400 mt-0.5">1 = full plate · 0.3 ≈ open silhouette / numbers</p>
         </div>
         <div>
           <label class="text-xs text-gray-500">Laser rate ($ / metre cut)</label>
@@ -318,10 +337,127 @@ tailwind.config = {
           <input id="set-margin" type="number" step="1" min="0" max="90" class="input mt-1">
         </div>
       </div>
-      <button type="button" id="btn-save-settings" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save settings live</button>
-      <p id="settings-msg" class="text-xs text-gray-500"></p>
+    </div>
+
+    <div class="panel p-6 space-y-4 mb-6">
+      <h2 class="text-sm font-semibold text-ink-950">Customer print page</h2>
+      <p class="text-xs text-gray-500">What customers see when you hit Print. Costings (material, laser, setup, margin) are never included.</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500">Company name on quote</label>
+          <input id="set-print-company" class="input mt-1" placeholder="CORTEN LIVING">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Tagline</label>
+          <input id="set-print-tagline" class="input mt-1" placeholder="Profile-cut Corten · Gisborne NZ">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">Contact line(s)</label>
+          <textarea id="set-print-contact" rows="2" class="input mt-1" placeholder="027 383 8178 · cortenliving@gmail.com&#10;Gisborne, New Zealand"></textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">Intro text (optional)</label>
+          <textarea id="set-print-intro" rows="2" class="input mt-1" placeholder="Thank you for your enquiry. This quote is for custom laser-cut 3 mm Corten as described below."></textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">Footer / terms on print</label>
+          <textarea id="set-print-footer" rows="3" class="input mt-1" placeholder="Prices in NZD. Quote valid for the period stated. Payment as agreed."></textarea>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-4 text-sm pt-1">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-size" class="rounded border-gray-400 text-corten-600" checked>
+          Show item sizes
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-lead" class="rounded border-gray-400 text-corten-600" checked>
+          Show lead time
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-pay" class="rounded border-gray-400 text-corten-600" checked>
+          Show payment terms
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-weight" class="rounded border-gray-400 text-corten-600">
+          Show part weight
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-logo" class="rounded border-gray-400 text-corten-600" checked>
+          Show logo
+        </label>
+      </div>
+    </div>
+
+    <button type="button" id="btn-save-settings" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save settings live</button>
+    <p id="settings-msg" class="text-xs text-gray-500 mt-2"></p>
+  </div>
+</div>
+
+<!-- Customer-facing print sheet (only visible when printing) -->
+<div id="customer-print" aria-hidden="true">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:28px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <img src="/images/logo.svg" alt="" style="width:40px;height:40px;" id="print-logo">
+        <div>
+          <p id="print-company" style="font-family:Oswald,sans-serif;font-size:18pt;margin:0;letter-spacing:0.04em;">CORTEN LIVING</p>
+          <p id="print-tagline" style="margin:2px 0 0;font-size:9pt;color:#666;"></p>
+        </div>
+      </div>
+      <p id="print-contact" style="margin:0;font-size:9pt;color:#555;line-height:1.5;"></p>
+    </div>
+    <div style="text-align:right;">
+      <p style="margin:0;font-size:9pt;color:#b7410e;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Quote</p>
+      <p id="print-number" style="margin:4px 0 0;font-family:Oswald,sans-serif;font-size:16pt;"></p>
+      <p id="print-date" style="margin:6px 0 0;font-size:9pt;color:#666;"></p>
+      <p id="print-valid" style="margin:2px 0 0;font-size:9pt;color:#666;"></p>
     </div>
   </div>
+
+  <p id="print-intro" style="margin:0 0 20px;font-size:10pt;color:#444;line-height:1.5;"></p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+    <div>
+      <p style="margin:0 0 6px;font-size:8pt;text-transform:uppercase;letter-spacing:0.08em;color:#888;font-weight:600;">Bill to</p>
+      <p id="print-customer" style="margin:0;font-size:10pt;line-height:1.55;white-space:pre-line;"></p>
+    </div>
+    <div id="print-meta-wrap">
+      <p style="margin:0 0 6px;font-size:8pt;text-transform:uppercase;letter-spacing:0.08em;color:#888;font-weight:600;">Details</p>
+      <p id="print-meta" style="margin:0;font-size:10pt;line-height:1.55;color:#333;"></p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;">#</th>
+        <th>Description</th>
+        <th style="text-align:right;width:70px;">Qty</th>
+        <th id="print-th-size" style="text-align:right;">Size</th>
+      </tr>
+    </thead>
+    <tbody id="print-items"></tbody>
+  </table>
+
+  <div style="margin-top:28px;display:flex;justify-content:flex-end;">
+    <table class="totals" style="width:280px;">
+      <tr>
+        <td style="color:#666;">Subtotal (excl. GST)</td>
+        <td style="text-align:right;" id="print-subtotal"></td>
+      </tr>
+      <tr id="print-gst-row">
+        <td style="color:#666;">GST</td>
+        <td style="text-align:right;" id="print-gst"></td>
+      </tr>
+      <tr class="grand">
+        <td>Total</td>
+        <td style="text-align:right;" id="print-total"></td>
+      </tr>
+    </table>
+  </div>
+
+  <p id="print-notes" style="margin:28px 0 0;font-size:9pt;color:#555;line-height:1.5;white-space:pre-line;"></p>
+  <p id="print-footer" style="margin:32px 0 0;padding-top:16px;border-top:1px solid #e5ddd0;font-size:8pt;color:#888;line-height:1.5;white-space:pre-line;"></p>
 </div>
 
 <script src="/js/dxf-parse.js"></script>
