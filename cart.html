@@ -363,6 +363,8 @@ let checkoutStep = 1;
 let addressSelected = false;
 /** When true, keep NZ Post rural flag until user edits the address field */
 let ruralLockedFromPick = false;
+/** Exact text from last dropdown pick — used so blur/change does not clear shipping */
+let lastPickedAddress = '';
 
 function money(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
@@ -409,7 +411,22 @@ function refreshRuralFromAutoAndOverride() {
 
 /** True once customer has picked an address from the dropdown */
 function hasChosenAddress() {
-  return !!addressSelected;
+  const addr = document.getElementById('order-address')?.value.trim() || '';
+  if (addressSelected && addr.length >= 5) return true;
+  if (lastPickedAddress && addr === lastPickedAddress) return true;
+  if (ruralLockedFromPick && addr.length >= 5) return true;
+  return false;
+}
+
+function markAddressPicked(text) {
+  lastPickedAddress = String(text || '').trim();
+  addressSelected = lastPickedAddress.length >= 5;
+}
+
+function clearAddressPick() {
+  addressSelected = false;
+  ruralLockedFromPick = false;
+  lastPickedAddress = '';
 }
 
 function computeShip(cart, subtotal, options = {}) {
@@ -844,24 +861,50 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
   const addrDrop = document.getElementById('address-dropdown');
   if (window.NzAddress && addrInput && addrDrop) {
     NzAddress.attachAutocomplete(addrInput, addrDrop, (result) => {
-      addressSelected = !!(result.fromPick || (!result.manual && result.dpid));
-      if (result.fromPick) {
+      const text = String(result.short || result.display || '').trim();
+      if (result.fromPick || (!result.manual && result.dpid)) {
+        markAddressPicked(text);
         ruralLockedFromPick = true;
-      } else if (result.manual) {
-        ruralLockedFromPick = false;
+        applyDeliveryFromAddress(!!result.rural, result.reason || '');
+        return;
+      }
+      // Blur/change after a pick often fires as "manual" — keep pick if text unchanged
+      if (lastPickedAddress && text === lastPickedAddress) {
+        addressSelected = true;
+        applyDeliveryFromAddress(autoRural, deliveryReason);
+        return;
+      }
+      // True manual edit of a different value
+      if (result.manual && text !== lastPickedAddress) {
+        clearAddressPick();
+        applyDeliveryFromAddress(!!result.rural, result.reason || '');
+        return;
       }
       applyDeliveryFromAddress(!!result.rural, result.reason || '');
     });
     addrInput.addEventListener('input', () => {
-      // User is typing again — unlock and re-detect from text
-      addressSelected = false;
-      ruralLockedFromPick = false;
+      const v = addrInput.value.trim();
+      // Only clear pick when user actually changes the chosen address
+      if (lastPickedAddress && v === lastPickedAddress) {
+        addressSelected = true;
+        return;
+      }
+      if (lastPickedAddress && v !== lastPickedAddress) {
+        clearAddressPick();
+      } else if (!lastPickedAddress) {
+        addressSelected = false;
+      }
       const det = NzAddress.detectRural(addrInput.value);
       applyDeliveryFromAddress(!!det.rural, det.reason || '');
     });
     addrInput.addEventListener('change', () => {
-      // Keep NZ Post pick rural; text-only change must not wipe surcharge
-      if (ruralLockedFromPick) {
+      const v = addrInput.value.trim();
+      if (lastPickedAddress && v === lastPickedAddress) {
+        addressSelected = true;
+        applyDeliveryFromAddress(autoRural, deliveryReason);
+        return;
+      }
+      if (ruralLockedFromPick && v === lastPickedAddress) {
         applyDeliveryFromAddress(autoRural, deliveryReason);
         return;
       }
