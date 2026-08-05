@@ -266,22 +266,14 @@ tailwind.config = {
                 placeholder="Start typing your NZ address…"
                 class="c-input w-full rounded-sm px-3 py-3 text-white">
               <div id="address-dropdown" class="addr-dropdown hidden absolute z-30 left-0 right-0 mt-1 rounded-sm" role="listbox"></div>
-              <p class="mt-1.5 text-[11px] text-gray-500 leading-relaxed">
-                Start with street number + name (e.g. <span class="text-gray-400">12 Peel St Gisborne</span>).
-                Use ↑↓ and Enter to pick. Shipping (standard/rural) is set automatically — include <span class="text-gray-400">RD</span> if you have one.
-              </p>
             </div>
             <div id="delivery-status" class="rounded-sm border border-white/10 bg-black/20 px-4 py-3 text-sm text-gray-300">
-              Enter and select an address to calculate shipping.
+              Select an address to set shipping.
             </div>
-            <label id="rural-override-wrap" class="hidden flex items-start gap-2.5 cursor-pointer text-sm text-gray-300">
-              <input type="checkbox" id="rural-override" class="mt-1 rounded border-gray-600 text-corten-600">
-              <span>
-                <span class="text-white font-medium">This is a rural delivery (RD) address</span>
-                <span class="block text-[11px] text-gray-500 mt-0.5">Tick if your mail is Rural Delivery and we marked it standard by mistake. Adds rural shipping surcharge.</span>
-              </span>
+            <label id="rural-override-wrap" class="hidden flex items-center gap-2.5 cursor-pointer text-sm text-gray-300">
+              <input type="checkbox" id="rural-override" class="rounded border-gray-600 text-corten-600">
+              <span class="text-white font-medium">This is a rural delivery address</span>
             </label>
-            <p id="address-data-source" class="text-[10px] text-gray-600"></p>
             <div>
               <label class="block text-xs font-semibold text-gray-200 mb-1.5 uppercase tracking-wide" for="order-notes">Order notes</label>
               <textarea id="order-notes" name="notes" rows="2" placeholder="Anything we should know?"
@@ -406,13 +398,10 @@ function refreshRuralFromAutoAndOverride() {
   const surcharge = Number((window.CortenShipping && CortenShipping.getCachedConfig()?.ruralSurcharge) || 12);
   if (status) {
     if (isRuralDelivery) {
-      const why = autoRural
-        ? (deliveryReason || 'detected from address')
-        : 'you marked rural delivery';
-      status.innerHTML = `<span class="text-amber-400 font-medium">Rural delivery</span> · ${why} — surcharge $${surcharge.toFixed(2)} excl. GST.`;
+      status.innerHTML = `<span class="text-amber-400 font-medium">Rural delivery</span> · +$${surcharge.toFixed(2)} excl. GST`;
       status.className = 'rounded-sm border border-amber-600/40 bg-amber-950/20 px-4 py-3 text-sm text-gray-300';
     } else {
-      status.innerHTML = `<span class="text-corten-400 font-medium">Standard delivery</span> — town / city rate. If you get Rural Post mail, tick the box below.`;
+      status.innerHTML = `<span class="text-corten-400 font-medium">Standard delivery</span>`;
       status.className = 'rounded-sm border border-corten-600/30 bg-black/20 px-4 py-3 text-sm text-gray-300';
     }
   }
@@ -819,24 +808,6 @@ if (new URLSearchParams(location.search).get('cancelled') === '1') {
         ruralLockedFromPick = false;
       }
       applyDeliveryFromAddress(!!result.rural, result.reason || '');
-      const src = document.getElementById('address-data-source');
-      if (src) {
-        const s = result.source || result.raw?.source || '';
-        if (s === 'nzpost' || s === 'nzpost-legacy') {
-          src.textContent = result.rural
-            ? 'NZ Post · rural delivery detected — surcharge applied in order summary'
-            : 'Address from NZ Post database';
-          src.className = result.rural
-            ? 'text-[10px] text-amber-400'
-            : 'text-[10px] text-emerald-500/80';
-        } else if (s === 'linz') {
-          src.textContent = 'Address from LINZ (official NZ addresses)';
-          src.className = 'text-[10px] text-gray-500';
-        } else {
-          src.textContent = 'Address from map data — tick rural below if you have RD mail';
-          src.className = 'text-[10px] text-amber-500/80';
-        }
-      }
     });
     addrInput.addEventListener('input', () => {
       // User is typing again — unlock and re-detect from text
