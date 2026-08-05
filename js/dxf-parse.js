@@ -1,19 +1,24 @@
 /**
  * Lightweight DXF parser for quote tooling.
- * Extracts bounding box, cut length estimate, and SVG path data.
- * Supports LINE, LWPOLYLINE, POLYLINE, CIRCLE, ARC, POINT (ignored for cut).
+ * Bounding box, cut length, SVG preview (full geometry, Y-flipped correctly).
+ * LINE, LWPOLYLINE, POLYLINE+VERTEX, CIRCLE, ARC, ELLIPSE (approx), SPLINE (fit/control pts).
  */
 (function (global) {
   function parsePairs(text) {
     const lines = String(text || '')
+      .replace(/^\uFEFF/, '')
       .replace(/\r\n/g, '\n')
       .replace(/\r/g, '\n')
       .split('\n');
     const pairs = [];
     for (let i = 0; i + 1 < lines.length; i += 2) {
       const code = parseInt(String(lines[i]).trim(), 10);
-      const value = String(lines[i + 1] != null ? lines[i + 1] : '').trim();
-      if (Number.isFinite(code)) pairs.push({ code, value });
+      if (!Number.isFinite(code)) {
+        i -= 1; // resync if odd blank line
+        continue;
+      }
+      const value = String(lines[i + 1] != null ? lines[i + 1] : '').replace(/\s+$/, '');
+      pairs.push({ code, value: value.trim() });
     }
     return pairs;
   }
@@ -24,14 +29,29 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function round2(n) {
+    return Math.round(n * 100) / 100;
+  }
+
   function parseDxf(text) {
     const pairs = parsePairs(text);
+    let entities = parseEntitiesInSection(pairs, true);
+    // Some exporters omit SECTION markers or use weird structure — fall back to full scan
+    if (!entities.length) {
+      entities = parseEntitiesInSection(pairs, false);
+    }
+    return summarize(entities);
+  }
+
+  function parseEntitiesInSection(pairs, requireSection) {
     const entities = [];
     let i = 0;
-    let inEntities = false;
+    let inEntities = !requireSection;
+    let currentPoly = null;
 
     while (i < pairs.length) {
       const p = pairs[i];
+
       if (p.code === 0 && p.value === 'SECTION') {
         const name = pairs[i + 1] && pairs[i + 1].code === 2 ? pairs[i + 1].value : '';
         inEntities = name === 'ENTITIES';
@@ -39,7 +59,8 @@
         continue;
       }
       if (p.code === 0 && p.value === 'ENDSEC') {
-        inEntities = false;
+        if (requireSection) inEntities = false;
+        currentPoly = null;
         i += 1;
         continue;
       }
@@ -48,99 +69,195 @@
         continue;
       }
 
-      const type = p.value;
+      const type = String(p.value || '').toUpperCase();
       i += 1;
-      const fields = {};
-      const vertices = [];
-      let currentVertex = null;
+
+      const f = {};
+      const verts = [];
+      let vx = null;
 
       while (i < pairs.length && pairs[i].code !== 0) {
-        const { code, value } = pairs[i];
+        const code = pairs[i].code;
+        const value = pairs[i].value;
         const num = parseFloat(value);
 
         if (type === 'LWPOLYLINE') {
           if (code === 10) {
-            currentVertex = { x: num, y: 0 };
-            vertices.push(currentVertex);
-          } else if (code === 20 && currentVertex) {
-            currentVertex.y = num;
-          } else if (code === 70) fields.flags = parseInt(value, 10) || 0;
-          else if (code === 90) fields.nVerts = parseInt(value, 10) || 0;
-        } else if (type === 'POLYLINE') {
-          fields.flags = code === 70 ? parseInt(value, 10) || 0 : fields.flags;
+            vx = { x: num, y: 0 };
+            verts.push(vx);
+          } else if (code === 20 && vx) {
+            vx.y = num;
+          } else if (code === 70) f.flags = parseInt(value, 10) || 0;
         } else if (type === 'VERTEX') {
-          if (code === 10) currentVertex = { x: num, y: 0 };
-          else if (code === 20 && currentVertex) {
-            currentVertex.y = num;
-            vertices.push(currentVertex);
-            currentVertex = null;
+          if (code === 10) vx = { x: num, y: 0 };
+          else if (code === 20 && vx) {
+            vx.y = num;
+            verts.push({ x: vx.x, y: vx.y });
+            vx = null;
+          } else if (code === 70) f.vflags = parseInt(value, 10) || 0;
+        } else if (type === 'SPLINE') {
+          if (code === 11) {
+            vx = { x: num, y: 0 };
+          } else if (code === 21 && vx) {
+            vx.y = num;
+            verts.push({ x: vx.x, y: vx.y });
+            vx = null;
+          } else if (code === 10) {
+            // control points also useful as fallback
+            vx = { x: num, y: 0, ctrl: true };
+          } else if (code === 20 && vx && vx.ctrl) {
+            vx.y = num;
+            verts.push({ x: vx.x, y: vx.y });
+            vx = null;
           }
         } else {
-          if (code === 10) fields.x = num;
-          else if (code === 20) fields.y = num;
-          else if (code === 11) fields.x2 = num;
-          else if (code === 21) fields.y2 = num;
-          else if (code === 40) fields.r = num;
-          else if (code === 50) fields.startAngle = num;
-          else if (code === 51) fields.endAngle = num;
+          if (code === 10) f.x = num;
+          else if (code === 20) f.y = num;
+          else if (code === 11) f.x2 = num;
+          else if (code === 21) f.y2 = num;
+          else if (code === 40) f.r = num;
+          else if (code === 41) f.r2 = num;
+          else if (code === 42) f.ratio = num;
+          else if (code === 50) f.a0 = num;
+          else if (code === 51) f.a1 = num;
+          else if (code === 70) f.flags = parseInt(value, 10) || 0;
         }
         i += 1;
       }
 
-      if (type === 'SEQEND' && entities.length) {
-        const last = entities[entities.length - 1];
-        if (last.type === 'POLYLINE' && vertices.length) {
-          last.vertices = vertices.slice();
-        }
-      }
-
-      if (type === 'LINE' && fields.x != null && fields.y != null && fields.x2 != null && fields.y2 != null) {
+      if (type === 'LINE' && finite(f.x, f.y, f.x2, f.y2)) {
         entities.push({
           type: 'LINE',
           points: [
-            { x: fields.x, y: fields.y },
-            { x: fields.x2, y: fields.y2 },
+            { x: f.x, y: f.y },
+            { x: f.x2, y: f.y2 },
           ],
         });
-      } else if (type === 'LWPOLYLINE' && vertices.length) {
+        currentPoly = null;
+      } else if (type === 'LWPOLYLINE' && verts.length) {
         entities.push({
           type: 'LWPOLYLINE',
-          closed: !!(fields.flags & 1),
-          points: vertices.map((v) => ({ x: v.x, y: v.y })),
+          closed: !!(f.flags & 1),
+          points: verts.map((v) => ({ x: v.x, y: v.y })),
         });
+        currentPoly = null;
       } else if (type === 'POLYLINE') {
-        entities.push({ type: 'POLYLINE', closed: !!(fields.flags & 1), points: [], _collect: true });
+        currentPoly = {
+          type: 'POLYLINE',
+          closed: !!(f.flags & 1),
+          points: [],
+        };
+        entities.push(currentPoly);
       } else if (type === 'VERTEX') {
-        // attached via SEQEND for classic polylines; also stash on last POLYLINE
-        const last = entities[entities.length - 1];
-        if (last && last.type === 'POLYLINE' && vertices.length) {
-          last.points = last.points.concat(vertices);
+        if (currentPoly && verts.length) {
+          // skip mesh/face vertices when possible
+          if (!(f.vflags & 128)) {
+            currentPoly.points.push(...verts.map((v) => ({ x: v.x, y: v.y })));
+          }
         }
-      } else if (type === 'CIRCLE' && fields.x != null && fields.y != null && fields.r != null) {
-        entities.push({ type: 'CIRCLE', cx: fields.x, cy: fields.y, r: fields.r });
-      } else if (
-        type === 'ARC' &&
-        fields.x != null &&
-        fields.y != null &&
-        fields.r != null &&
-        fields.startAngle != null &&
-        fields.endAngle != null
-      ) {
+      } else if (type === 'SEQEND') {
+        currentPoly = null;
+      } else if (type === 'CIRCLE' && finite(f.x, f.y, f.r) && f.r > 0) {
+        entities.push({ type: 'CIRCLE', cx: f.x, cy: f.y, r: f.r });
+        currentPoly = null;
+      } else if (type === 'ARC' && finite(f.x, f.y, f.r, f.a0, f.a1) && f.r > 0) {
         entities.push({
           type: 'ARC',
-          cx: fields.x,
-          cy: fields.y,
-          r: fields.r,
-          startAngle: fields.startAngle,
-          endAngle: fields.endAngle,
+          cx: f.x,
+          cy: f.y,
+          r: f.r,
+          startAngle: f.a0,
+          endAngle: f.a1,
         });
+        currentPoly = null;
+      } else if (type === 'ELLIPSE' && finite(f.x, f.y, f.x2, f.y2)) {
+        // centre + major axis end point, ratio = minor/major
+        const ratio = f.ratio > 0 ? f.ratio : 1;
+        const mj = Math.sqrt(f.x2 * f.x2 + f.y2 * f.y2) || 1;
+        entities.push({
+          type: 'ELLIPSE',
+          cx: f.x,
+          cy: f.y,
+          mx: f.x2,
+          my: f.y2,
+          ratio,
+          a0: f.a0 != null ? f.a0 : 0,
+          a1: f.a1 != null ? f.a1 : Math.PI * 2,
+          mj,
+        });
+        currentPoly = null;
+      } else if (type === 'SPLINE' && verts.length >= 2) {
+        entities.push({
+          type: 'SPLINE',
+          points: verts.map((v) => ({ x: v.x, y: v.y })),
+        });
+        currentPoly = null;
       }
     }
 
-    // Merge POLYLINE vertices if collected
-    const cleaned = entities.filter((e) => e.type !== 'POLYLINE' || (e.points && e.points.length));
+    return entities.filter((e) => {
+      if (e.type === 'POLYLINE') return e.points && e.points.length >= 2;
+      return true;
+    });
+  }
 
-    return summarize(cleaned);
+  function finite() {
+    for (let i = 0; i < arguments.length; i++) {
+      if (!Number.isFinite(arguments[i])) return false;
+    }
+    return true;
+  }
+
+  function circlePoints(cx, cy, r, steps) {
+    const n = steps || Math.max(24, Math.ceil((2 * Math.PI * r) / 1.5));
+    const pts = [];
+    for (let s = 0; s < n; s++) {
+      const a = (2 * Math.PI * s) / n;
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+    return pts;
+  }
+
+  function arcPoints(cx, cy, r, startDeg, endDeg) {
+    let a0 = (startDeg * Math.PI) / 180;
+    let a1 = (endDeg * Math.PI) / 180;
+    let sweep = a1 - a0;
+    if (sweep <= 0) sweep += 2 * Math.PI;
+    const steps = Math.max(12, Math.ceil((sweep * r) / 1.5));
+    const pts = [];
+    for (let s = 0; s <= steps; s++) {
+      const a = a0 + (sweep * s) / steps;
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+    return pts;
+  }
+
+  function ellipsePoints(e) {
+    const maj = Math.sqrt(e.mx * e.mx + e.my * e.my) || 1;
+    const min = maj * (e.ratio || 1);
+    const rot = Math.atan2(e.my, e.mx);
+    let a0 = e.a0 != null ? e.a0 : 0;
+    let a1 = e.a1 != null ? e.a1 : Math.PI * 2;
+    // DXF ellipse params often in radians already
+    if (Math.abs(a1) > 2 * Math.PI + 0.1 || Math.abs(a0) > 2 * Math.PI + 0.1) {
+      a0 = (a0 * Math.PI) / 180;
+      a1 = (a1 * Math.PI) / 180;
+    }
+    let sweep = a1 - a0;
+    if (Math.abs(sweep) < 1e-9) sweep = 2 * Math.PI;
+    if (sweep < 0) sweep += 2 * Math.PI;
+    const steps = Math.max(32, Math.ceil((sweep * maj) / 1.5));
+    const pts = [];
+    for (let s = 0; s <= steps; s++) {
+      const t = a0 + (sweep * s) / steps;
+      const lx = maj * Math.cos(t);
+      const ly = min * Math.sin(t);
+      pts.push({
+        x: e.cx + lx * Math.cos(rot) - ly * Math.sin(rot),
+        y: e.cy + lx * Math.sin(rot) + ly * Math.cos(rot),
+      });
+    }
+    return pts;
   }
 
   function summarize(entities) {
@@ -149,7 +266,8 @@
     let maxX = -Infinity;
     let maxY = -Infinity;
     let cutLength = 0;
-    const paths = [];
+    /** @type {{points: {x,y}[], closed: boolean}[]} */
+    const polylines = [];
 
     function expand(x, y) {
       if (x < minX) minX = x;
@@ -159,144 +277,154 @@
     }
 
     function addPoly(pts, closed) {
-      if (!pts.length) return;
-      const d = [];
-      pts.forEach((p, idx) => {
-        expand(p.x, p.y);
-        d.push((idx === 0 ? 'M' : 'L') + p.x + ' ' + p.y);
-        if (idx > 0) cutLength += dist(pts[idx - 1], p);
-      });
-      if (closed && pts.length > 1) {
-        cutLength += dist(pts[pts.length - 1], pts[0]);
-        d.push('Z');
-      }
-      paths.push(d.join(' '));
+      if (!pts || pts.length < 2) return;
+      const clean = pts.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+      if (clean.length < 2) return;
+      clean.forEach((p) => expand(p.x, p.y));
+      for (let i = 1; i < clean.length; i++) cutLength += dist(clean[i - 1], clean[i]);
+      if (closed) cutLength += dist(clean[clean.length - 1], clean[0]);
+      polylines.push({ points: clean, closed: !!closed });
     }
 
     entities.forEach((e) => {
-      if (e.type === 'LINE') {
-        addPoly(e.points, false);
-      } else if (e.type === 'LWPOLYLINE' || e.type === 'POLYLINE') {
+      if (e.type === 'LINE') addPoly(e.points, false);
+      else if (e.type === 'LWPOLYLINE' || e.type === 'POLYLINE' || e.type === 'SPLINE') {
         addPoly(e.points, !!e.closed);
       } else if (e.type === 'CIRCLE') {
-        expand(e.cx - e.r, e.cy - e.r);
-        expand(e.cx + e.r, e.cy + e.r);
-        cutLength += 2 * Math.PI * e.r;
-        paths.push(
-          `M ${e.cx - e.r} ${e.cy} A ${e.r} ${e.r} 0 1 0 ${e.cx + e.r} ${e.cy} A ${e.r} ${e.r} 0 1 0 ${e.cx - e.r} ${e.cy}`
-        );
+        addPoly(circlePoints(e.cx, e.cy, e.r), true);
       } else if (e.type === 'ARC') {
-        let a0 = (e.startAngle * Math.PI) / 180;
-        let a1 = (e.endAngle * Math.PI) / 180;
-        let sweep = a1 - a0;
-        if (sweep <= 0) sweep += 2 * Math.PI;
-        const steps = Math.max(8, Math.ceil((sweep * e.r) / 2));
-        const pts = [];
-        for (let s = 0; s <= steps; s++) {
-          const a = a0 + (sweep * s) / steps;
-          pts.push({ x: e.cx + e.r * Math.cos(a), y: e.cy + e.r * Math.sin(a) });
-        }
-        addPoly(pts, false);
+        addPoly(arcPoints(e.cx, e.cy, e.r, e.startAngle, e.endAngle), false);
+      } else if (e.type === 'ELLIPSE') {
+        addPoly(ellipsePoints(e), Math.abs((e.a1 || 0) - (e.a0 || 0)) > 6);
       }
     });
 
     if (!Number.isFinite(minX)) {
       minX = minY = 0;
-      maxX = maxY = 0;
+      maxX = maxY = 1;
     }
 
     const width = Math.max(0, maxX - minX);
     const height = Math.max(0, maxY - minY);
-    const area = width * height;
+
+    // SVG-ready path strings in raw DXF coords (toSvg normalises)
+    const paths = polylines.map((pl) => {
+      const d = pl.points
+        .map((p, idx) => (idx === 0 ? 'M' : 'L') + round2(p.x) + ' ' + round2(p.y))
+        .join(' ');
+      return pl.closed ? d + ' Z' : d;
+    });
 
     return {
       entityCount: entities.length,
       widthMm: round2(width),
       heightMm: round2(height),
-      areaMm2: round2(area),
+      areaMm2: round2(width * height),
       cutLengthMm: round2(cutLength),
       bounds: { minX, minY, maxX, maxY },
+      polylines,
       paths,
       entities,
     };
   }
 
-  function round2(n) {
-    return Math.round(n * 100) / 100;
-  }
-
+  /**
+   * Build SVG with all geometry visible (normalise to 0..w, 0..h, flip Y).
+   */
   function toSvg(summary, opts) {
     const o = opts || {};
-    const pad = o.pad != null ? o.pad : 8;
-    const vbW = Math.max(1, summary.widthMm) + pad * 2;
-    const vbH = Math.max(1, summary.heightMm) + pad * 2;
-    const ox = (summary.bounds?.minX || 0) - pad;
-    // SVG Y is down; flip DXF Y
-    const maxY = summary.bounds?.maxY || 0;
-    const pathEls = (summary.paths || [])
-      .map((d) => {
-        // Flip Y relative to maxY
-        const flipped = d.replace(/([ML])\s*([-\d.]+)\s+([-\d.]+)/g, (_, cmd, x, y) => {
-          const fy = maxY - parseFloat(y) + (summary.bounds?.minY || 0);
-          // Actually: svgY = maxY - y, then offset by min so viewBox starts 0
-          const sy = maxY - parseFloat(y);
-          return cmd + ' ' + x + ' ' + sy;
-        }).replace(/Z/g, 'Z');
-        // Simpler flip: transform on group
-        return d;
-      })
-      .map(
-        (d) =>
-          `<path d="${d}" fill="none" stroke="${o.stroke || '#b7410e'}" stroke-width="${o.strokeWidth || 0.8}" vector-effect="non-scaling-stroke"/>`
-      )
-      .join('');
+    const pad = o.pad != null ? o.pad : 6;
+    const minX = summary.bounds?.minX ?? 0;
+    const minY = summary.bounds?.minY ?? 0;
+    const maxX = summary.bounds?.maxX ?? minX + 1;
+    const maxY = summary.bounds?.maxY ?? minY + 1;
+    const w = Math.max(0.1, maxX - minX);
+    const h = Math.max(0.1, maxY - minY);
+    const stroke = o.stroke || '#b7410e';
+    const sw = o.strokeWidth != null ? o.strokeWidth : Math.max(0.4, Math.min(w, h) * 0.008);
 
-    const minX = summary.bounds?.minX || 0;
-    const minY = summary.bounds?.minY || 0;
-    const w = Math.max(1, summary.widthMm);
-    const h = Math.max(1, summary.heightMm);
+    // Prefer polylines (accurate); fall back to path strings
+    let pathEls = '';
+    if (summary.polylines && summary.polylines.length) {
+      pathEls = summary.polylines
+        .map((pl) => {
+          const d = pl.points
+            .map((p, idx) => {
+              const x = p.x - minX;
+              const y = maxY - p.y; // flip Y for SVG
+              return (idx === 0 ? 'M' : 'L') + round2(x) + ' ' + round2(y);
+            })
+            .join(' ');
+          return `<path d="${d}${pl.closed ? ' Z' : ''}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`;
+        })
+        .join('\n');
+    } else {
+      pathEls = (summary.paths || [])
+        .map((raw) => {
+          const d = String(raw).replace(/([ML])\s*([-\d.eE+]+)\s+([-\d.eE+]+)/g, (_, cmd, xs, ys) => {
+            const x = parseFloat(xs) - minX;
+            const y = maxY - parseFloat(ys);
+            return cmd + round2(x) + ' ' + round2(y);
+          });
+          return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`;
+        })
+        .join('\n');
+    }
 
-    return {
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX - pad} ${-(minY + h) - pad} ${w + pad * 2} ${h + pad * 2}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
-  <g transform="scale(1,-1)">
-    ${pathEls}
-  </g>
-</svg>`,
-      viewBox: `${minX - pad} ${minY - pad} ${w + pad * 2} ${h + pad * 2}`,
-    };
+    const vbW = w + pad * 2;
+    const vbH = h + pad * 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${vbW} ${vbH}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+  ${pathEls}
+</svg>`;
+
+    return { svg, viewBox: `${-pad} ${-pad} ${vbW} ${vbH}`, width: w, height: h };
   }
 
-  /**
-   * Scale geometry so width or height matches target mm (linked aspect).
-   */
   function scaleToSize(summary, targetW, targetH, linked) {
     const sw = summary.widthMm || 1;
     const sh = summary.heightMm || 1;
     let sx = 1;
     let sy = 1;
     if (linked) {
-      if (targetW && targetH) {
-        sx = sy = Math.min(targetW / sw, targetH / sh);
-      } else if (targetW) {
-        sx = sy = targetW / sw;
-      } else if (targetH) {
-        sx = sy = targetH / sh;
-      }
+      if (targetW && targetH) sx = sy = Math.min(targetW / sw, targetH / sh);
+      else if (targetW) sx = sy = targetW / sw;
+      else if (targetH) sx = sy = targetH / sh;
     } else {
       if (targetW) sx = targetW / sw;
       if (targetH) sy = targetH / sh;
     }
     const widthMm = round2(sw * sx);
     const heightMm = round2(sh * sy);
-    const cutLengthMm = round2((summary.cutLengthMm || 0) * ((sx + sy) / 2));
     return {
       ...summary,
       widthMm,
       heightMm,
       areaMm2: round2(widthMm * heightMm),
-      cutLengthMm,
+      cutLengthMm: round2((summary.cutLengthMm || 0) * ((sx + sy) / 2)),
       scaleX: sx,
       scaleY: sy,
+    };
+  }
+
+  /**
+   * 3 mm Corten part weight (kg).
+   * solidAreaM2 ≈ bounding box × silhouette fill.
+   * kgPerM2 default 23.55 (3 mm plate).
+   */
+  function partWeightKg(widthMm, heightMm, qty, opts) {
+    const o = opts || {};
+    const fill = Number(o.silhouetteFill) > 0 ? Number(o.silhouetteFill) : 0.32;
+    const kgPerM2 = Number(o.cortenKgPerM2) > 0 ? Number(o.cortenKgPerM2) : 23.55;
+    const q = Math.max(1, parseInt(qty, 10) || 1);
+    const areaM2 = (Math.max(0, widthMm) * Math.max(0, heightMm)) / 1e6;
+    const solidM2 = areaM2 * fill;
+    return {
+      weightKg: round2(solidM2 * kgPerM2 * q),
+      solidAreaM2: solidM2 * q,
+      plateAreaM2: areaM2 * q,
+      fill,
+      kgPerM2,
+      thicknessMm: 3,
     };
   }
 
@@ -304,5 +432,6 @@
     parseDxf,
     toSvg,
     scaleToSize,
+    partWeightKg,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

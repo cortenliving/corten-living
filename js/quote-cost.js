@@ -32,17 +32,26 @@
     const h = Number(item.heightMm) || 0;
     const cutMm = Number(item.cutLengthMm) || 0;
     const fill = Number(s.material?.silhouetteFill) || 0.32;
-    const areaM2 = ((w * h) / 1e6) * fill;
-    const cutM = cutMm / 1000;
     const kgPerM2 = Number(s.cortenKgPerM2) || 23.55;
-    const weightKg = areaM2 * kgPerM2 * qty;
+    // Bounding box area (plate) and solid part area (silhouette)
+    const plateM2 = (w * h) / 1e6;
+    const solidM2 = plateM2 * fill;
+    const cutM = cutMm / 1000;
+    // 3 mm Corten ≈ kgPerM2 for solid plate
+    const weightKg = solidM2 * kgPerM2 * qty;
+    const plateWeightKg = plateM2 * kgPerM2 * qty;
     return {
       qty,
-      areaM2: areaM2 * qty,
+      areaM2: solidM2 * qty,
+      plateAreaM2: plateM2 * qty,
       cutM: cutM * qty,
       weightKg,
+      plateWeightKg,
       widthMm: w,
       heightMm: h,
+      fill,
+      kgPerM2,
+      thicknessMm: 3,
     };
   }
 
@@ -131,6 +140,11 @@
     const gst = gstOn ? money(priceExcl * gstRate) : 0;
     const priceIncl = money(priceExcl + gst);
 
+    const plateWeightKg = (items || []).reduce(
+      (s, it) => s + itemMetrics(it, settings).plateWeightKg,
+      0
+    );
+
     return {
       auto: {
         material: autoMaterial,
@@ -139,6 +153,7 @@
         freight: money(autoFreight),
         freightTier: tier,
         weightKg: money(weightKg),
+        plateWeightKg: money(plateWeightKg),
       },
       costings: { material, laser, setup, freight },
       costExcl,
@@ -150,6 +165,9 @@
       priceIncl,
       freightTier: tier,
       weightKg: money(weightKg),
+      plateWeightKg: money(plateWeightKg),
+      thicknessMm: 3,
+      cortenKgPerM2: Number(settings.cortenKgPerM2) || 23.55,
     };
   }
 

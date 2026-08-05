@@ -311,6 +311,7 @@ async function handleFiles(fileList) {
         areaMm2: summary.areaMm2,
         linked: true,
         paths: summary.paths,
+        polylines: summary.polylines,
         bounds: summary.bounds,
         // keep a modest copy for re-open; strip if huge on save API-side
         dxfText: text.length < 500000 ? text : '',
@@ -338,6 +339,10 @@ function renderItems() {
   host.innerHTML = state.items
     .map((it, idx) => {
       const active = it.id === state.selectedItemId;
+      const wt = DxfParse.partWeightKg(it.widthMm, it.heightMm, it.qty, {
+        silhouetteFill: settings.material?.silhouetteFill,
+        cortenKgPerM2: settings.cortenKgPerM2,
+      });
       return `
       <div class="border rounded p-3 ${active ? 'border-corten-500 bg-orange-50/40' : 'border-gray-200 bg-white'}" data-item="${esc(it.id)}">
         <div class="flex items-start justify-between gap-2">
@@ -346,6 +351,7 @@ function renderItems() {
             <div class="min-w-0">
               <p class="text-sm font-medium truncate">${esc(it.fileName)}</p>
               <p class="text-[11px] text-gray-500">${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm · ${it.entityCount || 0} entities · cut ~${fmt(it.cutLengthMm)} mm</p>
+              <p class="text-[11px] text-ink-900 font-medium mt-0.5">3 mm Corten · ~${fmt(wt.weightKg)} kg <span class="text-gray-400 font-normal">(fill ${(wt.fill * 100).toFixed(0)}%)</span></p>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
@@ -464,14 +470,29 @@ function previewSelected() {
     return;
   }
   label.textContent = `${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm`;
-  const summary = {
+  // If we only have paths/bounds from a saved quote, use those; re-parse if dxfText present
+  let summary = {
     widthMm: it.widthMm,
     heightMm: it.heightMm,
     paths: it.paths,
+    polylines: it.polylines,
     bounds: it.bounds || { minX: 0, minY: 0, maxX: it.widthMm, maxY: it.heightMm },
   };
-  const { svg } = DxfParse.toSvg(summary, { stroke: '#b7410e', strokeWidth: 1.2, pad: 4 });
-  stage.innerHTML = `<div class="w-full h-full">${svg}</div>`;
+  if ((!summary.polylines || !summary.polylines.length) && it.dxfText && DxfParse.parseDxf) {
+    try {
+      const full = DxfParse.parseDxf(it.dxfText);
+      summary = {
+        ...full,
+        widthMm: it.widthMm,
+        heightMm: it.heightMm,
+      };
+      it.polylines = full.polylines;
+      it.paths = full.paths;
+      it.bounds = full.bounds;
+    } catch (_) {}
+  }
+  const { svg } = DxfParse.toSvg(summary, { stroke: '#b7410e', strokeWidth: 0.9, pad: 8 });
+  stage.innerHTML = `<div class="w-full h-full max-h-full">${svg}</div>`;
 }
 
 /* ── Costing ── */
@@ -504,9 +525,20 @@ function recalc(fromOverrides) {
   document.getElementById('q-subtotal').textContent = '$' + fmt(result.priceExcl);
   document.getElementById('q-gst').textContent = '$' + fmt(result.gst);
   document.getElementById('q-total').textContent = '$' + fmt(result.priceIncl);
-  document.getElementById('q-weight').textContent = result.weightKg
-    ? `Est. steel ~${fmt(result.weightKg)} kg (silhouette fill applied)`
-    : '';
+  const wEl = document.getElementById('q-weight');
+  if (wEl) {
+    if (result.weightKg > 0) {
+      wEl.innerHTML =
+        `<span class="text-ink-900 font-medium">Part weight (3 mm Corten): ~${fmt(result.weightKg)} kg</span>` +
+        `<span class="block text-gray-400">Silhouette fill ${(Number(settings.material?.silhouetteFill) * 100 || 32).toFixed(0)}% · ${fmt(result.cortenKgPerM2 || 23.55)} kg/m²` +
+        (result.plateWeightKg
+          ? ` · full box would be ~${fmt(result.plateWeightKg)} kg`
+          : '') +
+        `</span>`;
+    } else {
+      wEl.textContent = '';
+    }
+  }
 
   state._lastCalc = result;
   return result;
@@ -582,19 +614,28 @@ async function saveQuote() {
     number: state.number,
     status: 'saved',
     customer: collectCustomer(),
-    items: state.items.map((it) => ({
-      id: it.id,
-      fileName: it.fileName,
-      qty: it.qty,
-      widthMm: it.widthMm,
-      heightMm: it.heightMm,
-      cutLengthMm: it.cutLengthMm,
-      entityCount: it.entityCount,
-      areaMm2: it.areaMm2,
-      linked: it.linked,
-      paths: it.paths,
-      bounds: it.bounds,
-    })),
+    items: state.items.map((it) => {
+      const wt = DxfParse.partWeightKg(it.widthMm, it.heightMm, it.qty, {
+        silhouetteFill: settings.material?.silhouetteFill,
+        cortenKgPerM2: settings.cortenKgPerM2,
+      });
+      return {
+        id: it.id,
+        fileName: it.fileName,
+        qty: it.qty,
+        widthMm: it.widthMm,
+        heightMm: it.heightMm,
+        cutLengthMm: it.cutLengthMm,
+        entityCount: it.entityCount,
+        areaMm2: it.areaMm2,
+        linked: it.linked,
+        paths: it.paths,
+        polylines: it.polylines,
+        bounds: it.bounds,
+        weightKg: wt.weightKg,
+        thicknessMm: 3,
+      };
+    }),
     overrides: state.overrides,
     marginPercent: state.marginPercent,
     gstOn: state.gstOn,
