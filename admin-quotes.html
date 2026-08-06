@@ -174,10 +174,17 @@ tailwind.config = {
         <p class="text-[10px] uppercase tracking-widest text-corten-600 font-semibold">New fabrication quote</p>
         <h1 class="font-display text-3xl text-ink-950">Build a quote</h1>
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2 items-center">
         <button type="button" id="btn-back-list" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">← All quotes</button>
         <button type="button" id="btn-print" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">Print</button>
+        <button type="button" id="btn-payment-link" class="px-3 py-2 border border-emerald-600 text-emerald-800 rounded text-sm bg-emerald-50 hover:bg-emerald-100 font-medium">Stripe payment link</button>
         <button type="button" id="btn-save-quote" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save quote</button>
+      </div>
+      <div id="payment-link-box" class="hidden w-full mt-2 panel p-3 flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-gray-500 shrink-0">Payment link:</span>
+        <input id="payment-link-url" type="text" readonly class="input flex-1 min-w-[200px] text-xs font-mono">
+        <button type="button" id="btn-copy-payment-link" class="px-3 py-2 border border-gray-300 rounded text-xs bg-white hover:bg-paper-50">Copy</button>
+        <a id="payment-link-open" href="#" target="_blank" rel="noopener" class="px-3 py-2 btn-primary rounded text-xs font-semibold">Open</a>
       </div>
     </div>
 

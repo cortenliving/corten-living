@@ -190,6 +190,11 @@ function renderQuoteList() {
             <td class="px-4 py-3 text-gray-500 text-xs">${q.updatedAt ? new Date(q.updatedAt).toLocaleDateString() : '—'}</td>
             <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
               ${
+                q.paymentLinkUrl
+                  ? `<a href="${esc(q.paymentLinkUrl)}" target="_blank" rel="noopener" class="text-emerald-700 hover:underline text-xs font-medium">Pay link</a>`
+                  : ''
+              }
+              ${
                 q.pdfUrl
                   ? `<a href="${esc(q.pdfUrl)}" target="_blank" rel="noopener" class="text-ink-900 hover:underline text-xs font-medium">PDF</a>`
                   : ''
@@ -230,6 +235,8 @@ function loadQuoteIntoBuilder(q) {
   state.paymentTerms = q.paymentTerms || '';
   state.pdfUrl = q.pdfUrl || null;
   state.pdfPath = q.pdfPath || null;
+  state.paymentLinkUrl = q.paymentLinkUrl || null;
+  showPaymentLinkBox(state.paymentLinkUrl);
 
   document.getElementById('c-name').value = q.customer?.name || '';
   document.getElementById('c-company').value = q.customer?.company || '';
@@ -263,7 +270,9 @@ function newQuote() {
     costManual: false,
     pdfUrl: null,
     pdfPath: null,
+    paymentLinkUrl: null,
   };
+  showPaymentLinkBox(null);
   ['c-name', 'c-company', 'c-email', 'c-phone', 'c-address'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -1132,6 +1141,104 @@ document.getElementById('btn-new-quote')?.addEventListener('click', newQuote);
 document.getElementById('btn-back-list')?.addEventListener('click', () => showView('quotes'));
 document.getElementById('btn-print')?.addEventListener('click', printCustomerQuote);
 document.getElementById('btn-save-quote')?.addEventListener('click', saveQuote);
+document.getElementById('btn-payment-link')?.addEventListener('click', createPaymentLink);
+document.getElementById('btn-copy-payment-link')?.addEventListener('click', copyPaymentLink);
+
+function showPaymentLinkBox(url) {
+  const box = document.getElementById('payment-link-box');
+  const input = document.getElementById('payment-link-url');
+  const open = document.getElementById('payment-link-open');
+  if (!box) return;
+  if (url) {
+    box.classList.remove('hidden');
+    if (input) input.value = url;
+    if (open) open.href = url;
+  } else {
+    box.classList.add('hidden');
+    if (input) input.value = '';
+  }
+}
+
+async function createPaymentLink() {
+  if (!state.items.length) {
+    toast('Add DXF items and save the quote first', true);
+    return;
+  }
+  // Ensure quote is saved so it has an id + totals
+  if (!state.id) {
+    toast('Saving quote first…');
+    await saveQuote();
+    if (!state.id) {
+      toast('Save the quote before creating a payment link', true);
+      return;
+    }
+  } else {
+    // Refresh totals on server
+    await saveQuote();
+  }
+
+  const email = document.getElementById('c-email')?.value.trim();
+  if (!email) {
+    toast('Customer email is required for a payment link', true);
+    return;
+  }
+
+  const btn = document.getElementById('btn-payment-link');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creating link…';
+  }
+  try {
+    const calc = state._lastCalc || recalc(true);
+    const { ok, data } = await api('/api/quote-payment-link', {
+      method: 'POST',
+      body: JSON.stringify({
+        quoteId: state.id,
+        number: state.number,
+        email,
+        name: document.getElementById('c-name')?.value.trim() || '',
+        amountIncl: calc.priceIncl,
+        amountExcl: calc.priceExcl,
+      }),
+    });
+    if (!ok || !data?.url) {
+      throw new Error(data?.error || 'Could not create Stripe link');
+    }
+    state.paymentLinkUrl = data.url;
+    showPaymentLinkBox(data.url);
+    try {
+      await navigator.clipboard.writeText(data.url);
+      toast('Payment link created and copied — send to customer');
+    } catch {
+      toast('Payment link created — copy and send to customer');
+    }
+    const list = await api('/api/quotes');
+    if (list.data?.quotes) quoteList = list.data.quotes;
+  } catch (e) {
+    toast(String(e.message || e), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Stripe payment link';
+    }
+  }
+}
+
+async function copyPaymentLink() {
+  const input = document.getElementById('payment-link-url');
+  const url = input?.value || state.paymentLinkUrl;
+  if (!url) {
+    toast('No payment link yet', true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link copied');
+  } catch {
+    input?.select();
+    toast('Select the link and copy (Ctrl+C)');
+  }
+}
 document.getElementById('btn-save-customer')?.addEventListener('click', saveCustomer);
 document.getElementById('btn-save-settings')?.addEventListener('click', saveSettings);
 document.getElementById('btn-reset-cost')?.addEventListener('click', () => {
