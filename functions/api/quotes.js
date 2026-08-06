@@ -41,7 +41,6 @@ export async function onRequestGet(context) {
       pdfPath: q.pdfPath || null,
       paymentLinkUrl: q.paymentLinkUrl || null,
       paymentAmount: q.paymentAmount ?? null,
-      status: q.status || 'draft',
     }));
     return json({ quotes: list, nextSeq: data.nextSeq || 1843, updatedAt: data.updatedAt });
   } catch (e) {
