@@ -3,7 +3,7 @@
     {
       "id": "q_msgs8g5ayb0u",
       "number": "CL-2026-1843",
-      "status": "saved",
+      "status": "payment_link",
       "customer": {
         "name": "Kane Stevens",
         "company": "",
@@ -500,9 +500,14 @@
       },
       "pdfUrl": "https://raw.githubusercontent.com/cortenliving/corten-living/main/data/quote-files/CL-2026-1843.pdf",
       "pdfPath": "data/quote-files/CL-2026-1843.pdf",
-      "updatedAt": "2026-08-06T00:34:13.040Z"
+      "updatedAt": "2026-08-06T00:34:16.772Z",
+      "acceptedAt": "2026-08-06T00:34:16.772Z",
+      "paymentLinkUrl": "https://buy.stripe.com/test_bJe7sK74w45e5pTf0N77O00",
+      "paymentLinkId": "plink_1U1FGGBcXLL9F8zF0o0o86YA",
+      "paymentAmount": 54.97,
+      "paymentLinkCreatedAt": "2026-08-06T00:34:16.772Z"
     }
   ],
   "nextSeq": 1843,
-  "updatedAt": "2026-08-06T00:34:13.040Z"
+  "updatedAt": "2026-08-06T00:34:16.772Z"
 }
