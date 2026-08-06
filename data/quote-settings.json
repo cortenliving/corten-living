@@ -2,22 +2,21 @@
   "gstRate": 0.15,
   "defaultMarginPercent": 30,
   "material": {
-    "label": "Material (3 mm Corten)",
     "ratePerM2": 69,
     "silhouetteFill": 0.32,
+    "label": "Material (3 mm Corten)",
     "note": "Bounding box area × fill × rate"
   },
   "laser": {
-    "label": "Laser cutting",
     "ratePerMetre": 2.8,
-    "minCharge": 8
+    "minCharge": 8,
+    "label": "Laser cutting"
   },
   "setup": {
-    "label": "Setup (once per quote)",
-    "amount": 10
+    "amount": 10,
+    "label": "Setup (once per quote)"
   },
   "freight": {
-    "label": "Freight",
     "tiers": [
       {
         "id": "small",
@@ -43,11 +42,25 @@
         "maxKg": 999,
         "price": 65
       }
-    ]
+    ],
+    "label": "Freight"
   },
   "cortenKgPerM2": 23.55,
-  "currency": "NZD",
   "quoteValidDays": 14,
+  "print": {
+    "companyName": "CORTEN LIVING",
+    "tagline": "Profile-cut 3 mm Corten · Made in Gisborne, NZ",
+    "contact": "027 383 8178 · cortenliving@gmail.com\nGisborne, New Zealand",
+    "intro": "Thank you for your enquiry. This quote is for custom laser-cut 3 mm Corten steel as described below.",
+    "footer": "Prices in NZD. This quote is valid for the period stated unless withdrawn earlier. Payment terms as listed.",
+    "showSize": true,
+    "showLeadTime": true,
+    "showPaymentTerms": true,
+    "showWeight": true,
+    "showLogo": true,
+    "showProfile": true
+  },
+  "currency": "NZD",
   "quoteNumberPrefix": "CL",
   "leadTimes": [
     "3–5 days",
@@ -61,5 +74,5 @@
     "Invoice 14 days",
     "50% deposit, balance on completion"
   ],
-  "updatedAt": "2026-08-05T08:42:30.700Z"
+  "updatedAt": "2026-08-06T00:36:13.937Z"
 }
