@@ -227,7 +227,9 @@ function loadQuoteIntoBuilder(q) {
   state.items = Array.isArray(q.items) ? q.items : [];
   state.selectedItemId = state.items[0]?.id || null;
   state.overrides = q.overrides || {};
-  state.costManual = !!(q.overrides && Object.keys(q.overrides).length);
+  // Don't stick on $0 "manual" costs from a bad save — recalculate from DXF sizes
+  state.costManual = !!(q.overrides && Object.keys(q.overrides).length && !overridesLookEmpty(q.overrides));
+  if (!state.costManual) state.overrides = {};
   state.marginPercent = q.marginPercent ?? settings.defaultMarginPercent ?? 35;
   state.gstOn = q.gstOn !== false;
   state.freightId = q.freightId || null;
@@ -351,6 +353,7 @@ async function handleFiles(fileList) {
       };
       state.items.push(item);
       state.selectedItemId = item.id;
+      // Always re-run auto costing when a DXF is added
       state.costManual = false;
       state.overrides = {};
     } catch (e) {
@@ -358,6 +361,8 @@ async function handleFiles(fileList) {
     }
   }
   renderItems();
+  state.costManual = false;
+  state.overrides = {};
   recalc(false);
   previewSelected();
 }
@@ -529,47 +534,84 @@ function previewSelected() {
 }
 
 /* ── Costing ── */
+
+/** True if saved overrides are empty or all zero (should recalculate from DXF). */
+function overridesLookEmpty(ov) {
+  if (!ov || typeof ov !== 'object') return true;
+  const keys = ['material', 'laser', 'setup', 'freight'];
+  const hasAny = keys.some((k) => ov[k] != null && ov[k] !== '');
+  if (!hasAny) return true;
+  const sum = keys.reduce((s, k) => s + (Number(ov[k]) || 0), 0);
+  return sum === 0 && state.items.length > 0;
+}
+
+function fillCostInputs(auto) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = Number.isFinite(Number(val)) ? Number(val).toFixed(2) : '0.00';
+  };
+  set('cost-material', auto.material);
+  set('cost-laser', auto.laser);
+  set('cost-setup', auto.setup);
+  set('cost-freight', auto.freight);
+  state.overrides = {
+    material: money(auto.material),
+    laser: money(auto.laser),
+    setup: money(auto.setup),
+    freight: money(auto.freight),
+  };
+}
+
 function recalc(fromOverrides) {
+  // If "manual" but all zeros while we have parts, force auto (fixes stuck empty costs)
+  if (state.costManual && overridesLookEmpty(state.overrides) && state.items.length) {
+    state.costManual = false;
+    state.overrides = {};
+    fromOverrides = false;
+  }
+
+  const useManual = !!(state.costManual && !overridesLookEmpty(state.overrides));
   const result = QuoteCost.calculateQuote({
     items: state.items,
     settings,
     marginPercent: state.marginPercent,
-    overrides: state.costManual ? state.overrides : {},
+    overrides: useManual ? state.overrides : {},
     freightId: state.freightId,
     gstOn: state.gstOn,
   });
 
-  if (!fromOverrides && !state.costManual) {
-    document.getElementById('cost-material').value = result.auto.material;
-    document.getElementById('cost-laser').value = result.auto.laser;
-    document.getElementById('cost-setup').value = result.auto.setup;
-    document.getElementById('cost-freight').value = result.auto.freight;
-    state.overrides = {
-      material: result.auto.material,
-      laser: result.auto.laser,
-      setup: result.auto.setup,
-      freight: result.auto.freight,
-    };
+  // Always push auto numbers into the fields when not in real manual edit mode
+  if (!useManual) {
+    fillCostInputs(result.auto);
+    state.costManual = false;
   }
 
   const mb = result.materialBreakdown;
   const matNote = document.getElementById('mat-breakdown');
   if (matNote) {
     if (mb && mb.steelM2 > 0) {
+      const autoMat = result.auto.material;
       matNote.textContent =
-        `${mb.steelM2.toFixed(4)} m² steel × $${fmt(mb.ratePerM2)}/m²` +
+        `${mb.steelM2.toFixed(4)} m² × $${fmt(mb.ratePerM2)}/m² = $${fmt(autoMat)}` +
         `  (plate ${mb.plateM2.toFixed(4)} m² × fill ${(mb.fill * 100).toFixed(0)}%)`;
-    } else {
+    } else if (!state.items.length) {
       matNote.textContent = 'Add a DXF — material = m² × $/m² rate';
+    } else {
+      matNote.textContent = 'No area yet — check DXF size';
     }
   }
 
   state.freightId = result.freightTier?.id || state.freightId;
-  document.getElementById('freight-label').textContent = result.freightTier?.label || '—';
-  document.getElementById('q-price').textContent = fmt(result.priceExcl);
-  document.getElementById('q-subtotal').textContent = '$' + fmt(result.priceExcl);
-  document.getElementById('q-gst').textContent = '$' + fmt(result.gst);
-  document.getElementById('q-total').textContent = '$' + fmt(result.priceIncl);
+  const fl = document.getElementById('freight-label');
+  if (fl) fl.textContent = result.freightTier?.label || '—';
+  const priceEl = document.getElementById('q-price');
+  if (priceEl) priceEl.textContent = fmt(result.priceExcl);
+  const subEl = document.getElementById('q-subtotal');
+  if (subEl) subEl.textContent = '$' + fmt(result.priceExcl);
+  const gstEl = document.getElementById('q-gst');
+  if (gstEl) gstEl.textContent = '$' + fmt(result.gst);
+  const totEl = document.getElementById('q-total');
+  if (totEl) totEl.textContent = '$' + fmt(result.priceIncl);
   const wEl = document.getElementById('q-weight');
   if (wEl) {
     if (result.weightKg > 0) {
@@ -588,12 +630,21 @@ function recalc(fromOverrides) {
 }
 
 function readCostInputs() {
+  const raw = {
+    material: document.getElementById('cost-material')?.value,
+    laser: document.getElementById('cost-laser')?.value,
+    setup: document.getElementById('cost-setup')?.value,
+    freight: document.getElementById('cost-freight')?.value,
+  };
+  // Ignore blank fields (don't lock in $0 before auto-fill runs)
+  if (Object.values(raw).every((v) => v === '' || v == null)) return;
+
   state.costManual = true;
   state.overrides = {
-    material: parseFloat(document.getElementById('cost-material').value) || 0,
-    laser: parseFloat(document.getElementById('cost-laser').value) || 0,
-    setup: parseFloat(document.getElementById('cost-setup').value) || 0,
-    freight: parseFloat(document.getElementById('cost-freight').value) || 0,
+    material: parseFloat(raw.material) || 0,
+    laser: parseFloat(raw.laser) || 0,
+    setup: parseFloat(raw.setup) || 0,
+    freight: parseFloat(raw.freight) || 0,
   };
   recalc(true);
 }
@@ -1245,19 +1296,37 @@ document.getElementById('btn-reset-cost')?.addEventListener('click', () => {
   state.costManual = false;
   state.overrides = {};
   recalc(false);
+  toast('Costings reset from DXF + settings');
 });
 document.getElementById('btn-gst')?.addEventListener('click', () => {
   state.gstOn = !state.gstOn;
   updateGstButton();
-  recalc(true);
+  // Keep current cost lines; only refresh GST/total
+  const result = QuoteCost.calculateQuote({
+    items: state.items,
+    settings,
+    marginPercent: state.marginPercent,
+    overrides: state.costManual && !overridesLookEmpty(state.overrides) ? state.overrides : {},
+    freightId: state.freightId,
+    gstOn: state.gstOn,
+  });
+  if (!(state.costManual && !overridesLookEmpty(state.overrides))) fillCostInputs(result.auto);
+  document.getElementById('q-price').textContent = fmt(result.priceExcl);
+  document.getElementById('q-subtotal').textContent = '$' + fmt(result.priceExcl);
+  document.getElementById('q-gst').textContent = '$' + fmt(result.gst);
+  document.getElementById('q-total').textContent = '$' + fmt(result.priceIncl);
+  state._lastCalc = result;
 });
 document.getElementById('margin-range')?.addEventListener('input', (e) => {
   state.marginPercent = parseInt(e.target.value, 10) || 0;
   document.getElementById('margin-label').textContent = state.marginPercent + '%';
-  recalc(true);
+  recalc(false);
 });
 ['cost-material', 'cost-laser', 'cost-setup', 'cost-freight'].forEach((id) => {
-  document.getElementById(id)?.addEventListener('change', readCostInputs);
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', readCostInputs);
+  el.addEventListener('blur', readCostInputs);
 });
 
 document.getElementById('customer-select')?.addEventListener('change', (e) => {
