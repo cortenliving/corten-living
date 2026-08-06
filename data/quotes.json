@@ -5,11 +5,11 @@
       "number": "CL-2026-1843",
       "status": "saved",
       "customer": {
-        "name": "",
+        "name": "Kane Stevens",
         "company": "",
-        "email": "",
-        "phone": "",
-        "address": ""
+        "email": "locive@gmail.com",
+        "phone": "0273838178",
+        "address": "21A Cameron Road"
       },
       "items": [
         {
@@ -483,7 +483,7 @@
       "marginPercent": 30,
       "gstOn": true,
       "freightId": "small",
-      "leadTime": "3–5 days",
+      "leadTime": "",
       "paymentTerms": "Credit card payment portal",
       "totals": {
         "costExcl": 33.46,
@@ -500,9 +500,9 @@
       },
       "pdfUrl": "https://raw.githubusercontent.com/cortenliving/corten-living/main/data/quote-files/CL-2026-1843.pdf",
       "pdfPath": "data/quote-files/CL-2026-1843.pdf",
-      "updatedAt": "2026-08-06T00:33:43.721Z"
+      "updatedAt": "2026-08-06T00:34:09.719Z"
     }
   ],
   "nextSeq": 1843,
-  "updatedAt": "2026-08-06T00:33:43.721Z"
+  "updatedAt": "2026-08-06T00:34:09.719Z"
 }
