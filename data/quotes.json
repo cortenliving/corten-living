@@ -1,6 +1,7 @@
 {
   "quotes": [
     {
+      "id": "q_msgs8g5ayb0u",
       "number": "CL-2026-1843",
       "status": "saved",
       "customer": {
@@ -497,13 +498,11 @@
           "freight": 15
         }
       },
-      "pdfUrl": null,
-      "pdfPath": null,
-      "id": "q_msgs8g5ayb0u",
-      "createdAt": "2026-08-06T00:33:17.758Z",
-      "updatedAt": "2026-08-06T00:33:17.758Z"
+      "pdfUrl": "https://raw.githubusercontent.com/cortenliving/corten-living/main/data/quote-files/CL-2026-1843.pdf",
+      "pdfPath": "data/quote-files/CL-2026-1843.pdf",
+      "updatedAt": "2026-08-06T00:33:21.796Z"
     }
   ],
   "nextSeq": 1843,
-  "updatedAt": "2026-08-06T00:33:17.758Z"
+  "updatedAt": "2026-08-06T00:33:21.796Z"
 }
