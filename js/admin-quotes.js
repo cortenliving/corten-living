@@ -188,7 +188,12 @@ function renderQuoteList() {
             <td class="px-4 py-3 text-gray-500">${q.itemCount || 0}</td>
             <td class="px-4 py-3">${q.priceExcl != null ? '$' + fmt(q.priceExcl) : '—'}</td>
             <td class="px-4 py-3 text-gray-500 text-xs">${q.updatedAt ? new Date(q.updatedAt).toLocaleDateString() : '—'}</td>
-            <td class="px-4 py-3 text-right">
+            <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
+              ${
+                q.pdfUrl
+                  ? `<a href="${esc(q.pdfUrl)}" target="_blank" rel="noopener" class="text-ink-900 hover:underline text-xs font-medium">PDF</a>`
+                  : ''
+              }
               <button type="button" data-open-quote="${esc(q.id)}" class="text-corten-600 hover:underline text-xs font-medium">Open</button>
             </td>
           </tr>`
@@ -223,6 +228,8 @@ function loadQuoteIntoBuilder(q) {
   state.freightId = q.freightId || null;
   state.leadTime = q.leadTime || '';
   state.paymentTerms = q.paymentTerms || '';
+  state.pdfUrl = q.pdfUrl || null;
+  state.pdfPath = q.pdfPath || null;
 
   document.getElementById('c-name').value = q.customer?.name || '';
   document.getElementById('c-company').value = q.customer?.company || '';
@@ -254,6 +261,8 @@ function newQuote() {
     leadTime: (settings.leadTimes || [])[0] || '',
     paymentTerms: (settings.paymentTerms || [])[0] || '',
     costManual: false,
+    pdfUrl: null,
+    pdfPath: null,
   };
   ['c-name', 'c-company', 'c-email', 'c-phone', 'c-address'].forEach((id) => {
     const el = document.getElementById(id);
@@ -628,6 +637,32 @@ async function saveCustomer() {
   toast('Customer saved');
 }
 
+function itemSvgMarkup(it, maxH) {
+  if (!it) return '';
+  let summary = {
+    widthMm: it.widthMm,
+    heightMm: it.heightMm,
+    paths: it.paths,
+    polylines: it.polylines,
+    bounds: it.bounds || { minX: 0, minY: 0, maxX: it.widthMm || 1, maxY: it.heightMm || 1 },
+  };
+  if ((!summary.polylines || !summary.polylines.length) && it.dxfText) {
+    try {
+      const full = DxfParse.parseDxf(it.dxfText);
+      summary = { ...full, widthMm: it.widthMm, heightMm: it.heightMm };
+    } catch (_) {}
+  }
+  if ((!summary.polylines || !summary.polylines.length) && (!summary.paths || !summary.paths.length)) {
+    return '';
+  }
+  const { svg } = DxfParse.toSvg(summary, { stroke: '#b7410e', strokeWidth: 0.7, pad: 6 });
+  // Constrain height for print cards
+  return svg.replace(
+    '<svg ',
+    `<svg style="max-height:${maxH || 110}px;width:100%;" `
+  );
+}
+
 async function saveQuote() {
   if (!state.items.length) {
     toast('Add at least one DXF', true);
@@ -675,8 +710,11 @@ async function saveQuote() {
       weightKg: calc.weightKg,
       costings: calc.costings,
     },
+    pdfUrl: state.pdfUrl || null,
+    pdfPath: state.pdfPath || null,
   };
 
+  toast('Saving quote…');
   const { ok, data } = await api('/api/quotes', {
     method: 'PUT',
     body: JSON.stringify({ quote }),
@@ -691,10 +729,105 @@ async function saveQuote() {
     document.getElementById('q-number').textContent = state.number;
   }
   if (data.nextSeq) nextSeq = data.nextSeq;
-  // refresh list
+
+  // Generate customer PDF (with profiles) and store under data/quote-files/
+  try {
+    toast('Saving PDF copy…');
+    const pdfResult = await generateAndUploadQuotePdf(state.number);
+    if (pdfResult?.url) {
+      state.pdfUrl = pdfResult.url;
+      state.pdfPath = pdfResult.path;
+      // Patch quote record with PDF link
+      await api('/api/quotes', {
+        method: 'PUT',
+        body: JSON.stringify({
+          quote: {
+            ...quote,
+            id: state.id,
+            number: state.number,
+            pdfUrl: pdfResult.url,
+            pdfPath: pdfResult.path,
+          },
+        }),
+      });
+    }
+  } catch (e) {
+    console.warn('PDF save failed', e);
+    toast('Quote saved, but PDF upload failed: ' + (e.message || e), true);
+    const list = await api('/api/quotes');
+    if (list.data?.quotes) quoteList = list.data.quotes;
+    return;
+  }
+
   const list = await api('/api/quotes');
   if (list.data?.quotes) quoteList = list.data.quotes;
-  toast('Quote saved');
+  toast('Quote + PDF saved');
+}
+
+/**
+ * Build print DOM, render to PDF via html2pdf, upload to GitHub data/quote-files/
+ */
+async function generateAndUploadQuotePdf(quoteNumber) {
+  if (typeof html2pdf === 'undefined') {
+    throw new Error('PDF library not loaded');
+  }
+  buildCustomerPrint();
+  const el = document.getElementById('customer-print');
+  if (!el) throw new Error('Print sheet missing');
+
+  // Off-screen but renderable for html2canvas
+  const prev = {
+    display: el.style.display,
+    position: el.style.position,
+    left: el.style.left,
+    top: el.style.top,
+    width: el.style.width,
+    zIndex: el.style.zIndex,
+    background: el.style.background,
+  };
+  el.style.display = 'block';
+  el.style.position = 'fixed';
+  el.style.left = '0';
+  el.style.top = '0';
+  el.style.width = '800px';
+  el.style.zIndex = '-1';
+  el.style.background = '#fff';
+
+  try {
+    await new Promise((r) => setTimeout(r, 100));
+    const opt = {
+      margin: [10, 12, 10, 12],
+      filename: `${quoteNumber || 'quote'}.pdf`,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    };
+    const blob = await html2pdf().set(opt).from(el).outputPdf('blob');
+    const buf = await blob.arrayBuffer();
+    const u8 = new Uint8Array(buf);
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < u8.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, u8.subarray(i, i + chunk));
+    }
+    const dataUrl = 'data:application/pdf;base64,' + btoa(binary);
+
+    const { ok, data } = await api('/api/quote-file', {
+      method: 'POST',
+      body: JSON.stringify({ quoteNumber: quoteNumber || state.number, dataUrl }),
+    });
+    if (!ok) throw new Error(data?.error || 'PDF upload failed');
+    return { url: data.url, path: data.path };
+  } finally {
+    el.style.display = prev.display || 'none';
+    el.style.position = prev.position || '';
+    el.style.left = prev.left || '';
+    el.style.top = prev.top || '';
+    el.style.width = prev.width || '';
+    el.style.zIndex = prev.zIndex || '';
+    el.style.background = prev.background || '';
+  }
 }
 
 /* ── Customers view ── */
@@ -772,6 +905,8 @@ function fillSettingsForm() {
   document.getElementById('set-print-show-pay').checked = p.showPaymentTerms !== false;
   document.getElementById('set-print-show-weight').checked = !!p.showWeight;
   document.getElementById('set-print-show-logo').checked = p.showLogo !== false;
+  const prof = document.getElementById('set-print-show-profile');
+  if (prof) prof.checked = p.showProfile !== false;
 }
 
 async function saveSettings() {
@@ -803,6 +938,9 @@ async function saveSettings() {
       showPaymentTerms: !!document.getElementById('set-print-show-pay').checked,
       showWeight: !!document.getElementById('set-print-show-weight').checked,
       showLogo: !!document.getElementById('set-print-show-logo').checked,
+      showProfile: document.getElementById('set-print-show-profile')
+        ? !!document.getElementById('set-print-show-profile').checked
+        : true,
     },
   };
   const msg = document.getElementById('settings-msg');
@@ -899,6 +1037,32 @@ function buildCustomerPrint() {
           </tr>`;
         })
         .join('');
+    }
+  }
+
+  // DXF profile drawings for customer print / PDF
+  const profHost = document.getElementById('print-profiles');
+  if (profHost) {
+    if (p.showProfile === false || !state.items.length) {
+      profHost.innerHTML = '';
+    } else {
+      const cards = state.items
+        .map((it, idx) => {
+          const svg = itemSvgMarkup(it, 100);
+          if (!svg) return '';
+          const name = (it.fileName || 'Part').replace(/\.dxf$/i, '');
+          const size = `${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm`;
+          return `<div class="profile-card">
+            ${svg}
+            <div class="cap"><strong>${idx + 1}.</strong> ${esc(name)}<br>${esc(size)}${it.qty > 1 ? ' · qty ' + it.qty : ''}</div>
+          </div>`;
+        })
+        .filter(Boolean)
+        .join('');
+      profHost.innerHTML = cards
+        ? `<p style="margin:0 0 6px;font-size:8pt;text-transform:uppercase;letter-spacing:0.08em;color:#888;font-weight:600;">Profiles</p>
+           <div class="profile-grid">${cards}</div>`
+        : '';
     }
   }
 

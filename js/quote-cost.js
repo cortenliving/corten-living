@@ -36,6 +36,7 @@
         showPaymentTerms: true,
         showWeight: false,
         showLogo: true,
+        showProfile: true,
       },
     };
   }

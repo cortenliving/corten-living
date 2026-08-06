@@ -92,6 +92,21 @@ tailwind.config = {
     #customer-print th { color: #666; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; }
     #customer-print .totals td { border: none; padding: 4px 6px; }
     #customer-print .totals .grand td { font-weight: 700; font-size: 13pt; padding-top: 10px; }
+    #customer-print .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    #customer-print .profile-card {
+      border: 1px solid #e5ddd0;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    #customer-print .profile-card svg { max-height: 100px; width: 100%; }
+    #customer-print .profile-card .cap { font-size: 8pt; color: #666; margin-top: 4px; }
     @page { margin: 12mm; size: auto; }
   }
 </style>
@@ -408,7 +423,12 @@ tailwind.config = {
           <input type="checkbox" id="set-print-show-logo" class="rounded border-gray-400 text-corten-600" checked>
           Show logo
         </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="set-print-show-profile" class="rounded border-gray-400 text-corten-600" checked>
+          Show DXF profile drawing
+        </label>
       </div>
+      <p class="text-xs text-gray-500">Saved quotes also store a PDF under <code class="text-corten-700">data/quote-files/</code> so you can reopen them from the quotes list.</p>
     </div>
 
     <button type="button" id="btn-save-settings" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save settings live</button>
@@ -462,6 +482,8 @@ tailwind.config = {
     <tbody id="print-items"></tbody>
   </table>
 
+  <div id="print-profiles" style="margin-top:22px;"></div>
+
   <div style="margin-top:28px;display:flex;justify-content:flex-end;">
     <table class="totals" style="width:280px;">
       <tr>
@@ -483,6 +505,7 @@ tailwind.config = {
   <p id="print-footer" style="margin:32px 0 0;padding-top:16px;border-top:1px solid #e5ddd0;font-size:8pt;color:#888;line-height:1.5;white-space:pre-line;"></p>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="/js/dxf-parse.js"></script>
 <script src="/js/quote-cost.js"></script>
 <script src="/js/admin-quotes.js"></script>

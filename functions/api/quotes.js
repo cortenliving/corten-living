@@ -37,6 +37,8 @@ export async function onRequestGet(context) {
       updatedAt: q.updatedAt,
       status: q.status || 'draft',
       itemCount: Array.isArray(q.items) ? q.items.length : 0,
+      pdfUrl: q.pdfUrl || null,
+      pdfPath: q.pdfPath || null,
     }));
     return json({ quotes: list, nextSeq: data.nextSeq || 1843, updatedAt: data.updatedAt });
   } catch (e) {
