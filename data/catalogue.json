@@ -333,7 +333,38 @@
         }
       ],
       "paymentLinks": []
+    },
+    {
+      "id": "corten-steel-kereru-garden-stake",
+      "name": "Corten Steel Kereru Garden Stake",
+      "category": "sculpture",
+      "size": "1200mmH x 200mmW",
+      "price": 50,
+      "priceLabel": "$50",
+      "desc": "Create a standout garden feature with this Corten steel Kereru garden stake.\n\nFeaturing a bold New Zealand pigeon silhouette, the stake is cut from 3mm Corten steel and designed for outdoor display. It will naturally form a warm, rust-coloured patina as it weathers.\n\nThe pointed end allows it to be installed directly into soil, gravel, garden beds or large pots.\n\nDetails:\n\nKereru / New Zealand pigeon design\nApproximately 1200mm high\nApproximately 200mm wide\nMade from 3mm Corten steel\nEasy push-in pointed stake\nSuitable for outdoor use\n\nMade in New Zealand",
+      "tag": "Garden Feature",
+      "featured": false,
+      "link": "/product?id=corten-steel-kereru-garden-stake",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f48d3c2a81c54dfe.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f48d3c2a81c54dfe.jpg",
+          "label": "Pigon"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/001bf66b613d4107.jpg",
+          "label": "Tui-Pigon-Fantail"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Standard",
+          "size": "1200mmH x 200mmW",
+          "price": 50
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:57:07.999Z"
+  "updatedAt": "2026-08-09T23:59:15.989Z"
 }
