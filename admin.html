@@ -95,6 +95,37 @@ tailwind.config = {
  </div>
  <button type="button" id="btn-add" class="px-4 py-2 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">+ Add product</button>
  </div>
+
+ <!-- Quick QR — no product required -->
+ <div class="mb-6 bg-metal-850 border border-corten-900/40 rounded-sm p-5 space-y-3">
+ <div>
+ <p class="font-display text-white text-lg">Quick payment QR</p>
+ <p class="text-xs text-gray-500 mt-0.5">For the other shop: type description + price → Stripe link + QR. No product needed.</p>
+ </div>
+ <div class="grid sm:grid-cols-3 gap-3">
+ <div class="sm:col-span-2">
+ <label class="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Description</label>
+ <input id="quick-qr-desc" type="text" placeholder="e.g. Corten Kombi Small — Market stall"
+ class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Price $ excl. GST</label>
+ <input id="quick-qr-price" type="number" min="0.5" step="0.01" placeholder="50"
+ class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ </div>
+ <div class="flex flex-wrap items-center gap-3">
+ <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+ <input type="checkbox" id="quick-qr-incl-gst" class="rounded border-gray-600 text-corten-600" checked>
+ Add 15% GST on charge
+ </label>
+ <span id="quick-qr-incl" class="text-xs text-gray-500">Customer pays: —</span>
+ <button type="button" id="btn-quick-qr" class="ml-auto px-4 py-2 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Generate link + QR</button>
+ </div>
+ <div id="quick-qr-result" class="hidden border-t border-gray-800 pt-3"></div>
+ <p id="quick-qr-msg" class="text-xs text-gray-500"></p>
+ </div>
+
  <div id="product-list" class="space-y-3"></div>
  </div>
 
@@ -185,9 +216,34 @@ tailwind.config = {
  <div>
  <p class="text-sm text-white font-medium">In-store QR payment</p>
  <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
- Creates a <strong class="text-gray-400">Stripe Payment Link</strong> and QR code for each price.
- Customer scans → pays on their phone. Amount includes GST (15%). Save the product after generating.
+ Type a <strong class="text-gray-400">description</strong> and <strong class="text-gray-400">price</strong>, then generate.
+ Creates a Stripe Payment Link + QR (customer scans phone to pay). Charges price + 15% GST.
  </p>
+ </div>
+ <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 space-y-3">
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Description (on Stripe / receipt)</label>
+ <input id="qr-custom-desc" type="text" placeholder="e.g. Corten Heart 300mm — shop sale"
+ class="w-full bg-metal-900 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ <div class="grid grid-cols-2 gap-2">
+ <div>
+ <label class="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Price $ (excl. GST)</label>
+ <input id="qr-custom-price" type="number" min="0.5" step="0.01" placeholder="50"
+ class="w-full bg-metal-900 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ <div class="flex flex-col justify-end">
+ <p id="qr-custom-incl" class="text-[11px] text-gray-500 mb-1.5">Incl. GST: —</p>
+ <button type="button" id="btn-qr-custom-create"
+ class="w-full py-2 corten-gradient text-white text-xs font-semibold rounded-sm hover:opacity-90">
+ Generate link + QR
+ </button>
+ </div>
+ </div>
+ <label class="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer">
+ <input type="checkbox" id="qr-custom-incl-gst" class="rounded border-gray-600 text-corten-600" checked>
+ Price above is excl. GST — charge customer with 15% GST added
+ </label>
  </div>
  <div id="qr-pay-rows" class="space-y-3"></div>
  <p id="qr-pay-msg" class="text-xs text-gray-500"></p>

@@ -689,67 +689,39 @@ function getQrPayVariants() {
   return [];
 }
 
-function renderQrPayRows() {
-  const host = document.getElementById('qr-pay-rows');
-  if (!host) return;
-  const variants = getQrPayVariants();
-  if (!variants.length) {
-    host.innerHTML =
-      '<p class="text-xs text-gray-500">Set a price (or size prices) above, then generate a payment link / QR.</p>';
-    return;
-  }
-
-  host.innerHTML = variants
-    .map((v) => {
-      const link = findPaymentLink(v.sizeId);
-      const incl = Math.round(v.priceExcl * (1 + GST_RATE_ADMIN) * 100) / 100;
-      const title = [v.label, v.size].filter(Boolean).join(' · ');
-      if (link?.url) {
-        const qr = qrImageUrl(link.url, 200);
-        return `
- <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 space-y-2" data-qr-size="${escapeHtml(v.sizeId || '')}">
+function renderPaymentLinkCard(entry) {
+  if (!entry?.url) return '';
+  const qr = qrImageUrl(entry.url, 200);
+  const title = entry.label || entry.description || 'Payment';
+  const excl = Number(entry.priceExcl) || 0;
+  const incl = Number(entry.amountIncl) || Math.round(excl * (1 + GST_RATE_ADMIN) * 100) / 100;
+  const safeName = slugify(title).slice(0, 40) || 'pay';
+  return `
+ <div class="bg-metal-950 border border-emerald-900/40 rounded-sm p-3 space-y-2">
   <div class="flex flex-wrap items-start justify-between gap-2">
-   <div>
-    <p class="text-sm text-white font-medium">${escapeHtml(title)}</p>
-    <p class="text-[11px] text-gray-500">$${v.priceExcl.toFixed(2)} excl. · <span class="text-corten-400">$${incl.toFixed(2)} incl. GST</span> charged on Stripe</p>
+   <div class="min-w-0">
+    <p class="text-sm text-white font-medium truncate">${escapeHtml(title)}</p>
+    <p class="text-[11px] text-gray-500">$${excl.toFixed(2)} excl. · <span class="text-corten-400">$${incl.toFixed(2)} charged</span>${entry.includeGst === false ? ' (no GST added)' : ' incl. GST'}</p>
    </div>
-   <button type="button" data-qr-regen="${escapeHtml(v.sizeId || '')}" class="text-[11px] text-gray-400 hover:text-corten-400">Regenerate link</button>
+   <button type="button" data-qr-remove="${escapeHtml(entry.key || '')}" class="text-[11px] text-gray-500 hover:text-red-400">Remove</button>
   </div>
   <div class="flex flex-wrap gap-3 items-center">
    <img src="${qr}" alt="QR" class="w-28 h-28 bg-white rounded-sm p-1 border border-gray-700" width="112" height="112">
    <div class="min-w-0 flex-1 space-y-1.5">
-    <input type="text" readonly value="${escapeHtml(link.url)}" class="w-full bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+    <input type="text" readonly value="${escapeHtml(entry.url)}" class="w-full bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-[10px] text-gray-300 font-mono">
     <div class="flex flex-wrap gap-2">
-     <button type="button" data-qr-copy="${escapeHtml(link.url)}" class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Copy link</button>
-     <a href="${qr}&amp;download=1" download="qr-${escapeHtml(v.sizeId || 'product')}.png" target="_blank" rel="noopener"
-      class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Open QR image</a>
-     <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener" class="px-2.5 py-1 text-[11px] text-corten-400 hover:underline">Test pay ↗</a>
+     <button type="button" data-qr-copy="${escapeHtml(entry.url)}" class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Copy link</button>
+     <a href="${qr}" target="_blank" rel="noopener" class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Open QR image</a>
+     <a href="${escapeHtml(entry.url)}" target="_blank" rel="noopener" class="px-2.5 py-1 text-[11px] text-corten-400 hover:underline">Test pay ↗</a>
     </div>
    </div>
   </div>
  </div>`;
-      }
-      return `
- <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 flex flex-wrap items-center justify-between gap-2" data-qr-size="${escapeHtml(v.sizeId || '')}">
-  <div>
-   <p class="text-sm text-white font-medium">${escapeHtml(title)}</p>
-   <p class="text-[11px] text-gray-500">$${v.priceExcl.toFixed(2)} excl. → <span class="text-gray-300">$${incl.toFixed(2)} incl. GST</span> on Stripe</p>
-  </div>
-  <button type="button" data-qr-create="${escapeHtml(v.sizeId || '')}"
-   class="px-3 py-1.5 corten-gradient text-white text-xs font-semibold rounded-sm hover:opacity-90">
-   Create Payment Link + QR
-  </button>
- </div>`;
-    })
-    .join('');
+}
 
-  host.querySelectorAll('[data-qr-create], [data-qr-regen]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const sizeId = btn.getAttribute('data-qr-create') || btn.getAttribute('data-qr-regen') || '';
-      createProductPaymentLink(sizeId);
-    });
-  });
-  host.querySelectorAll('[data-qr-copy]').forEach((btn) => {
+function wireQrCardButtons(root) {
+  const el = root || document;
+  el.querySelectorAll('[data-qr-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const url = btn.getAttribute('data-qr-copy');
       try {
@@ -760,82 +732,216 @@ function renderQrPayRows() {
       }
     });
   });
+  el.querySelectorAll('[data-qr-remove]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-qr-remove');
+      pendingPaymentLinks = pendingPaymentLinks.filter((l) => l.key !== key);
+      renderQrPayRows();
+      toast('Removed from this product (Save product to update cloud)');
+    });
+  });
 }
 
-async function createProductPaymentLink(sizeId) {
-  const msg = document.getElementById('qr-pay-msg');
-  const name = document.getElementById('f-name')?.value.trim();
-  let id = document.getElementById('f-id')?.value.trim();
-  if (!name) {
-    toast('Enter product name first', true);
-    return;
-  }
-  if (!id) id = slugify(name);
+function renderQrPayRows() {
+  const host = document.getElementById('qr-pay-rows');
+  if (!host) return;
 
-  const variants = getQrPayVariants();
-  const v = variants.find((x) => (x.sizeId || '') === (sizeId || '')) || variants[0];
-  if (!v || !(v.priceExcl > 0)) {
-    toast('Set a price first', true);
+  // Show all saved links for this product (custom + size-based)
+  const links = pendingPaymentLinks.filter((l) => l.url);
+  if (!links.length) {
+    host.innerHTML =
+      '<p class="text-xs text-gray-500">Generated links for this product appear here. Use the form above: description + price → Generate.</p>';
     return;
   }
+  host.innerHTML =
+    '<p class="text-[10px] text-gray-500 uppercase tracking-wide">Saved links for this product</p>' +
+    links.map((l) => renderPaymentLinkCard(l)).join('');
+  wireQrCardButtons(host);
+}
+
+function updateCustomQrInclHint() {
+  const price = parseFloat(document.getElementById('qr-custom-price')?.value);
+  const addGst = document.getElementById('qr-custom-incl-gst')?.checked !== false;
+  const el = document.getElementById('qr-custom-incl');
+  if (!el) return;
+  if (!Number.isFinite(price) || price <= 0) {
+    el.textContent = 'Incl. GST: —';
+    return;
+  }
+  const charged = addGst ? Math.round(price * (1 + GST_RATE_ADMIN) * 100) / 100 : price;
+  el.textContent = addGst
+    ? `Customer pays: $${charged.toFixed(2)} (incl. GST)`
+    : `Customer pays: $${charged.toFixed(2)} (as entered)`;
+}
+
+function updateQuickQrInclHint() {
+  const price = parseFloat(document.getElementById('quick-qr-price')?.value);
+  const addGst = document.getElementById('quick-qr-incl-gst')?.checked !== false;
+  const el = document.getElementById('quick-qr-incl');
+  if (!el) return;
+  if (!Number.isFinite(price) || price <= 0) {
+    el.textContent = 'Customer pays: —';
+    return;
+  }
+  const charged = addGst ? Math.round(price * (1 + GST_RATE_ADMIN) * 100) / 100 : price;
+  el.textContent = addGst
+    ? `Customer pays: $${charged.toFixed(2)} incl. GST`
+    : `Customer pays: $${charged.toFixed(2)}`;
+}
+
+/**
+ * Create Stripe Payment Link from description + price (freeform).
+ * @param {{ description, priceExcl, includeGst, productId?, productName?, attachToProduct? }} opts
+ */
+async function createFreeformPaymentLink(opts) {
+  const description = String(opts.description || '').trim();
+  const priceExcl = Number(opts.priceExcl);
+  const includeGst = opts.includeGst !== false;
+  if (!description) {
+    toast('Enter a description', true);
+    return null;
+  }
+  if (!Number.isFinite(priceExcl) || priceExcl <= 0) {
+    toast('Enter a price greater than 0', true);
+    return null;
+  }
+
+  const productName = opts.productName || description;
+  const productId = opts.productId || 'qr-' + slugify(description).slice(0, 24);
+
+  const { res, data } = await api('/api/product-payment-link', {
+    method: 'POST',
+    body: JSON.stringify({
+      productId,
+      productName,
+      sizeLabel: description,
+      sizeDims: '',
+      priceExcl,
+      includeGst,
+      description,
+    }),
+  });
+  if (!res.ok || !data?.url) {
+    throw new Error(data?.error || 'Stripe link failed');
+  }
+
+  const entry = {
+    key: 'custom:' + Date.now().toString(36),
+    sizeId: '',
+    label: description,
+    description,
+    size: '',
+    priceExcl,
+    amountIncl: data.amountIncl,
+    includeGst,
+    url: data.url,
+    stripeId: data.id || '',
+    createdAt: new Date().toISOString(),
+  };
+  return entry;
+}
+
+async function createCustomQrFromEditor() {
+  const msg = document.getElementById('qr-pay-msg');
+  const description =
+    document.getElementById('qr-custom-desc')?.value.trim() ||
+    document.getElementById('f-name')?.value.trim() ||
+    '';
+  const priceExcl = parseFloat(document.getElementById('qr-custom-price')?.value);
+  const includeGst = document.getElementById('qr-custom-incl-gst')?.checked !== false;
+  const name = document.getElementById('f-name')?.value.trim() || description;
+  let id = document.getElementById('f-id')?.value.trim();
+  if (!id && name) id = slugify(name);
 
   if (msg) msg.textContent = 'Creating Stripe Payment Link…';
   try {
-    const { res, data } = await api('/api/product-payment-link', {
-      method: 'POST',
-      body: JSON.stringify({
-        productId: id,
-        productName: name,
-        sizeId: v.sizeId || null,
-        sizeLabel: v.label || '',
-        sizeDims: v.size || '',
-        priceExcl: v.priceExcl,
-        includeGst: true,
-      }),
+    const entry = await createFreeformPaymentLink({
+      description,
+      priceExcl,
+      includeGst,
+      productId: id || undefined,
+      productName: name,
     });
-    if (!res.ok || !data?.url) {
-      throw new Error(data?.error || 'Stripe link failed');
+    if (!entry) {
+      if (msg) msg.textContent = '';
+      return;
     }
+    pendingPaymentLinks.unshift(entry);
 
-    const key = paymentLinkKey(v.sizeId);
-    const entry = {
-      key,
-      sizeId: v.sizeId || '',
-      label: v.label || '',
-      size: v.size || '',
-      priceExcl: v.priceExcl,
-      amountIncl: data.amountIncl,
-      url: data.url,
-      stripeId: data.id || '',
-      createdAt: new Date().toISOString(),
-    };
-    const idx = pendingPaymentLinks.findIndex((l) => l.key === key);
-    if (idx >= 0) pendingPaymentLinks[idx] = entry;
-    else pendingPaymentLinks.push(entry);
-
-    // Persist on product immediately if cloud is available
-    const product = collectFormProduct();
-    if (product) {
-      product.paymentLinks = pendingPaymentLinks;
-      const cIdx = catalogue.findIndex((p) => p.id === product.id);
-      if (cIdx >= 0) catalogue[cIdx] = { ...catalogue[cIdx], ...product, paymentLinks: pendingPaymentLinks };
-      else catalogue.push({ ...product, paymentLinks: pendingPaymentLinks });
-      saveDraftLocal();
-      if (cloudStatus.hasGithub || cloudStatus.cloud) {
-        const put = await api('/api/products', {
-          method: 'PUT',
-          body: JSON.stringify({ products: catalogue }),
-        });
-        if (!put.res.ok) throw new Error(put.data?.error || 'Saved link but product cloud save failed');
+    // Attach to product if we can
+    if (id || name) {
+      const product = collectFormProduct();
+      if (product) {
+        product.paymentLinks = pendingPaymentLinks;
+        const cIdx = catalogue.findIndex((p) => p.id === product.id);
+        if (cIdx >= 0) catalogue[cIdx] = { ...catalogue[cIdx], ...product, paymentLinks: pendingPaymentLinks };
+        else if (name) catalogue.push({ ...product, paymentLinks: pendingPaymentLinks });
+        saveDraftLocal();
+        if (cloudStatus.hasGithub || cloudStatus.cloud) {
+          await api('/api/products', {
+            method: 'PUT',
+            body: JSON.stringify({ products: catalogue }),
+          });
+        }
       }
     }
 
     renderQrPayRows();
-    if (msg) msg.textContent = 'Payment link + QR ready. Print the QR for the shop shelf.';
-    toast('Stripe Payment Link created');
+    if (msg) msg.textContent = 'Done — print the QR for the shelf. Link also under this product.';
+    toast('Payment link + QR created');
+    try {
+      await navigator.clipboard.writeText(entry.url);
+    } catch (_) {}
   } catch (e) {
     if (msg) msg.textContent = '';
     toast(String(e.message || e), true);
+  }
+}
+
+async function createQuickQr() {
+  const msg = document.getElementById('quick-qr-msg');
+  const result = document.getElementById('quick-qr-result');
+  const description = document.getElementById('quick-qr-desc')?.value.trim() || '';
+  const priceExcl = parseFloat(document.getElementById('quick-qr-price')?.value);
+  const includeGst = document.getElementById('quick-qr-incl-gst')?.checked !== false;
+  const btn = document.getElementById('btn-quick-qr');
+
+  if (msg) msg.textContent = 'Creating Stripe Payment Link…';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+  }
+  try {
+    const entry = await createFreeformPaymentLink({
+      description,
+      priceExcl,
+      includeGst,
+      productId: 'quick-qr',
+      productName: description,
+    });
+    if (!entry) {
+      if (msg) msg.textContent = '';
+      return;
+    }
+    if (result) {
+      result.classList.remove('hidden');
+      result.innerHTML = renderPaymentLinkCard(entry);
+      wireQrCardButtons(result);
+    }
+    if (msg) msg.textContent = 'Scan/print the QR or copy the link for the customer.';
+    toast('Payment link + QR ready');
+    try {
+      await navigator.clipboard.writeText(entry.url);
+      toast('Link copied to clipboard');
+    } catch (_) {}
+  } catch (e) {
+    if (msg) msg.textContent = '';
+    toast(String(e.message || e), true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Generate link + QR';
+    }
   }
 }
 
@@ -1251,6 +1357,12 @@ document.addEventListener('DOMContentLoaded', async () => {
  document.getElementById('f-category')?.addEventListener('change', updateSizesEditorVisibility);
  document.getElementById('f-price')?.addEventListener('change', () => renderQrPayRows());
  document.getElementById('f-name')?.addEventListener('change', () => renderQrPayRows());
+ document.getElementById('btn-qr-custom-create')?.addEventListener('click', createCustomQrFromEditor);
+ document.getElementById('qr-custom-price')?.addEventListener('input', updateCustomQrInclHint);
+ document.getElementById('qr-custom-incl-gst')?.addEventListener('change', updateCustomQrInclHint);
+ document.getElementById('btn-quick-qr')?.addEventListener('click', createQuickQr);
+ document.getElementById('quick-qr-price')?.addEventListener('input', updateQuickQrInclHint);
+ document.getElementById('quick-qr-incl-gst')?.addEventListener('change', updateQuickQrInclHint);
  document.getElementById('btn-cancel-edit')?.addEventListener('click', closeEditor);
  document.getElementById('btn-save-product')?.addEventListener('click', () => saveProductFromForm());
 
