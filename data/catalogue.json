@@ -167,15 +167,16 @@
           "id": "sz-md",
           "label": "Medium",
           "size": "300x300mm",
-          "price": 69
+          "price": 65
         },
         {
           "id": "sz-lg",
           "label": "Large",
           "size": "400x400mm",
-          "price": 119
+          "price": 99
         }
-      ]
+      ],
+      "paymentLinks": []
     },
     {
       "id": "corten-steel-stingray-wall-art-maori-kor",
@@ -222,5 +223,5 @@
       "paymentLinks": []
     }
   ],
-  "updatedAt": "2026-08-09T23:36:41.066Z"
+  "updatedAt": "2026-08-09T23:37:23.075Z"
 }
