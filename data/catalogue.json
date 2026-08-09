@@ -101,55 +101,43 @@
     },
     {
       "id": "garden-sculptures",
-      "name": "Garden Sculptures",
+      "name": "Corten Steel Love Heart Sign",
       "category": "sculpture",
-      "size": "Various",
-      "price": 49,
-      "priceLabel": "From $37",
-      "desc": "Profile-cut outdoor silhouettes — animals, icons and custom shapes. Ask about stakes and pre-weathering.",
+      "size": "Multiple sizes",
+      "price": 33,
+      "priceLabel": "From $33",
+      "desc": "Add a rustic touch to your home, garden or outdoor area with this decorative Corten steel heart featuring the word “Love” cut through the centre.\n\nFeatures:\n\nHeart-shaped decorative sign\n“Love” cut-out design\nMade from 3mm Corten steel\nSuitable for indoor or outdoor use\nNaturally develops a rusted finish\nGreat for walls, fences, gates or garden areas",
       "tag": "Custom",
       "featured": false,
       "link": "/product?id=garden-sculptures",
       "image": "/images/product-garden-1.jpg",
       "slides": [
         {
-          "src": "/images/product-garden-1.jpg",
-          "label": "Garden sculpture"
-        },
-        {
-          "src": "/images/product-garden-2.jpg",
-          "label": "In the workshop"
-        },
-        {
-          "src": "/images/product-garden-3.jpg",
-          "label": "Corten detail"
-        },
-        {
-          "src": "/images/product-garden-4.jpg",
-          "label": "Outdoor ready"
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/3933bb5c3eb748d8.jpg",
+          "label": "love heart"
         }
       ],
       "sizes": [
         {
           "id": "sm",
           "label": "Small",
-          "size": "300 mm",
-          "price": 37
+          "size": "200x200mm",
+          "price": 33
         },
         {
           "id": "md",
           "label": "Medium",
-          "size": "450 mm",
-          "price": 49
+          "size": "300x300mm",
+          "price": 69
         },
         {
           "id": "lg",
           "label": "Large",
-          "size": "600 mm",
-          "price": 69
+          "size": "400x400mm",
+          "price": 119
         }
       ]
     }
   ],
-  "updatedAt": "2026-07-31T07:24:26.765Z"
+  "updatedAt": "2026-08-09T23:23:13.704Z"
 }
