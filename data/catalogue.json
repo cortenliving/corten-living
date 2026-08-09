@@ -321,6 +321,10 @@
         {
           "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8809cccf0f22480a.jpg",
           "label": "Fantail"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/2952f65396564150.jpg",
+          "label": "Tui-Pigon-Fantail"
         }
       ],
       "sizes": [
@@ -330,8 +334,9 @@
           "size": "1200mmH x 170mmW",
           "price": 50
         }
-      ]
+      ],
+      "paymentLinks": []
     }
   ],
-  "updatedAt": "2026-08-09T23:55:13.214Z"
+  "updatedAt": "2026-08-09T23:56:35.961Z"
 }
