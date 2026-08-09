@@ -137,7 +137,46 @@
           "price": 119
         }
       ]
+    },
+    {
+      "id": "corten-steel-love-heart-wall-art",
+      "name": "Corten Steel Love Heart Wall Art",
+      "category": "sculpture",
+      "size": "Multiple sizes",
+      "price": 33,
+      "priceLabel": "From $33",
+      "desc": "Add a touch of warmth and rustic charm to your home or garden with this beautiful Love Heart Wall Art. Cut from genuine 3mm Corten steel, this elegant design is perfect for creating a feature on fences, garden walls, patios or inside your home.\n\nOver time, the steel naturally develops its distinctive weathered rust finish, making every piece unique.\n\nSpecifications\nGenuine 3mm Corten Steel\nSuitable for indoor and outdoor use\nProudly made in New Zealand",
+      "tag": "Gift Idea",
+      "featured": false,
+      "link": "/product?id=corten-steel-love-heart-wall-art",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0863e2048c8843ff.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0863e2048c8843ff.jpg",
+          "label": "ab64aca2-83b9-4b6c-a3ad-2917fdcbb09a"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Small",
+          "size": "200x200mm",
+          "price": 33
+        },
+        {
+          "id": "sz-md",
+          "label": "Medium",
+          "size": "300x300mm",
+          "price": 69
+        },
+        {
+          "id": "sz-lg",
+          "label": "Large",
+          "size": "400x400mm",
+          "price": 119
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:24:41.964Z"
+  "updatedAt": "2026-08-09T23:29:35.969Z"
 }
