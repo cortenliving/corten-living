@@ -71,7 +71,6 @@ tailwind.config = {
         <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
         <a href="/house-numbers" class="hover:text-corten-400 transition">Numbers</a>
         <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
-        <a href="/faq" class="text-corten-400">FAQ</a>
         <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
         <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
         <a href="/quote" class="px-4 py-2 corten-gradient text-white rounded-sm font-semibold tracking-wide hover:opacity-90 transition">Get a Quote</a>
@@ -87,7 +86,6 @@ tailwind.config = {
       <a href="/shop" class="block hover:text-corten-400">Shop</a>
       <a href="/house-numbers" class="block hover:text-corten-400">House Numbers</a>
       <a href="/quote" class="block hover:text-corten-400">Custom Quote</a>
-      <a href="/faq" class="block text-corten-400">FAQ</a>
       <a href="/contact" class="block hover:text-corten-400">Contact</a>
       <a href="/cart" class="block hover:text-corten-400">Cart</a>
     </div>
@@ -227,8 +225,43 @@ tailwind.config = {
 </section>
 
 <footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
-  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 text-center text-xs text-gray-500">
-    <p>© 2026 Corten Living · Gisborne, New Zealand</p>
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-14">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <img src="/images/logo.svg" alt="" class="w-10 h-10">
+          <span class="font-display text-lg text-white tracking-wide">CORTEN LIVING</span>
+        </div>
+        <p class="text-sm text-gray-500 leading-relaxed">Locally designed and manufactured in Gisborne, New Zealand.</p>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Quick links</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li><a href="/shop" class="hover:text-corten-400 transition">Shop</a></li>
+          <li><a href="/house-numbers" class="hover:text-corten-400 transition">House Numbers</a></li>
+          <li><a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a></li>
+          <li><a href="/faq" class="hover:text-corten-400 transition">FAQ</a></li>
+          <li><a href="/cart" class="hover:text-corten-400 transition">Cart</a></li>
+          <li><a href="/contact" class="hover:text-corten-400 transition">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li><a href="tel:0273838178" class="hover:text-corten-400 transition">027 383 8178</a></li>
+          <li><a href="mailto:cortenliving@gmail.com" class="hover:text-corten-400 transition">cortenliving@gmail.com</a></li>
+          <li class="pt-1">Gisborne, New Zealand</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display text-sm tracking-widest text-corten-500 uppercase mb-4">Get in touch</h4>
+        <p class="text-sm text-gray-500 mb-4">Still have a question?</p>
+        <a href="/contact" class="inline-block px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm tracking-wide hover:opacity-90 transition">Send a message</a>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 border-t border-gray-800 text-center text-xs text-gray-600">
+      <p>© 2026 Corten Living · Gisborne, New Zealand</p>
+    </div>
   </div>
 </footer>
 
