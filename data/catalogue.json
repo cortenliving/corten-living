@@ -195,10 +195,6 @@
         {
           "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
           "label": "b4090cf8-06c1-47e5-9fbe-b9b0e75d5d21"
-        },
-        {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6ce982e7443f4f02.jpg",
-          "label": "8cc828b1-852d-465a-9af8-69552096b2fe"
         }
       ],
       "sizes": [
@@ -303,5 +299,5 @@
       "paymentLinks": []
     }
   ],
-  "updatedAt": "2026-08-09T23:50:42.322Z"
+  "updatedAt": "2026-08-09T23:51:01.432Z"
 }
