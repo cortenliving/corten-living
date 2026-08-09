@@ -176,7 +176,50 @@
           "price": 119
         }
       ]
+    },
+    {
+      "id": "corten-steel-stingray-wall-art-maori-kor",
+      "name": "Corten Steel Stingray Wall Art - Maori Koru Design",
+      "category": "sculpture",
+      "size": "Multiple sizes",
+      "price": 38,
+      "priceLabel": "From $38",
+      "desc": "Premium 3mm Corten Steel Stingray Wall Sculpture\nBeautifully detailed stingray cut from 3mm Corten steel (weathering steel). Supplied un weathered so it will naturally develop a rich protective rust patina over time.\n\nNZ made from quality 3mm Corten steel\n\nMounting: Designed to be hung on a wall (no fixing holes pre-drilled)\nCustom size: Can be made to your required size\n\nFeatures stunning Maori-inspired koru patterns. A striking coastal or garden feature.\nIdeal for indoor or outdoor use",
+      "tag": "Bestseller",
+      "featured": true,
+      "link": "/product?id=corten-steel-stingray-wall-art-maori-kor",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
+          "label": "b4090cf8-06c1-47e5-9fbe-b9b0e75d5d21"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/caad747260f345ae.jpg",
+          "label": "5857b8a8-3229-452e-b63d-8fd61c8468e7"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Small",
+          "size": "330mmH x320mmW",
+          "price": 38
+        },
+        {
+          "id": "sz-md",
+          "label": "Medium",
+          "size": "430mmH x420mmw",
+          "price": 65
+        },
+        {
+          "id": "sz-lg",
+          "label": "Large",
+          "size": "530mmH x520mmw",
+          "price": 99
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:29:35.969Z"
+  "updatedAt": "2026-08-09T23:35:43.955Z"
 }
