@@ -278,10 +278,6 @@
         {
           "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
           "label": "06d5d87b-a02d-44c3-939f-861cb922c658"
-        },
-        {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f78b9082a57542ab.jpg",
-          "label": "0c417f9a-d812-40b5-9121-b01230c6929a"
         }
       ],
       "sizes": [
@@ -303,7 +299,8 @@
           "size": "",
           "price": 0
         }
-      ]
+      ],
+      "paymentLinks": []
     },
     {
       "id": "corten-steel-fantail-garden-stake",
@@ -338,5 +335,5 @@
       "paymentLinks": []
     }
   ],
-  "updatedAt": "2026-08-09T23:56:35.961Z"
+  "updatedAt": "2026-08-09T23:57:07.999Z"
 }
