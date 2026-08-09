@@ -261,7 +261,50 @@
           "price": 79
         }
       ]
+    },
+    {
+      "id": "orten-steel-unicorn-wall-art-fantasy-des",
+      "name": "orten Steel Unicorn Wall Art -Fantasy Design",
+      "category": "sculpture",
+      "size": "Multiple sizes",
+      "price": 38,
+      "priceLabel": "$38",
+      "desc": "Premium 3mm Corten Steel Unicorn Wall Sculpture\nBeautifully detailed Unicorn cut from 3mm Corten steel (weathering steel). Supplied un weathered so it will naturally develop a rich protective rust patina over time.\n\nNZ made from quality 3mm Corten steel\n\nMounting: Designed to be hung on a wall (no fixing holes pre-drilled)\nCustom size: Can be made to your required size\n\nHighly detailed with flowing mane, horn, and decorative swirls. Perfect magical focal point for any space.\nIdeal for indoor or outdoor use",
+      "tag": "Bestseller",
+      "featured": false,
+      "link": "/product?id=orten-steel-unicorn-wall-art-fantasy-des",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
+          "label": "06d5d87b-a02d-44c3-939f-861cb922c658"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f78b9082a57542ab.jpg",
+          "label": "0c417f9a-d812-40b5-9121-b01230c6929a"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Small",
+          "size": "330mmH x 210mmW",
+          "price": 38
+        },
+        {
+          "id": "sz-md",
+          "label": "Medium",
+          "size": "",
+          "price": 0
+        },
+        {
+          "id": "sz-lg",
+          "label": "Large",
+          "size": "",
+          "price": 0
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:43:30.935Z"
+  "updatedAt": "2026-08-09T23:47:43.484Z"
 }
