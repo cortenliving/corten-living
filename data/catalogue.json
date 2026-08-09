@@ -222,7 +222,46 @@
         }
       ],
       "paymentLinks": []
+    },
+    {
+      "id": "corten-steel-welcome-sign",
+      "name": "Corten Steel Welcome Sign",
+      "category": "sculpture",
+      "size": "Multiple sizes",
+      "price": 33,
+      "priceLabel": "From $33",
+      "desc": "Add a warm welcome to your home or garden with this  Corten Steel Welcome Sign. Cut from genuine 3mm Corten steel, this sign is designed to naturally develop the rich rusted patina that makes Corten steel so unique.\n\nPerfect for:\n\nFront entrance\nFence or gate\nGarden\nDeck or patio\nFarm entrance\nLifestyle blocks\nSpecifications\nMaterial: Genuine 3mm Corten Steel\nFinish: Supplied in raw Corten steel (develops a natural rusted patina over time)\nSuitable for indoor or outdoor use\nProudly made in New Zealand\nCorten Steel",
+      "tag": "Entrance",
+      "featured": false,
+      "link": "/product?id=corten-steel-welcome-sign",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0fbb4e97f8bd401a.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0fbb4e97f8bd401a.jpg",
+          "label": "2cc927be-8e6e-4475-af94-f6106670ad1d"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Small",
+          "size": "125mmH x 250mmW",
+          "price": 33
+        },
+        {
+          "id": "sz-md",
+          "label": "Medium",
+          "size": "175mmH x 300mmW",
+          "price": 55
+        },
+        {
+          "id": "sz-lg",
+          "label": "Large",
+          "size": "220mmH x 350mmW",
+          "price": 79
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:37:40.034Z"
+  "updatedAt": "2026-08-09T23:43:30.935Z"
 }
