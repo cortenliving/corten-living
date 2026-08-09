@@ -128,15 +128,16 @@
           "id": "md",
           "label": "Medium",
           "size": "300x300mm",
-          "price": 69
+          "price": 65
         },
         {
           "id": "lg",
           "label": "Large",
           "size": "400x400mm",
-          "price": 119
+          "price": 99
         }
-      ]
+      ],
+      "paymentLinks": []
     },
     {
       "id": "corten-steel-love-heart-wall-art",
@@ -223,5 +224,5 @@
       "paymentLinks": []
     }
   ],
-  "updatedAt": "2026-08-09T23:37:23.075Z"
+  "updatedAt": "2026-08-09T23:37:40.034Z"
 }
