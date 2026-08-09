@@ -179,6 +179,19 @@ tailwind.config = {
  <input type="checkbox" id="f-featured" class="rounded border-gray-600 text-corten-600 focus:ring-corten-500">
  Show on homepage (Featured)
  </label>
+
+ <!-- In-store Stripe Payment Link + QR -->
+ <div id="qr-pay-panel" class="border-t border-gray-800 pt-4 mt-2 space-y-3">
+ <div>
+ <p class="text-sm text-white font-medium">In-store QR payment</p>
+ <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+ Creates a <strong class="text-gray-400">Stripe Payment Link</strong> and QR code for each price.
+ Customer scans → pays on their phone. Amount includes GST (15%). Save the product after generating.
+ </p>
+ </div>
+ <div id="qr-pay-rows" class="space-y-3"></div>
+ <p id="qr-pay-msg" class="text-xs text-gray-500"></p>
+ </div>
  </div>
 
  <div class="space-y-4">

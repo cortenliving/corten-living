@@ -23,7 +23,11 @@ let editingId = null;
 let pendingImages = [];
 /** Size options for the product being edited: { id, label, size, price }[] */
 let pendingSizes = [];
+/** Stripe payment links for in-store QR: { key, sizeId, label, size, priceExcl, amountIncl, url, stripeId, createdAt }[] */
+let pendingPaymentLinks = [];
 let cloudStatus = { cloud: false, hasGithub: false, hasAdminPassword: false, storage: 'none' };
+
+const GST_RATE_ADMIN = 0.15;
 
 async function sha256(text) {
  const data = new TextEncoder().encode(text);
@@ -237,6 +241,7 @@ function renderList() {
  <p class="font-display text-white truncate">${escapeHtml(p.name)}</p>
  ${p.featured ? '<span class="text-[10px] uppercase bg-corten-600 text-white px-1.5 py-0.5 rounded-sm">Featured</span>' : ''}
  ${p.tag ? `<span class="text-[10px] text-corten-500">${escapeHtml(p.tag)}</span>` : ''}
+ ${Array.isArray(p.paymentLinks) && p.paymentLinks.length ? '<span class="text-[10px] uppercase bg-emerald-900/50 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded-sm">QR pay</span>' : ''}
  </div>
  <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(p.category || '')} · ${escapeHtml(p.size || '')} · <span class="text-corten-400">${escapeHtml(p.priceLabel || ('$' + p.price))}</span></p>
  </div>
@@ -411,9 +416,13 @@ function openEditor(id) {
    { id: 'sz-lg', label: 'Large', size: '', price: '' },
   ];
  }
+ pendingPaymentLinks = Array.isArray(p?.paymentLinks)
+  ? p.paymentLinks.map((l) => ({ ...l }))
+  : [];
  renderSlidePreviews();
  renderSizeRows();
  updateSizesEditorVisibility();
+ renderQrPayRows();
  document.getElementById('editor-panel').classList.remove('hidden');
  document.getElementById('list-panel').classList.add('hidden');
  window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -426,6 +435,10 @@ function updateSizesEditorVisibility() {
  // House numbers use the numbers configurator — hide size options
  const hide = cat === 'numbers';
  box.classList.toggle('hidden', hide);
+ // Refresh QR rows when category/sizes change
+ try {
+  renderQrPayRows();
+ } catch (_) {}
 }
 
 function syncPendingSizesFromDom() {
@@ -477,6 +490,13 @@ function renderSizeRows() {
    renderSizeRows();
   });
  });
+ body.querySelectorAll('input').forEach((inp) => {
+  inp.addEventListener('change', () => {
+   syncPendingSizesFromDom();
+   renderQrPayRows();
+  });
+ });
+ renderQrPayRows();
 }
 
 function collectSizesFromForm() {
@@ -609,7 +629,214 @@ function collectFormProduct() {
  image,
  slides: pendingImages.map((s) => ({ src: s.src, label: s.label || '' })),
  ...(sizes.length ? { sizes } : {}),
+ ...(pendingPaymentLinks.length ? { paymentLinks: pendingPaymentLinks } : {}),
  };
+}
+
+/* ── In-store Stripe Payment Link + QR ── */
+
+function qrImageUrl(payUrl, size) {
+  const s = size || 280;
+  return (
+    'https://api.qrserver.com/v1/create-qr-code/?size=' +
+    s +
+    'x' +
+    s +
+    '&margin=12&data=' +
+    encodeURIComponent(payUrl)
+  );
+}
+
+function paymentLinkKey(sizeId) {
+  return sizeId ? 'size:' + sizeId : 'base';
+}
+
+function findPaymentLink(sizeId) {
+  const key = paymentLinkKey(sizeId);
+  return pendingPaymentLinks.find((l) => l.key === key || (sizeId && l.sizeId === sizeId));
+}
+
+function getQrPayVariants() {
+  syncPendingSizesFromDom();
+  const cat = document.getElementById('f-category')?.value;
+  const name = document.getElementById('f-name')?.value.trim() || 'Product';
+  const mainPrice = parseFloat(document.getElementById('f-price')?.value);
+  const mainSize = document.getElementById('f-size')?.value.trim() || '';
+
+  // Prefer size rows with prices
+  const fromSizes = (pendingSizes || [])
+    .filter((s) => s.price !== '' && s.price != null && Number(s.price) > 0)
+    .map((s) => ({
+      sizeId: s.id || '',
+      label: s.label || 'Size',
+      size: s.size || '',
+      priceExcl: Number(s.price),
+    }));
+
+  if (fromSizes.length && cat !== 'numbers') return fromSizes;
+
+  // Fallback: single base price
+  if (Number.isFinite(mainPrice) && mainPrice > 0) {
+    return [
+      {
+        sizeId: '',
+        label: mainSize || 'Standard',
+        size: mainSize,
+        priceExcl: mainPrice,
+      },
+    ];
+  }
+  return [];
+}
+
+function renderQrPayRows() {
+  const host = document.getElementById('qr-pay-rows');
+  if (!host) return;
+  const variants = getQrPayVariants();
+  if (!variants.length) {
+    host.innerHTML =
+      '<p class="text-xs text-gray-500">Set a price (or size prices) above, then generate a payment link / QR.</p>';
+    return;
+  }
+
+  host.innerHTML = variants
+    .map((v) => {
+      const link = findPaymentLink(v.sizeId);
+      const incl = Math.round(v.priceExcl * (1 + GST_RATE_ADMIN) * 100) / 100;
+      const title = [v.label, v.size].filter(Boolean).join(' · ');
+      if (link?.url) {
+        const qr = qrImageUrl(link.url, 200);
+        return `
+ <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 space-y-2" data-qr-size="${escapeHtml(v.sizeId || '')}">
+  <div class="flex flex-wrap items-start justify-between gap-2">
+   <div>
+    <p class="text-sm text-white font-medium">${escapeHtml(title)}</p>
+    <p class="text-[11px] text-gray-500">$${v.priceExcl.toFixed(2)} excl. · <span class="text-corten-400">$${incl.toFixed(2)} incl. GST</span> charged on Stripe</p>
+   </div>
+   <button type="button" data-qr-regen="${escapeHtml(v.sizeId || '')}" class="text-[11px] text-gray-400 hover:text-corten-400">Regenerate link</button>
+  </div>
+  <div class="flex flex-wrap gap-3 items-center">
+   <img src="${qr}" alt="QR" class="w-28 h-28 bg-white rounded-sm p-1 border border-gray-700" width="112" height="112">
+   <div class="min-w-0 flex-1 space-y-1.5">
+    <input type="text" readonly value="${escapeHtml(link.url)}" class="w-full bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+    <div class="flex flex-wrap gap-2">
+     <button type="button" data-qr-copy="${escapeHtml(link.url)}" class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Copy link</button>
+     <a href="${qr}&amp;download=1" download="qr-${escapeHtml(v.sizeId || 'product')}.png" target="_blank" rel="noopener"
+      class="px-2.5 py-1 text-[11px] border border-gray-600 rounded-sm text-gray-300 hover:border-corten-500">Open QR image</a>
+     <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener" class="px-2.5 py-1 text-[11px] text-corten-400 hover:underline">Test pay ↗</a>
+    </div>
+   </div>
+  </div>
+ </div>`;
+      }
+      return `
+ <div class="bg-metal-950 border border-gray-800 rounded-sm p-3 flex flex-wrap items-center justify-between gap-2" data-qr-size="${escapeHtml(v.sizeId || '')}">
+  <div>
+   <p class="text-sm text-white font-medium">${escapeHtml(title)}</p>
+   <p class="text-[11px] text-gray-500">$${v.priceExcl.toFixed(2)} excl. → <span class="text-gray-300">$${incl.toFixed(2)} incl. GST</span> on Stripe</p>
+  </div>
+  <button type="button" data-qr-create="${escapeHtml(v.sizeId || '')}"
+   class="px-3 py-1.5 corten-gradient text-white text-xs font-semibold rounded-sm hover:opacity-90">
+   Create Payment Link + QR
+  </button>
+ </div>`;
+    })
+    .join('');
+
+  host.querySelectorAll('[data-qr-create], [data-qr-regen]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sizeId = btn.getAttribute('data-qr-create') || btn.getAttribute('data-qr-regen') || '';
+      createProductPaymentLink(sizeId);
+    });
+  });
+  host.querySelectorAll('[data-qr-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const url = btn.getAttribute('data-qr-copy');
+      try {
+        await navigator.clipboard.writeText(url);
+        toast('Payment link copied');
+      } catch {
+        toast('Copy failed — select the link manually', true);
+      }
+    });
+  });
+}
+
+async function createProductPaymentLink(sizeId) {
+  const msg = document.getElementById('qr-pay-msg');
+  const name = document.getElementById('f-name')?.value.trim();
+  let id = document.getElementById('f-id')?.value.trim();
+  if (!name) {
+    toast('Enter product name first', true);
+    return;
+  }
+  if (!id) id = slugify(name);
+
+  const variants = getQrPayVariants();
+  const v = variants.find((x) => (x.sizeId || '') === (sizeId || '')) || variants[0];
+  if (!v || !(v.priceExcl > 0)) {
+    toast('Set a price first', true);
+    return;
+  }
+
+  if (msg) msg.textContent = 'Creating Stripe Payment Link…';
+  try {
+    const { res, data } = await api('/api/product-payment-link', {
+      method: 'POST',
+      body: JSON.stringify({
+        productId: id,
+        productName: name,
+        sizeId: v.sizeId || null,
+        sizeLabel: v.label || '',
+        sizeDims: v.size || '',
+        priceExcl: v.priceExcl,
+        includeGst: true,
+      }),
+    });
+    if (!res.ok || !data?.url) {
+      throw new Error(data?.error || 'Stripe link failed');
+    }
+
+    const key = paymentLinkKey(v.sizeId);
+    const entry = {
+      key,
+      sizeId: v.sizeId || '',
+      label: v.label || '',
+      size: v.size || '',
+      priceExcl: v.priceExcl,
+      amountIncl: data.amountIncl,
+      url: data.url,
+      stripeId: data.id || '',
+      createdAt: new Date().toISOString(),
+    };
+    const idx = pendingPaymentLinks.findIndex((l) => l.key === key);
+    if (idx >= 0) pendingPaymentLinks[idx] = entry;
+    else pendingPaymentLinks.push(entry);
+
+    // Persist on product immediately if cloud is available
+    const product = collectFormProduct();
+    if (product) {
+      product.paymentLinks = pendingPaymentLinks;
+      const cIdx = catalogue.findIndex((p) => p.id === product.id);
+      if (cIdx >= 0) catalogue[cIdx] = { ...catalogue[cIdx], ...product, paymentLinks: pendingPaymentLinks };
+      else catalogue.push({ ...product, paymentLinks: pendingPaymentLinks });
+      saveDraftLocal();
+      if (cloudStatus.hasGithub || cloudStatus.cloud) {
+        const put = await api('/api/products', {
+          method: 'PUT',
+          body: JSON.stringify({ products: catalogue }),
+        });
+        if (!put.res.ok) throw new Error(put.data?.error || 'Saved link but product cloud save failed');
+      }
+    }
+
+    renderQrPayRows();
+    if (msg) msg.textContent = 'Payment link + QR ready. Print the QR for the shop shelf.';
+    toast('Stripe Payment Link created');
+  } catch (e) {
+    if (msg) msg.textContent = '';
+    toast(String(e.message || e), true);
+  }
 }
 
 async function saveProductFromForm() {
@@ -1022,6 +1249,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSizeRows();
  });
  document.getElementById('f-category')?.addEventListener('change', updateSizesEditorVisibility);
+ document.getElementById('f-price')?.addEventListener('change', () => renderQrPayRows());
+ document.getElementById('f-name')?.addEventListener('change', () => renderQrPayRows());
  document.getElementById('btn-cancel-edit')?.addEventListener('click', closeEditor);
  document.getElementById('btn-save-product')?.addEventListener('click', () => saveProductFromForm());
 
