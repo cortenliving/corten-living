@@ -111,6 +111,7 @@ async function loadAll() {
       setup: { ...def.setup, ...(s.data.settings.setup || {}) },
       freight: { ...def.freight, ...(s.data.settings.freight || {}) },
       print: { ...def.print, ...(s.data.settings.print || {}) },
+      invoice: { ...def.invoice, ...(s.data.settings.invoice || {}) },
     };
   }
   if (Array.isArray(c.data?.customers)) customers = c.data.customers;
@@ -942,8 +943,36 @@ function printDefaults() {
   );
 }
 
+function invoiceDefaults() {
+  return (
+    QuoteCost.defaultSettings().invoice || {
+      title: 'TAX INVOICE',
+      dueDays: 7,
+      gstNumber: '',
+      logoUrl: '/images/logo.svg',
+      fromAddress:
+        'Corten Living\n21A Cameron Road, Makauri\nGisborne 4071, New Zealand\n027 383 8178 · cortenliving@gmail.com',
+      bankDetails: 'Payment details\nPay to: Corten Living\nReference: invoice number',
+      notes: 'Payment is due by the date shown. Prices in NZD.',
+    }
+  );
+}
+
 function getPrintSettings() {
   return { ...printDefaults(), ...(settings.print || {}) };
+}
+
+function getInvoiceSettings() {
+  return { ...invoiceDefaults(), ...(settings.invoice || {}) };
+}
+
+function makeInvoiceNumber(quoteNumber) {
+  // CL-2026-1843 → INV-2026-1843
+  const n = String(quoteNumber || '').trim();
+  if (/^CL-/i.test(n)) return n.replace(/^CL-/i, 'INV-');
+  if (/^INV-/i.test(n)) return n;
+  const year = new Date().getFullYear();
+  return 'INV-' + year + '-' + (n || Date.now().toString(36).toUpperCase());
 }
 
 function fillSettingsForm() {
@@ -967,6 +996,19 @@ function fillSettingsForm() {
   document.getElementById('set-print-show-logo').checked = p.showLogo !== false;
   const prof = document.getElementById('set-print-show-profile');
   if (prof) prof.checked = p.showProfile !== false;
+
+  const inv = getInvoiceSettings();
+  const setInv = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val != null ? val : '';
+  };
+  setInv('set-inv-title', inv.title || 'TAX INVOICE');
+  setInv('set-inv-due-days', inv.dueDays != null ? inv.dueDays : 7);
+  setInv('set-inv-gst', inv.gstNumber || '');
+  setInv('set-inv-logo', inv.logoUrl || '/images/logo.svg');
+  setInv('set-inv-bank', inv.bankDetails || '');
+  setInv('set-inv-notes', inv.notes || '');
+  setInv('set-inv-from', inv.fromAddress || '');
 }
 
 async function saveSettings() {
@@ -1002,6 +1044,15 @@ async function saveSettings() {
         ? !!document.getElementById('set-print-show-profile').checked
         : true,
     },
+    invoice: {
+      title: document.getElementById('set-inv-title')?.value.trim() || 'TAX INVOICE',
+      dueDays: parseInt(document.getElementById('set-inv-due-days')?.value, 10) || 7,
+      gstNumber: document.getElementById('set-inv-gst')?.value.trim() || '',
+      logoUrl: document.getElementById('set-inv-logo')?.value.trim() || '/images/logo.svg',
+      fromAddress: document.getElementById('set-inv-from')?.value.trim() || '',
+      bankDetails: document.getElementById('set-inv-bank')?.value.trim() || '',
+      notes: document.getElementById('set-inv-notes')?.value.trim() || '',
+    },
   };
   const msg = document.getElementById('settings-msg');
   msg.textContent = 'Saving…';
@@ -1017,6 +1068,8 @@ async function saveSettings() {
   settings = { ...next, ...(data.settings || {}) };
   if (data.settings?.print) settings.print = data.settings.print;
   else settings.print = next.print;
+  if (data.settings?.invoice) settings.invoice = data.settings.invoice;
+  else settings.invoice = next.invoice;
   msg.textContent = 'Saved live';
   toast('Quote settings saved');
 }
@@ -1138,19 +1191,160 @@ function buildCustomerPrint() {
   setText('print-notes', '');
 }
 
+function setPrintSheet(which) {
+  document.getElementById('customer-print')?.classList.toggle('print-active', which === 'quote');
+  document.getElementById('customer-invoice')?.classList.toggle('print-active', which === 'invoice');
+}
+
 function printCustomerQuote() {
   if (!state.items.length) {
     toast('Add a DXF before printing a customer quote', true);
     return;
   }
   buildCustomerPrint();
+  setPrintSheet('quote');
   document.body.classList.add('printing-quote');
   const done = () => {
     document.body.classList.remove('printing-quote');
+    setPrintSheet(null);
     window.removeEventListener('afterprint', done);
   };
   window.addEventListener('afterprint', done);
-  // Allow layout paint then print (avoids blank first page from hidden admin UI)
+  requestAnimationFrame(() => {
+    setTimeout(() => window.print(), 80);
+  });
+}
+
+/** Build branded tax invoice from current quote (custom template — not Stripe). */
+function buildCustomerInvoice() {
+  const inv = getInvoiceSettings();
+  const p = getPrintSettings();
+  const calc = state._lastCalc || recalc(true);
+  const cust = collectCustomer();
+  const dueDays = Math.max(0, parseInt(inv.dueDays, 10) || 7);
+  const issue = new Date();
+  const due = new Date(issue.getTime() + dueDays * 24 * 60 * 60 * 1000);
+  const invNo = makeInvoiceNumber(state.number || state.invoiceNumber);
+  state.invoiceNumber = invNo;
+
+  const fmtDate = (d) =>
+    d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const setText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val || '';
+  };
+
+  const logo = document.getElementById('inv-logo');
+  if (logo) {
+    logo.src = inv.logoUrl || p.logoUrl || '/images/logo.svg';
+    logo.style.display = '';
+  }
+
+  setText('inv-company', p.companyName || 'CORTEN LIVING');
+  setText('inv-tagline', p.tagline || 'Profile-cut 3 mm Corten · Gisborne NZ');
+  setText('inv-doc-title', inv.title || 'TAX INVOICE');
+  setText('inv-number', invNo);
+  setText('inv-gst-no', inv.gstNumber || '');
+  setText(
+    'inv-from',
+    inv.fromAddress ||
+      (p.companyName || 'Corten Living') + '\n' + (p.contact || '')
+  );
+
+  const bill = [];
+  if (cust.name) bill.push(cust.name);
+  if (cust.company) bill.push(cust.company);
+  if (cust.email) bill.push(cust.email);
+  if (cust.phone) bill.push(cust.phone);
+  if (cust.address) bill.push(cust.address);
+  setText('inv-billto', bill.length ? bill.join('\n') : '—');
+
+  setText(
+    'inv-amount-due',
+    calc.gstOn === false
+      ? '$' + fmt(calc.priceExcl)
+      : '$' + fmt(calc.priceIncl)
+  );
+  setText('inv-issue-date', fmtDate(issue));
+  setText('inv-due-date', fmtDate(due));
+  setText('inv-quote-ref', state.number || '—');
+
+  const tbody = document.getElementById('inv-items');
+  if (tbody) {
+    if (!state.items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:#888;">No line items</td></tr>';
+    } else {
+      // Split total across lines by weight/area roughly equal for display;
+      // single package total on last line if one item.
+      const n = state.items.length;
+      const excl = calc.priceExcl;
+      const per = n ? money(excl / n) : 0;
+      let allocated = 0;
+      tbody.innerHTML = state.items
+        .map((it, idx) => {
+          const name = (it.fileName || 'Part').replace(/\.dxf$/i, '');
+          const size = `${fmt(it.widthMm)} × ${fmt(it.heightMm)} mm`;
+          let lineAmt = per;
+          if (idx === n - 1) lineAmt = money(excl - allocated);
+          else allocated = money(allocated + per);
+          return `<tr>
+            <td>${idx + 1}</td>
+            <td>Laser-cut 3 mm Corten — ${esc(name)}</td>
+            <td style="text-align:right;">${it.qty || 1}</td>
+            <td style="text-align:right;">${esc(size)}</td>
+            <td style="text-align:right;">$${fmt(lineAmt)}</td>
+          </tr>`;
+        })
+        .join('');
+    }
+  }
+
+  setText('inv-subtotal', '$' + fmt(calc.priceExcl));
+  const gstRow = document.getElementById('inv-gst-row');
+  if (gstRow) gstRow.style.display = calc.gstOn === false ? 'none' : '';
+  setText('inv-gst', '$' + fmt(calc.gst));
+  setText(
+    'inv-total',
+    calc.gstOn === false ? '$' + fmt(calc.priceExcl) + ' excl. GST' : '$' + fmt(calc.priceIncl)
+  );
+
+  const bank = document.getElementById('inv-bank');
+  if (bank) {
+    bank.textContent = inv.bankDetails || '';
+    bank.style.display = inv.bankDetails ? '' : 'none';
+  }
+  setText('inv-notes', inv.notes || '');
+
+  const payEl = document.getElementById('inv-payment-link');
+  if (payEl) {
+    if (state.paymentLinkUrl) {
+      payEl.innerHTML =
+        'Pay online: <a href="' +
+        esc(state.paymentLinkUrl) +
+        '" style="color:#b7410e;">' +
+        esc(state.paymentLinkUrl) +
+        '</a>';
+    } else {
+      payEl.textContent = '';
+    }
+  }
+}
+
+function printCustomerInvoice() {
+  if (!state.items.length) {
+    toast('Add items / DXF before creating an invoice', true);
+    return;
+  }
+  buildCustomerInvoice();
+  setPrintSheet('invoice');
+  document.body.classList.add('printing-quote');
+  const done = () => {
+    document.body.classList.remove('printing-quote');
+    setPrintSheet(null);
+    window.removeEventListener('afterprint', done);
+  };
+  window.addEventListener('afterprint', done);
   requestAnimationFrame(() => {
     setTimeout(() => window.print(), 80);
   });
@@ -1191,6 +1385,7 @@ document.querySelectorAll('.nav-btn').forEach((btn) => {
 document.getElementById('btn-new-quote')?.addEventListener('click', newQuote);
 document.getElementById('btn-back-list')?.addEventListener('click', () => showView('quotes'));
 document.getElementById('btn-print')?.addEventListener('click', printCustomerQuote);
+document.getElementById('btn-invoice')?.addEventListener('click', printCustomerInvoice);
 document.getElementById('btn-save-quote')?.addEventListener('click', saveQuote);
 document.getElementById('btn-payment-link')?.addEventListener('click', createPaymentLink);
 document.getElementById('btn-copy-payment-link')?.addEventListener('click', copyPaymentLink);

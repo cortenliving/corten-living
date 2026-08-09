@@ -46,10 +46,9 @@ tailwind.config = {
     transition: border-color .15s, background .15s;
   }
   .dropzone.drag { border-color: #b7410e; background: #fff5ef; }
-  /* Screen: hide customer print sheet */
-  #customer-print { display: none; }
+  /* Screen: hide print sheets */
+  #customer-print, #customer-invoice { display: none; }
   @media print {
-    /* Avoid blank first page: collapse everything except the customer sheet */
     html, body {
       background: #fff !important;
       height: auto !important;
@@ -58,40 +57,45 @@ tailwind.config = {
       padding: 0 !important;
       overflow: visible !important;
     }
-    body * {
-      visibility: hidden;
-    }
-    #customer-print,
-    #customer-print * {
+    body * { visibility: hidden; }
+    #customer-print, #customer-print *,
+    #customer-invoice, #customer-invoice * {
       visibility: visible !important;
     }
-    #login-screen,
-    #app,
-    #toast {
+    #login-screen, #app, #toast {
       display: none !important;
       height: 0 !important;
       overflow: hidden !important;
     }
-    #customer-print {
+    #customer-print.print-active,
+    #customer-invoice.print-active {
       display: block !important;
       position: absolute;
       left: 0;
       top: 0;
       width: 100%;
-      max-width: none;
       margin: 0;
       padding: 12mm 14mm;
       color: #1a1814;
       font-size: 11pt;
       box-sizing: border-box;
     }
-    #customer-print table { width: 100%; border-collapse: collapse; }
-    #customer-print th, #customer-print td {
+    #customer-print:not(.print-active),
+    #customer-invoice:not(.print-active) {
+      display: none !important;
+    }
+    #customer-print table, #customer-invoice table { width: 100%; border-collapse: collapse; }
+    #customer-print th, #customer-print td,
+    #customer-invoice th, #customer-invoice td {
       border-bottom: 1px solid #e5ddd0; padding: 8px 6px; text-align: left; font-size: 10pt;
     }
-    #customer-print th { color: #666; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; }
-    #customer-print .totals td { border: none; padding: 4px 6px; }
-    #customer-print .totals .grand td { font-weight: 700; font-size: 13pt; padding-top: 10px; }
+    #customer-print th, #customer-invoice th {
+      color: #666; font-weight: 600; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    #customer-print .totals td, #customer-invoice .totals td { border: none; padding: 4px 6px; }
+    #customer-print .totals .grand td, #customer-invoice .totals .grand td {
+      font-weight: 700; font-size: 13pt; padding-top: 10px;
+    }
     #customer-print .profile-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -107,7 +111,31 @@ tailwind.config = {
     }
     #customer-print .profile-card svg { max-height: 100px; width: 100%; }
     #customer-print .profile-card .cap { font-size: 8pt; color: #666; margin-top: 4px; }
-    @page { margin: 12mm; size: auto; }
+    /* Invoice branding */
+    #customer-invoice .inv-hero {
+      background: linear-gradient(135deg, #1a1410 0%, #2a1c14 55%, #3d2418 100%);
+      color: #fff;
+      margin: -12mm -14mm 8mm -14mm;
+      padding: 14mm 14mm 10mm 14mm;
+      border-bottom: 4px solid #b7410e;
+    }
+    #customer-invoice .inv-due-box {
+      background: #fff8f4;
+      border: 1px solid #e8c4a8;
+      border-left: 4px solid #b7410e;
+      padding: 10px 14px;
+      margin: 16px 0 20px;
+    }
+    #customer-invoice .inv-bank {
+      background: #f7f4ef;
+      border: 1px solid #e5ddd0;
+      padding: 12px 14px;
+      margin-top: 20px;
+      font-size: 9pt;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+    @page { margin: 10mm; size: auto; }
   }
 </style>
 </head>
@@ -176,7 +204,8 @@ tailwind.config = {
       </div>
       <div class="flex flex-wrap gap-2 items-center">
         <button type="button" id="btn-back-list" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">← All quotes</button>
-        <button type="button" id="btn-print" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">Print</button>
+        <button type="button" id="btn-print" class="px-3 py-2 border border-gray-300 rounded text-sm bg-white hover:bg-paper-50">Print quote</button>
+        <button type="button" id="btn-invoice" class="px-3 py-2 border border-ink-900 text-ink-950 rounded text-sm bg-white hover:bg-paper-50 font-medium">Invoice</button>
         <button type="button" id="btn-payment-link" class="px-3 py-2 border border-emerald-600 text-emerald-800 rounded text-sm bg-emerald-50 hover:bg-emerald-100 font-medium">Stripe payment link</button>
         <button type="button" id="btn-save-quote" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save quote</button>
       </div>
@@ -438,6 +467,41 @@ tailwind.config = {
       <p class="text-xs text-gray-500">Saved quotes also store a PDF under <code class="text-corten-700">data/quote-files/</code> so you can reopen them from the quotes list.</p>
     </div>
 
+    <div class="panel p-6 space-y-4 mb-6">
+      <h2 class="text-sm font-semibold text-ink-950">Invoice template (your design — not Stripe)</h2>
+      <p class="text-xs text-gray-500">Used when you click <strong>Invoice</strong> on a quote. Looks branded with your logo. No Stripe costings.</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500">Invoice title</label>
+          <input id="set-inv-title" class="input mt-1" placeholder="TAX INVOICE">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Payment due (days from issue)</label>
+          <input id="set-inv-due-days" type="number" min="0" step="1" class="input mt-1" placeholder="7">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">GST / NZBN (optional)</label>
+          <input id="set-inv-gst" class="input mt-1" placeholder="GST: 123-456-789">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Logo URL or path</label>
+          <input id="set-inv-logo" class="input mt-1" placeholder="/images/logo.svg">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">Bank / payment details (shown on invoice)</label>
+          <textarea id="set-inv-bank" rows="4" class="input mt-1" placeholder="Pay to: Corten Living&#10;Bank: ANZ&#10;Account: 00-0000-0000000-00&#10;Reference: invoice number"></textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">Invoice notes / terms</label>
+          <textarea id="set-inv-notes" rows="3" class="input mt-1" placeholder="Payment due within 7 days. Goods remain property of Corten Living until paid in full."></textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-gray-500">From address (your business)</label>
+          <textarea id="set-inv-from" rows="3" class="input mt-1" placeholder="Corten Living&#10;21A Cameron Road, Makauri&#10;Gisborne 4071, New Zealand&#10;027 383 8178 · cortenliving@gmail.com"></textarea>
+        </div>
+      </div>
+    </div>
+
     <button type="button" id="btn-save-settings" class="px-4 py-2 btn-primary rounded text-sm font-semibold">Save settings live</button>
     <p id="settings-msg" class="text-xs text-gray-500 mt-2"></p>
   </div>
@@ -510,6 +574,86 @@ tailwind.config = {
 
   <p id="print-notes" style="margin:28px 0 0;font-size:9pt;color:#555;line-height:1.5;white-space:pre-line;"></p>
   <p id="print-footer" style="margin:32px 0 0;padding-top:16px;border-top:1px solid #e5ddd0;font-size:8pt;color:#888;line-height:1.5;white-space:pre-line;"></p>
+</div>
+
+<!-- Custom branded invoice (not Stripe) -->
+<div id="customer-invoice" aria-hidden="true">
+  <div class="inv-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img id="inv-logo" src="/images/logo.svg" alt="" style="width:52px;height:52px;background:rgba(255,255,255,0.08);border-radius:6px;padding:4px;">
+        <div>
+          <p id="inv-company" style="font-family:Oswald,sans-serif;font-size:20pt;margin:0;letter-spacing:0.06em;color:#fff;">CORTEN LIVING</p>
+          <p id="inv-tagline" style="margin:4px 0 0;font-size:9pt;color:rgba(255,255,255,0.65);"></p>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <p id="inv-doc-title" style="margin:0;font-size:10pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#e57a48;">TAX INVOICE</p>
+        <p id="inv-number" style="margin:6px 0 0;font-family:Oswald,sans-serif;font-size:16pt;color:#fff;"></p>
+        <p id="inv-gst-no" style="margin:6px 0 0;font-size:8pt;color:rgba(255,255,255,0.55);"></p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:8px;">
+    <div>
+      <p style="margin:0 0 6px;font-size:8pt;text-transform:uppercase;letter-spacing:0.1em;color:#b7410e;font-weight:700;">From</p>
+      <p id="inv-from" style="margin:0;font-size:9.5pt;line-height:1.55;color:#333;white-space:pre-line;"></p>
+    </div>
+    <div>
+      <p style="margin:0 0 6px;font-size:8pt;text-transform:uppercase;letter-spacing:0.1em;color:#b7410e;font-weight:700;">Bill to</p>
+      <p id="inv-billto" style="margin:0;font-size:9.5pt;line-height:1.55;color:#1a1814;white-space:pre-line;font-weight:500;"></p>
+    </div>
+  </div>
+
+  <div class="inv-due-box">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:baseline;">
+      <div>
+        <p style="margin:0;font-size:8pt;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Amount due</p>
+        <p id="inv-amount-due" style="margin:4px 0 0;font-family:Oswald,sans-serif;font-size:22pt;color:#1a1814;"></p>
+      </div>
+      <div style="text-align:right;font-size:9pt;color:#555;line-height:1.6;">
+        <div>Issue date: <strong id="inv-issue-date" style="color:#1a1814;"></strong></div>
+        <div>Due date: <strong id="inv-due-date" style="color:#b7410e;"></strong></div>
+        <div id="inv-quote-ref-wrap">Quote ref: <strong id="inv-quote-ref" style="color:#1a1814;"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:36px;">#</th>
+        <th>Description</th>
+        <th style="text-align:right;width:56px;">Qty</th>
+        <th style="text-align:right;width:100px;">Size</th>
+        <th style="text-align:right;width:90px;">Amount</th>
+      </tr>
+    </thead>
+    <tbody id="inv-items"></tbody>
+  </table>
+
+  <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+    <table class="totals" style="width:300px;">
+      <tr>
+        <td style="color:#666;">Subtotal (excl. GST)</td>
+        <td style="text-align:right;" id="inv-subtotal"></td>
+      </tr>
+      <tr id="inv-gst-row">
+        <td style="color:#666;">GST (15%)</td>
+        <td style="text-align:right;" id="inv-gst"></td>
+      </tr>
+      <tr class="grand">
+        <td style="border-top:2px solid #1a1814;padding-top:10px;">Total due</td>
+        <td style="text-align:right;border-top:2px solid #1a1814;padding-top:10px;color:#b7410e;" id="inv-total"></td>
+      </tr>
+    </table>
+  </div>
+
+  <div id="inv-bank" class="inv-bank"></div>
+  <p id="inv-notes" style="margin:18px 0 0;font-size:9pt;color:#555;line-height:1.5;white-space:pre-line;"></p>
+  <p id="inv-payment-link" style="margin:14px 0 0;font-size:9pt;color:#333;"></p>
+  <p style="margin:28px 0 0;font-size:8pt;color:#999;letter-spacing:0.04em;">CORTEN LIVING · Profile-cut steel · Gisborne NZ</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>

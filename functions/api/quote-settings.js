@@ -44,6 +44,18 @@ const DEFAULTS = {
     showLogo: true,
     showProfile: true,
   },
+  invoice: {
+    title: 'TAX INVOICE',
+    dueDays: 7,
+    gstNumber: '',
+    logoUrl: '/images/logo.svg',
+    fromAddress:
+      'Corten Living\n21A Cameron Road, Makauri\nGisborne 4071, New Zealand\n027 383 8178 · cortenliving@gmail.com',
+    bankDetails:
+      'Payment details\nPay to: Corten Living\nBank: (your bank)\nAccount: 00-0000-0000000-00\nReference: invoice number',
+    notes:
+      'Payment is due by the date shown. Goods remain the property of Corten Living until paid in full. Prices in NZD.',
+  },
 };
 
 export async function onRequestOptions() {
