@@ -959,17 +959,40 @@ async function saveProductFromForm() {
  if (cloudStatus.hasGithub || cloudStatus.cloud) {
  finalProduct = await ensureCloudUrls(product);
  }
+ // Merge with existing so tag/desc/paymentLinks etc. never drop unexpectedly
  const idx = catalogue.findIndex((p) => p.id === (editingId || finalProduct.id));
- if (idx >= 0) catalogue[idx] = finalProduct;
- else catalogue.push(finalProduct);
+ if (idx >= 0) {
+  const prev = catalogue[idx] || {};
+  catalogue[idx] = {
+   ...prev,
+   ...finalProduct,
+   tag: finalProduct.tag != null ? finalProduct.tag : (prev.tag || ''),
+   desc: finalProduct.desc != null ? finalProduct.desc : prev.desc,
+   paymentLinks: finalProduct.paymentLinks || prev.paymentLinks || [],
+  };
+  // Explicit empty tag clears the badge
+  if (document.getElementById('f-tag')) {
+   catalogue[idx].tag = document.getElementById('f-tag').value.trim();
+  }
+ } else {
+  catalogue.push(finalProduct);
+ }
  saveDraftLocal();
+ // Keep public shop cache in sync so tag/photo changes show immediately
+ try {
+  localStorage.setItem(STORAGE_PUBLISHED, JSON.stringify(catalogue));
+ } catch (_) {}
  if (cloudStatus.hasGithub || cloudStatus.cloud) {
  const { res, data } = await api('/api/products', {
  method: 'PUT',
  body: JSON.stringify({ products: catalogue }),
  });
  if (!res.ok) throw new Error(data?.error || 'Cloud save failed');
- toast('Product saved live for everyone');
+ toast(
+  finalProduct.tag
+   ? `Saved live · tag “${finalProduct.tag}”`
+   : 'Product saved live for everyone'
+ );
  } else {
  toast('Product saved on this device (add secrets to go live)');
  }

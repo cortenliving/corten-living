@@ -43,10 +43,11 @@ textarea:focus-visible {
   outline: 2px solid #d56f3d;
   outline-offset: 2px;
 }
-/* Smooth image reveal */
+/* Smooth image reveal — contain so product photos are not cropped */
 .product-card img {
   transition: transform 0.5s ease;
+  object-fit: contain;
 }
 .product-card:hover img {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }

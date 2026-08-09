@@ -18,7 +18,8 @@ export async function onRequestGet(context) {
  return json(
  { products, updatedAt: data.updatedAt || null },
  200,
- { 'Cache-Control': 'public, max-age=30' }
+ // Short cache so admin tag/price edits show on shop quickly
+ { 'Cache-Control': 'public, max-age=10' }
  );
  } catch (e) {
  return json({ products: null, error: String(e.message || e) }, 500);

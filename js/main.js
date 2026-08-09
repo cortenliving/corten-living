@@ -188,7 +188,7 @@ function productCardHTML(p, options = {}) {
  media = `<div class="product-slides relative w-full h-full" data-interval="${slideMs}">
  ${p.slides.map((s, i) => `
  <div class="slide absolute inset-0 transition-opacity duration-700 ${i === 0 ? 'opacity-100' : 'opacity-0'}">
- <img src="${s.src}" alt="${s.label || p.name}" class="w-full h-full object-cover" loading="${i === 0 ? 'eager' : 'lazy'}"
+ <img src="${s.src}" alt="${s.label || p.name}" class="w-full h-full object-contain" loading="${i === 0 ? 'eager' : 'lazy'}"
  onerror="this.onerror=null;this.src='';this.parentElement.querySelector('.fallback')?.classList.remove('hidden')">
  <div class="fallback hidden absolute inset-0 flex flex-col items-center justify-center bg-metal-950">
  <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
@@ -196,13 +196,13 @@ function productCardHTML(p, options = {}) {
  </div>`).join('')}
  </div>`;
  } else if (hasSlides && p.slides.length === 1) {
- media = `<img src="${p.slides[0].src}" alt="${p.name}" class="w-full h-full object-cover" loading="lazy"
+ media = `<img src="${p.slides[0].src}" alt="${p.name}" class="w-full h-full object-contain" loading="lazy"
  onerror="this.style.display='none';this.nextElementSibling?.classList.remove('hidden')">
  <div class="fallback hidden absolute inset-0 flex items-center justify-center bg-metal-950">
  <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
  </div>`;
  } else if (firstImg) {
- media = `<img src="${firstImg}" alt="${p.name}" class="w-full h-full object-cover" loading="lazy"
+ media = `<img src="${firstImg}" alt="${p.name}" class="w-full h-full object-contain" loading="lazy"
  onerror="this.style.display='none';this.nextElementSibling?.classList.remove('hidden')">
  <div class="fallback hidden absolute inset-0 flex items-center justify-center bg-metal-950">
  <span class="font-display text-3xl text-corten-600/70">${p.name.charAt(0)}</span>
@@ -218,11 +218,18 @@ function productCardHTML(p, options = {}) {
  ? ''
  : `<p class="text-sm text-gray-400 mt-3 leading-relaxed line-clamp-4 whitespace-pre-line">${p.desc || ''}</p>`;
 
+ const tagHtml = p.tag
+  ? `<span class="absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wider bg-corten-600 text-white px-2 py-0.5 rounded-sm">${String(p.tag)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;')}</span>`
+  : '';
+
  return `
  <article class="product-card group bg-metal-850 border border-corten-900/40 rounded-sm overflow-hidden transition-all duration-300">
- <a href="${href}" class="block aspect-[4/3] bg-metal-950 relative overflow-hidden">
+ <a href="${href}" class="block aspect-[4/3] bg-metal-950 relative overflow-hidden flex items-center justify-center">
  ${media}
- ${p.tag ? `<span class="absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wider bg-corten-600 text-white px-2 py-0.5 rounded-sm">${p.tag}</span>` : ''}
+ ${tagHtml}
  </a>
  <div class="p-5">
  <div class="flex justify-between items-start gap-2">
