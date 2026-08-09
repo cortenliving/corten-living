@@ -195,6 +195,10 @@
         {
           "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
           "label": "b4090cf8-06c1-47e5-9fbe-b9b0e75d5d21"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6ce982e7443f4f02.jpg",
+          "label": "8cc828b1-852d-465a-9af8-69552096b2fe"
         }
       ],
       "sizes": [
@@ -274,6 +278,10 @@
         {
           "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
           "label": "06d5d87b-a02d-44c3-939f-861cb922c658"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f78b9082a57542ab.jpg",
+          "label": "0c417f9a-d812-40b5-9121-b01230c6929a"
         }
       ],
       "sizes": [
@@ -295,9 +303,35 @@
           "size": "",
           "price": 0
         }
+      ]
+    },
+    {
+      "id": "corten-steel-fantail-garden-stake",
+      "name": "Corten Steel Fantail Garden Stake",
+      "category": "sculpture",
+      "size": "1200mmH x 170mmW",
+      "price": 50,
+      "priceLabel": "$50",
+      "desc": "Add a striking native-bird feature to your garden with this Corten steel Fantail garden stake.\n\nThe Fantail silhouette is cut from durable 3mm Corten steel and designed to develop a natural rust patina outdoors. The long pointed stake pushes directly into soil, garden beds, gravel or large planter pots.\n\nDetails:\n\nFantail / Pīwakawaka design\nApproximately 1200mm high\nApproximately 170mm wide\nMade from 3mm Corten steel\nPointed end for easy installation\nSuitable for year-round outdoor use\n\nMade in New Zealand",
+      "tag": "Garden Feature",
+      "featured": false,
+      "link": "/product?id=corten-steel-fantail-garden-stake",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8809cccf0f22480a.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8809cccf0f22480a.jpg",
+          "label": "Fantail"
+        }
       ],
-      "paymentLinks": []
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Standard",
+          "size": "1200mmH x 170mmW",
+          "price": 50
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:51:01.432Z"
+  "updatedAt": "2026-08-09T23:55:13.214Z"
 }
