@@ -39,7 +39,9 @@ export async function onRequestGet(context) {
   try {
     const url = new URL('https://api.stripe.com/v1/promotion_codes');
     url.searchParams.set('limit', '30');
-    url.searchParams.set('expand[]', 'data.coupon');
+    // Support both legacy coupon expand and newer promotion.coupon expand
+    url.searchParams.append('expand[]', 'data.coupon');
+    url.searchParams.append('expand[]', 'data.promotion.coupon');
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${secret}` },
     });
@@ -48,7 +50,11 @@ export async function onRequestGet(context) {
       return json({ error: data?.error?.message || 'Failed to list codes', codes: [] }, 502);
     }
     const codes = (data.data || []).map((pc) => {
-      const c = pc.coupon || {};
+      let c = pc.coupon;
+      if (!c || typeof c === 'string') {
+        c = pc.promotion?.coupon || {};
+      }
+      if (typeof c === 'string') c = { id: c };
       let discount = '';
       if (c.percent_off != null) discount = c.percent_off + '% off';
       else if (c.amount_off != null) discount = '$' + (c.amount_off / 100).toFixed(2) + ' off';
@@ -60,7 +66,7 @@ export async function onRequestGet(context) {
         maxRedemptions: pc.max_redemptions || null,
         expiresAt: pc.expires_at ? new Date(pc.expires_at * 1000).toISOString() : null,
         discount,
-        couponId: typeof c === 'string' ? c : c.id,
+        couponId: c.id || null,
         created: pc.created ? new Date(pc.created * 1000).toISOString() : null,
       };
     });
@@ -136,26 +142,40 @@ export async function onRequestPost(context) {
     }
 
     // 2) Create promotion code (what customers type)
-    const promoParams = new URLSearchParams();
-    promoParams.set('coupon', coupon.id);
-    promoParams.set('code', code);
-    if (maxRedemptions > 0) {
-      promoParams.set('max_redemptions', String(maxRedemptions));
-    }
-    if (body.expiresAt) {
-      const exp = new Date(body.expiresAt);
-      if (!Number.isNaN(exp.getTime())) {
-        // end of that day NZ-ish: use UTC end of day
-        exp.setUTCHours(23, 59, 59, 0);
-        promoParams.set('expires_at', String(Math.floor(exp.getTime() / 1000)));
+    // Newer Stripe API versions reject top-level `coupon` — use promotion[type]/coupon].
+    // Fall back to legacy `coupon=` if the account is still on an older API version.
+    async function createPromotionCode(useNestedPromotion) {
+      const promoParams = new URLSearchParams();
+      promoParams.set('code', code);
+      if (useNestedPromotion) {
+        promoParams.set('promotion[type]', 'coupon');
+        promoParams.set('promotion[coupon]', coupon.id);
+      } else {
+        promoParams.set('coupon', coupon.id);
       }
+      if (maxRedemptions > 0) {
+        promoParams.set('max_redemptions', String(maxRedemptions));
+      }
+      if (body.expiresAt) {
+        const exp = new Date(body.expiresAt);
+        if (!Number.isNaN(exp.getTime())) {
+          // end of that day: use UTC end of day
+          exp.setUTCHours(23, 59, 59, 0);
+          promoParams.set('expires_at', String(Math.floor(exp.getTime() / 1000)));
+        }
+      }
+      return stripeForm(secret, 'promotion_codes', promoParams);
     }
 
-    const { res: pRes, data: promo } = await stripeForm(
-      secret,
-      'promotion_codes',
-      promoParams
-    );
+    let { res: pRes, data: promo } = await createPromotionCode(true);
+    if (
+      !pRes.ok &&
+      /unknown parameter.*coupon|unknown parameter.*promotion/i.test(
+        promo?.error?.message || ''
+      )
+    ) {
+      ({ res: pRes, data: promo } = await createPromotionCode(false));
+    }
     if (!pRes.ok || !promo.id) {
       return json(
         {
