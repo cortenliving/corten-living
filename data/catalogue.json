@@ -221,7 +221,21 @@
           "price": 99
         }
       ],
-      "paymentLinks": []
+      "paymentLinks": [
+        {
+          "key": "custom:msmoyada",
+          "sizeId": "",
+          "label": "Corten Steel Stingray Wall Art - Maori Koru Design",
+          "description": "Corten Steel Stingray Wall Art - Maori Koru Design",
+          "size": "",
+          "priceExcl": 38,
+          "amountIncl": 43.7,
+          "includeGst": true,
+          "url": "https://buy.stripe.com/9B69AS2OH19O5MD3P44sE01",
+          "stripeId": "plink_1U2kByBf4V9zldqrA2RzLN7S",
+          "createdAt": "2026-08-10T03:48:01.918Z"
+        }
+      ]
     },
     {
       "id": "corten-steel-welcome-sign",
@@ -436,5 +450,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-08-10T03:47:23.683Z"
+  "updatedAt": "2026-08-10T03:48:02.870Z"
 }
