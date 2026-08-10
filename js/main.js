@@ -238,7 +238,7 @@ function productCardHTML(p, options = {}) {
  </h3>
  <p class="text-corten-400 font-semibold whitespace-nowrap">${priceText}</p>
  </div>
- <p class="text-xs text-gray-500 mt-1">${p.size} · 3 mm Corten</p>
+ <p class="text-xs text-gray-400 mt-1">${p.size} · 3 mm Corten</p>
  ${descHtml}
  <a href="${href}" class="mt-4 inline-block text-sm text-corten-500 hover:text-corten-400 font-medium">${cta}</a>
  </div>
@@ -255,7 +255,7 @@ function renderProducts(filter = 'all') {
  : list.filter((p) => p.category === filter);
 
  if (filtered.length === 0) {
- grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">No products in this category yet. <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers</a> or <a href="/quote" class="text-corten-500 hover:underline">request a custom cut</a>.</p>`;
+ grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-12">No products in this category yet. <a href="/house-numbers" class="text-corten-500 hover:underline">Configure House Numbers</a> or <a href="/quote" class="text-corten-500 hover:underline">request a custom cut</a>.</p>`;
  return;
  }
 
