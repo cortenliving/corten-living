@@ -395,7 +395,46 @@
           "price": 50
         }
       ]
+    },
+    {
+      "id": "set-of-3-corten-steel-native-bird-garden",
+      "name": "Set of 3 Corten Steel Native Bird Garden Stakes",
+      "category": "sculpture",
+      "size": "1200mmH x 170-220mmW",
+      "price": 125,
+      "priceLabel": "$125",
+      "desc": "Add a touch of New Zealand nature to your garden with this set of three decorative Corten steel bird stakes, featuring a Fantail/Piwakawaka, Tui and Kereru.\n\nEach stake has its own native bird silhouette and is designed to push directly into soil, garden beds, pots or gravel areas. The natural rust finish looks great against plants, fences and landscaping.\n\nFeatures:\n\nSet of three bird designs: Fantail/Pīwakawaka, Tui and Kereru\nMade from durable 3mm Corten steel\nDesigned for outdoor use\nDevelops a natural rust patina over time\nPointed ends for easy installation into the ground\nSuitable for gardens, pathways, pots and entranceways\nMade in New Zealand\n\nApproximate size:\n\nHeight: 1200mm each\nWidth at bird: approximately 200mm",
+      "tag": "Garden Feature",
+      "featured": false,
+      "link": "/product?id=set-of-3-corten-steel-native-bird-garden",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/089dc8cae5d04db3.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/089dc8cae5d04db3.jpg",
+          "label": "Tui-Pigon-Fantail"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8b287a100cbd4a43.jpg",
+          "label": "Fantail"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/49962b836e814578.jpg",
+          "label": "Pigon"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/bdcc32eae66e4696.jpg",
+          "label": "Tui "
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Standard",
+          "size": "1200mmH x 170-220mmW",
+          "price": 125
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-10T00:00:36.924Z"
+  "updatedAt": "2026-08-10T00:02:57.995Z"
 }
