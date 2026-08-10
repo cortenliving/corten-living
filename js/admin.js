@@ -1091,6 +1091,7 @@ function switchTab(tab) {
  btn.classList.toggle('text-gray-400', !on);
  btn.classList.toggle('border-transparent', !on);
  });
+ if (tab === 'promo') loadPromoCodes();
 }
 
 /* —— Shipping admin —— */
@@ -1308,6 +1309,153 @@ async function saveShippingLive() {
  }
 }
 
+/* —— Promo codes (Stripe) —— */
+function updatePromoValueLabel() {
+ const type = document.getElementById('promo-type')?.value;
+ const label = document.getElementById('promo-value-label');
+ const input = document.getElementById('promo-value');
+ if (!label) return;
+ if (type === 'amount') {
+  label.textContent = 'Amount off ($ NZD) *';
+  if (input) input.placeholder = '5.00';
+ } else {
+  label.textContent = 'Percent off *';
+  if (input) input.placeholder = '10';
+ }
+}
+
+function formatPromoDate(iso) {
+ if (!iso) return '';
+ try {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' });
+ } catch {
+  return '';
+ }
+}
+
+async function loadPromoCodes() {
+ const list = document.getElementById('promo-list');
+ if (!list) return;
+ list.innerHTML = '<p class="text-xs text-gray-600">Loading from Stripe…</p>';
+ try {
+  const { res, data } = await api('/api/promo-codes');
+  if (!res.ok) throw new Error(data?.error || 'Failed to load codes');
+  const codes = data?.codes || [];
+  if (!codes.length) {
+   list.innerHTML = '<p class="text-xs text-gray-600">No promotion codes yet. Create one on the left.</p>';
+   return;
+  }
+  list.innerHTML = codes
+   .map((c) => {
+    const status = c.active
+     ? '<span class="text-green-400">Active</span>'
+     : '<span class="text-gray-500">Inactive</span>';
+    const used =
+     c.maxRedemptions != null
+      ? `${c.timesRedeemed || 0} / ${c.maxRedemptions} used`
+      : `${c.timesRedeemed || 0} used`;
+    const exp = c.expiresAt ? ` · expires ${formatPromoDate(c.expiresAt)}` : '';
+    const deactivateBtn = c.active
+     ? `<button type="button" data-deactivate-promo="${escapeHtml(c.id)}" class="text-xs text-red-400 hover:text-red-300 ml-2">Deactivate</button>`
+     : '';
+    return `<div class="flex flex-wrap items-start justify-between gap-2 border border-gray-800 rounded-sm px-3 py-2 bg-metal-950/50">
+ <div>
+ <span class="font-mono text-white tracking-wide">${escapeHtml(c.code)}</span>
+ <span class="text-gray-500 mx-1">·</span>
+ <span class="text-corten-400">${escapeHtml(c.discount || '—')}</span>
+ <div class="text-[11px] text-gray-500 mt-0.5">${status} · ${escapeHtml(used)}${escapeHtml(exp)}</div>
+ </div>
+ <div class="flex items-center">${deactivateBtn}</div>
+ </div>`;
+   })
+   .join('');
+  list.querySelectorAll('[data-deactivate-promo]').forEach((btn) => {
+   btn.addEventListener('click', () => deactivatePromo(btn.dataset.deactivatePromo));
+  });
+ } catch (e) {
+  list.innerHTML = `<p class="text-xs text-red-400">${escapeHtml(String(e.message || e))}</p>`;
+ }
+}
+
+async function createPromoCode() {
+ const msg = document.getElementById('promo-msg');
+ const codeEl = document.getElementById('promo-code');
+ const type = document.getElementById('promo-type')?.value || 'percent';
+ const value = Number(document.getElementById('promo-value')?.value);
+ const duration = document.getElementById('promo-duration')?.value || 'once';
+ const maxRaw = document.getElementById('promo-max')?.value;
+ const expiresAt = document.getElementById('promo-expires')?.value || '';
+ const name = document.getElementById('promo-name')?.value || '';
+ const code = String(codeEl?.value || '').trim();
+
+ if (!code || code.length < 3) {
+  toast('Code must be at least 3 letters/numbers', true);
+  return;
+ }
+ if (!Number.isFinite(value) || value <= 0) {
+  toast('Enter a discount value greater than 0', true);
+  return;
+ }
+
+ if (msg) msg.textContent = 'Creating in Stripe…';
+ const btn = document.getElementById('btn-create-promo');
+ if (btn) btn.disabled = true;
+ try {
+  const body = {
+   code,
+   type,
+   value,
+   duration,
+   name: name || undefined,
+   expiresAt: expiresAt || undefined,
+  };
+  if (maxRaw !== '' && maxRaw != null) {
+   const n = parseInt(maxRaw, 10);
+   if (n > 0) body.maxRedemptions = n;
+  }
+  const { res, data } = await api('/api/promo-codes', {
+   method: 'POST',
+   body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(data?.error || 'Create failed');
+  if (msg) {
+   msg.textContent = `Created ${data.code} — ${data.discount}. Customers can type it at checkout.`;
+   msg.className = 'text-xs text-green-400';
+  }
+  toast(`Promo ${data.code} live`);
+  if (codeEl) codeEl.value = '';
+  const valEl = document.getElementById('promo-value');
+  if (valEl) valEl.value = '';
+  await loadPromoCodes();
+ } catch (e) {
+  if (msg) {
+   msg.textContent = String(e.message || e);
+   msg.className = 'text-xs text-red-400';
+  }
+  toast(String(e.message || e), true);
+ } finally {
+  if (btn) btn.disabled = false;
+ }
+}
+
+async function deactivatePromo(id) {
+ if (!id) return;
+ if (!confirm('Deactivate this promo code? Customers will no longer be able to use it.')) return;
+ try {
+  const { res, data } = await api('/api/promo-codes', {
+   method: 'PUT',
+   body: JSON.stringify({ id, active: false }),
+  });
+  if (!res.ok) throw new Error(data?.error || 'Deactivate failed');
+  toast(`Deactivated ${data.code || id}`);
+  await loadPromoCodes();
+ } catch (e) {
+  toast(String(e.message || e), true);
+ }
+}
+
 async function bootAdmin() {
  await refreshCloudStatus();
  await loadCatalogue();
@@ -1516,4 +1664,9 @@ document.addEventListener('DOMContentLoaded', async () => {
  document.querySelectorAll('[data-tab]').forEach((btn) => {
  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
  });
+
+ document.getElementById('btn-create-promo')?.addEventListener('click', () => createPromoCode());
+ document.getElementById('btn-refresh-promo')?.addEventListener('click', () => loadPromoCodes());
+ document.getElementById('promo-type')?.addEventListener('change', updatePromoValueLabel);
+ updatePromoValueLabel();
 });

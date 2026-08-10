@@ -72,6 +72,7 @@ tailwind.config = {
  <button type="button" data-tab="products" class="px-3 py-1.5 border-b-2 border-corten-600 text-corten-400 font-medium">Products</button>
  <button type="button" data-tab="pricing" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Number pricing</button>
  <button type="button" data-tab="shipping" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Shipping</button>
+ <button type="button" data-tab="promo" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Promo codes</button>
  <a href="/admin-quotes" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Quotes</a>
  <button type="button" data-tab="deploy" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Save & deploy</button>
  <button type="button" data-tab="settings" class="px-3 py-1.5 border-b-2 border-transparent text-gray-400 hover:text-white">Settings</button>
@@ -393,6 +394,73 @@ tailwind.config = {
  <div class="mt-6 flex flex-wrap gap-3 items-center">
  <button type="button" id="btn-save-shipping" class="px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Save shipping live</button>
  <p id="ship-save-msg" class="text-sm text-gray-500"></p>
+ </div>
+ </div>
+
+ <!-- PROMO CODES TAB -->
+ <div data-tab-panel="promo" class="hidden">
+ <h1 class="font-display text-2xl font-bold text-white mb-2">Promo codes</h1>
+ <p class="text-sm text-gray-500 mb-6 max-w-2xl">
+ Create Stripe discount codes here (no Stripe dashboard needed). Codes work on shop checkout, product QR payment links, and quote payment links.
+ </p>
+ <div class="grid lg:grid-cols-2 gap-6">
+ <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6 space-y-4">
+ <h2 class="font-display text-lg text-white">Create code</h2>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Code customers type *</label>
+ <input id="promo-code" type="text" placeholder="e.g. GISBORNE10" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm uppercase tracking-wide focus:border-corten-500 outline-none">
+ <p class="text-[10px] text-gray-600 mt-1">Letters &amp; numbers only · shown as entered (usually UPPERCASE)</p>
+ </div>
+ <div class="grid grid-cols-2 gap-3">
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Discount type</label>
+ <select id="promo-type" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ <option value="percent">Percent off (%)</option>
+ <option value="amount">Fixed amount ($ NZD)</option>
+ </select>
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1" id="promo-value-label">Percent off *</label>
+ <input id="promo-value" type="number" min="0.01" step="0.01" placeholder="10" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ </div>
+ <div class="grid grid-cols-2 gap-3">
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Duration</label>
+ <select id="promo-duration" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ <option value="once">Once (one payment)</option>
+ <option value="forever">Forever (if used on subscriptions)</option>
+ </select>
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Max redemptions (blank = unlimited)</label>
+ <input id="promo-max" type="number" min="1" step="1" placeholder="e.g. 50" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Expires (optional)</label>
+ <input id="promo-expires" type="date" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ <div>
+ <label class="block text-xs text-gray-400 mb-1">Note (optional, only you see in Stripe)</label>
+ <input id="promo-name" type="text" placeholder="Market stall weekend sale" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white text-sm focus:border-corten-500 outline-none">
+ </div>
+ <button type="button" id="btn-create-promo" class="w-full py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Create promo code in Stripe</button>
+ <p id="promo-msg" class="text-xs text-gray-500"></p>
+ </div>
+ <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-6">
+ <div class="flex items-center justify-between gap-2 mb-4">
+ <h2 class="font-display text-lg text-white">Recent codes</h2>
+ <button type="button" id="btn-refresh-promo" class="text-xs text-corten-400 hover:text-corten-300">Refresh</button>
+ </div>
+ <div id="promo-list" class="space-y-2 text-sm text-gray-400">
+ <p class="text-xs text-gray-600">Click Refresh to load codes from Stripe.</p>
+ </div>
+ <p class="text-[10px] text-gray-600 mt-4 leading-relaxed">
+ Use <strong class="text-gray-500">Deactivate</strong> to stop a code (customers can no longer apply it).
+ Codes work on shop checkout, product QR payment links, and quote payment links.
+ </p>
+ </div>
  </div>
  </div>
 
