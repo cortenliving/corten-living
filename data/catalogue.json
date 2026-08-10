@@ -364,7 +364,38 @@
           "price": 50
         }
       ]
+    },
+    {
+      "id": "corten-steel-tui-garden-stake",
+      "name": "Corten Steel Tui Garden Stake",
+      "category": "sculpture",
+      "size": "1200mmH x 220mmW",
+      "price": 50,
+      "priceLabel": "$50",
+      "desc": "Bring a touch of New Zealand birdlife into your outdoor space with this decorative Corten steel Tui garden stake.\n\nCut from strong 3mm Corten steel, this garden feature is made to stand outdoors and naturally develop a unique rust-coloured patina. Simply push the pointed stake into soil, gravel, a garden bed or a large planter.\n\nDetails:\n\nTui -inspired silhouette\nApproximately 1200mm high\nApproximately 220mm wide\nMade from 3mm Corten steel\nPointed end for easy ground installation\nDurable outdoor garden decoration\n\nMade in New Zealand",
+      "tag": "Garden Feature",
+      "featured": false,
+      "link": "/product?id=corten-steel-tui-garden-stake",
+      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/69ad873758a34070.jpg",
+      "slides": [
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/69ad873758a34070.jpg",
+          "label": "Tui "
+        },
+        {
+          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6cb2eed593fe4616.jpg",
+          "label": "Tui-Pigon-Fantail"
+        }
+      ],
+      "sizes": [
+        {
+          "id": "sz-sm",
+          "label": "Standard",
+          "size": "1200mmH x 220mmW",
+          "price": 50
+        }
+      ]
     }
   ],
-  "updatedAt": "2026-08-09T23:59:15.989Z"
+  "updatedAt": "2026-08-10T00:00:36.924Z"
 }
