@@ -155,7 +155,7 @@ function slugify(str) {
  .slice(0, 40) || 'product';
 }
 
-function compressImage(file, maxW = 1100, quality = 0.82) {
+function compressImage(file, maxW = 1000, quality = 0.72) {
  return new Promise((resolve, reject) => {
  const img = new Image();
  const url = URL.createObjectURL(file);
@@ -275,12 +275,38 @@ function renderList() {
  });
 }
 
+/** Prefer /images/live/… over raw.githubusercontent.com for CDN speed */
+function normalizeImageUrl(url) {
+ if (!url || typeof url !== 'string') return url;
+ if (url.startsWith('data:')) return url;
+ const m = url.match(
+  /^https?:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+\/(images\/live\/[^?#]+)/i
+ );
+ if (m) return '/' + m[1];
+ return url;
+}
+
+function normalizeCatalogueImages(list) {
+ if (!Array.isArray(list)) return list || [];
+ return list.map((p) => {
+  if (!p || typeof p !== 'object') return p;
+  const out = { ...p };
+  if (out.image) out.image = normalizeImageUrl(out.image);
+  if (Array.isArray(out.slides)) {
+   out.slides = out.slides.map((s) =>
+    s && typeof s === 'object' ? { ...s, src: normalizeImageUrl(s.src) } : s
+   );
+  }
+  return out;
+ });
+}
+
 async function loadCatalogue() {
  // 1) Cloud
  try {
  const { res, data } = await api('/api/products', { headers: {} });
  if (res.ok && Array.isArray(data?.products) && data.products.length) {
- catalogue = data.products;
+ catalogue = normalizeCatalogueImages(data.products);
  localStorage.setItem(STORAGE_PRODUCTS, JSON.stringify(catalogue));
  return;
  }
@@ -290,14 +316,14 @@ async function loadCatalogue() {
  try {
  const raw = localStorage.getItem(STORAGE_PRODUCTS);
  if (raw) {
- catalogue = JSON.parse(raw);
+ catalogue = normalizeCatalogueImages(JSON.parse(raw));
  return;
  }
  } catch (_) {}
 
  // 3) Seed from products.js
  if (typeof window.products !== 'undefined' && Array.isArray(window.products)) {
- catalogue = JSON.parse(JSON.stringify(window.products));
+ catalogue = normalizeCatalogueImages(JSON.parse(JSON.stringify(window.products)));
  } else {
  catalogue = [];
  }

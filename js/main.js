@@ -4,6 +4,38 @@ const CART_KEY = 'cortenCart';
 const PUBLISHED_PRODUCTS_KEY = 'cortenProductsPublished';
 const HN_PRICES_KEY = 'cortenHouseNumberPrices';
 
+/**
+ * Prefer site CDN paths over raw.githubusercontent.com (slow, poor cache).
+ * Rewrites …/images/live/x.jpg → /images/live/x.jpg
+ */
+function normalizeImageUrl(url) {
+ if (!url || typeof url !== 'string') return url;
+ if (url.startsWith('data:')) return url;
+ const m = url.match(
+  /^https?:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+\/(images\/live\/[^?#]+)/i
+ );
+ if (m) return '/' + m[1];
+ // Already absolute github pages or other — leave alone
+ return url;
+}
+
+function normalizeProductImages(p) {
+ if (!p || typeof p !== 'object') return p;
+ const out = { ...p };
+ if (out.image) out.image = normalizeImageUrl(out.image);
+ if (Array.isArray(out.slides)) {
+  out.slides = out.slides.map((s) =>
+   s && typeof s === 'object' ? { ...s, src: normalizeImageUrl(s.src) } : s
+  );
+ }
+ return out;
+}
+
+function normalizeProductList(list) {
+ if (!Array.isArray(list)) return list;
+ return list.map(normalizeProductImages);
+}
+
 function seedProducts() {
  return typeof products !== 'undefined' && Array.isArray(products) ? products : [];
 }
@@ -13,7 +45,7 @@ function loadActiveProducts() {
  try {
  const raw = localStorage.getItem(PUBLISHED_PRODUCTS_KEY);
  if (raw) {
- const list = JSON.parse(raw);
+ const list = normalizeProductList(JSON.parse(raw));
  if (Array.isArray(list) && list.length) {
  window.products = list;
  return list;
@@ -34,11 +66,12 @@ async function loadActiveProductsAsync() {
  if (res.ok) {
  const data = await res.json();
  if (Array.isArray(data.products) && data.products.length) {
- window.products = data.products;
+ const list = normalizeProductList(data.products);
+ window.products = list;
  try {
- localStorage.setItem(PUBLISHED_PRODUCTS_KEY, JSON.stringify(data.products));
+ localStorage.setItem(PUBLISHED_PRODUCTS_KEY, JSON.stringify(list));
  } catch (_) {}
- return data.products;
+ return list;
  }
  }
  } catch (_) {}

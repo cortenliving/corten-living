@@ -34,7 +34,7 @@
   Cache-Control: public, max-age=0, must-revalidate
 
 /images/*
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=2592000, immutable
 
 /css/*
   Cache-Control: public, max-age=86400

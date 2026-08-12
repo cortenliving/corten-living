@@ -14,15 +14,15 @@
       "image": "/images/hn-three-holes.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/fca711a21be64af5.jpg",
+          "src": "/images/live/fca711a21be64af5.jpg",
           "label": "image (4)"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/d3ede6139fff422f.jpg",
+          "src": "/images/live/d3ede6139fff422f.jpg",
           "label": "image (5)"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6facff49e363457c.jpg",
+          "src": "/images/live/6facff49e363457c.jpg",
           "label": "content"
         }
       ]
@@ -80,7 +80,7 @@
       "image": "/images/product-hearts.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/a95e432bbc52426b.jpg",
+          "src": "/images/live/a95e432bbc52426b.jpg",
           "label": "2317403533"
         }
       ],
@@ -113,7 +113,7 @@
       "image": "/images/product-garden-1.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/3933bb5c3eb748d8.jpg",
+          "src": "/images/live/3933bb5c3eb748d8.jpg",
           "label": "love heart"
         }
       ],
@@ -150,10 +150,10 @@
       "tag": "Gift Idea",
       "featured": false,
       "link": "/product?id=corten-steel-love-heart-wall-art",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0863e2048c8843ff.jpg",
+      "image": "/images/live/0863e2048c8843ff.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0863e2048c8843ff.jpg",
+          "src": "/images/live/0863e2048c8843ff.jpg",
           "label": "ab64aca2-83b9-4b6c-a3ad-2917fdcbb09a"
         }
       ],
@@ -190,14 +190,14 @@
       "tag": "Bestseller",
       "featured": true,
       "link": "/product?id=corten-steel-stingray-wall-art-maori-kor",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
+      "image": "/images/live/1c8eef106bdf43a7.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/1c8eef106bdf43a7.jpg",
+          "src": "/images/live/1c8eef106bdf43a7.jpg",
           "label": "b4090cf8-06c1-47e5-9fbe-b9b0e75d5d21"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6ce982e7443f4f02.jpg",
+          "src": "/images/live/6ce982e7443f4f02.jpg",
           "label": "8cc828b1-852d-465a-9af8-69552096b2fe"
         }
       ],
@@ -248,10 +248,10 @@
       "tag": "Entrance",
       "featured": false,
       "link": "/product?id=corten-steel-welcome-sign",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0fbb4e97f8bd401a.jpg",
+      "image": "/images/live/0fbb4e97f8bd401a.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/0fbb4e97f8bd401a.jpg",
+          "src": "/images/live/0fbb4e97f8bd401a.jpg",
           "label": "2cc927be-8e6e-4475-af94-f6106670ad1d"
         }
       ],
@@ -287,10 +287,10 @@
       "tag": "Bestseller",
       "featured": false,
       "link": "/product?id=orten-steel-unicorn-wall-art-fantasy-des",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
+      "image": "/images/live/5585d5d018304f2f.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/5585d5d018304f2f.jpg",
+          "src": "/images/live/5585d5d018304f2f.jpg",
           "label": "06d5d87b-a02d-44c3-939f-861cb922c658"
         }
       ],
@@ -341,14 +341,14 @@
       "tag": "Garden Feature",
       "featured": false,
       "link": "/product?id=corten-steel-fantail-garden-stake",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8809cccf0f22480a.jpg",
+      "image": "/images/live/8809cccf0f22480a.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8809cccf0f22480a.jpg",
+          "src": "/images/live/8809cccf0f22480a.jpg",
           "label": "Fantail"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/2952f65396564150.jpg",
+          "src": "/images/live/2952f65396564150.jpg",
           "label": "Tui-Pigon-Fantail"
         }
       ],
@@ -373,14 +373,14 @@
       "tag": "Garden Feature",
       "featured": false,
       "link": "/product?id=corten-steel-kereru-garden-stake",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f48d3c2a81c54dfe.jpg",
+      "image": "/images/live/f48d3c2a81c54dfe.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/f48d3c2a81c54dfe.jpg",
+          "src": "/images/live/f48d3c2a81c54dfe.jpg",
           "label": "Pigon"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/001bf66b613d4107.jpg",
+          "src": "/images/live/001bf66b613d4107.jpg",
           "label": "Tui-Pigon-Fantail"
         }
       ],
@@ -404,14 +404,14 @@
       "tag": "Garden Feature",
       "featured": false,
       "link": "/product?id=corten-steel-tui-garden-stake",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/69ad873758a34070.jpg",
+      "image": "/images/live/69ad873758a34070.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/69ad873758a34070.jpg",
+          "src": "/images/live/69ad873758a34070.jpg",
           "label": "Tui "
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/6cb2eed593fe4616.jpg",
+          "src": "/images/live/6cb2eed593fe4616.jpg",
           "label": "Tui-Pigon-Fantail"
         }
       ],
@@ -435,22 +435,22 @@
       "tag": "Garden Feature",
       "featured": false,
       "link": "/product?id=set-of-3-corten-steel-native-bird-garden",
-      "image": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/089dc8cae5d04db3.jpg",
+      "image": "/images/live/089dc8cae5d04db3.jpg",
       "slides": [
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/089dc8cae5d04db3.jpg",
+          "src": "/images/live/089dc8cae5d04db3.jpg",
           "label": "Tui-Pigon-Fantail"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/8b287a100cbd4a43.jpg",
+          "src": "/images/live/8b287a100cbd4a43.jpg",
           "label": "Fantail"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/49962b836e814578.jpg",
+          "src": "/images/live/49962b836e814578.jpg",
           "label": "Pigon"
         },
         {
-          "src": "https://raw.githubusercontent.com/cortenliving/corten-living/main/images/live/bdcc32eae66e4696.jpg",
+          "src": "/images/live/bdcc32eae66e4696.jpg",
           "label": "Tui "
         }
       ],
