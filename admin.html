@@ -96,6 +96,20 @@ tailwind.config = {
  </div>
  <button type="button" id="btn-add" class="px-4 py-2 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">+ Add product</button>
  </div>
+ <div class="flex flex-wrap items-center gap-2 mb-4">
+ <label class="text-xs text-gray-500" for="list-filter-cat">Show</label>
+ <select id="list-filter-cat" class="bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-sm text-white focus:border-corten-500 outline-none">
+ <option value="all">All categories</option>
+ <option value="privacy">Privacy screens</option>
+ <option value="sculpture">Sculpture</option>
+ <option value="signage">Signage</option>
+ <option value="numbers">Numbers</option>
+ <option value="planter">Planter</option>
+ <option value="other">Other</option>
+ </select>
+ <input id="list-filter-q" type="search" placeholder="Search name…" class="bg-metal-950 border border-gray-700 rounded-sm px-2 py-1.5 text-sm text-white focus:border-corten-500 outline-none min-w-[10rem]">
+ <span id="list-count" class="text-xs text-gray-600"></span>
+ </div>
 
  <!-- Quick QR — no product required -->
  <div class="mb-6 bg-metal-850 border border-corten-900/40 rounded-sm p-5 space-y-3">
@@ -147,6 +161,7 @@ tailwind.config = {
  <div>
  <label class="block text-xs text-gray-400 mb-1">Category</label>
  <select id="f-category" class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2 text-white focus:border-corten-500 outline-none">
+ <option value="privacy">Privacy screen</option>
  <option value="sculpture">Sculpture</option>
  <option value="signage">Signage</option>
  <option value="numbers">Numbers</option>

@@ -201,27 +201,52 @@ tailwind.config = {
     return sizes[selectedIdx] || sizes[0];
   }
 
+  function isQuoteOnly() {
+    if (!product) return false;
+    const label = String(product.priceLabel || '').toLowerCase();
+    if (label.includes('quote') || label.includes('poa') || label.includes('on request')) return true;
+    const allZero = sizes.length && sizes.every((s) => !(Number(s.price) > 0));
+    if (allZero && !(Number(product.price) > 0)) return true;
+    return false;
+  }
+
   function updatePriceUI() {
     const s = selectedSize();
     if (!s) return;
     const qty = Math.max(1, parseInt(document.getElementById('pd-qty').value, 10) || 1);
     const unit = Number(s.price) || 0;
-    document.getElementById('pd-price').textContent = '$' + (unit * qty);
-    document.getElementById('pd-price-detail').textContent =
-      (s.label ? s.label + ' · ' : '') + (s.size || '') + (qty > 1 ? ' · ×' + qty : '');
+    const priceEl = document.getElementById('pd-price');
+    const detailEl = document.getElementById('pd-price-detail');
+    const btn = document.getElementById('pd-add-cart');
+    if (isQuoteOnly() && unit <= 0) {
+      priceEl.textContent = product.priceLabel || 'Quote for size';
+      detailEl.textContent = (s.size || product.size || '') + ' · priced by size';
+      if (btn) btn.textContent = 'Request a quote';
+    } else {
+      priceEl.textContent = '$' + (unit * qty);
+      detailEl.textContent =
+        (s.label ? s.label + ' · ' : '') + (s.size || '') + (qty > 1 ? ' · ×' + qty : '');
+      if (btn) btn.textContent = 'Add to Cart';
+    }
   }
 
   function renderSizes() {
     const box = document.getElementById('pd-sizes');
-    box.innerHTML = sizes.map((s, i) => `
+    const quote = isQuoteOnly();
+    box.innerHTML = sizes.map((s, i) => {
+      const unit = Number(s.price) || 0;
+      const priceBit = quote && unit <= 0
+        ? 'Quote for size'
+        : ('$' + unit);
+      return `
       <button type="button" data-size-idx="${i}"
         class="pd-opt size-btn text-left px-3 py-3 rounded-sm border ${i === selectedIdx ? 'is-active border-corten-500 text-white' : 'border-white/15 text-gray-200'} text-sm font-medium">
         <span class="block font-semibold">${escapeHtml(s.label || s.size)}</span>
         <span class="block text-xs mt-0.5 ${i === selectedIdx ? 'text-corten-200' : 'text-gray-400'}">
-          ${escapeHtml(s.size || '')}${s.size && s.label ? ' · ' : ''}$${Number(s.price) || 0}
+          ${escapeHtml(s.size || '')}${s.size && s.label ? ' · ' : ''}${escapeHtml(priceBit)}
         </span>
-      </button>
-    `).join('');
+      </button>`;
+    }).join('');
     box.querySelectorAll('.size-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         selectedIdx = parseInt(btn.dataset.sizeIdx, 10) || 0;
@@ -302,6 +327,15 @@ tailwind.config = {
   document.getElementById('pd-add-cart')?.addEventListener('click', () => {
     if (!product) return;
     const s = selectedSize();
+    // Quote-only panels (e.g. privacy screens) → custom quote with product name
+    if (isQuoteOnly() && !(Number(s?.price) > 0)) {
+      const q = new URLSearchParams({
+        product: product.name || product.id || '',
+        note: product.id || '',
+      });
+      window.location.href = '/quote?' + q.toString();
+      return;
+    }
     const qty = Math.max(1, Math.min(50, parseInt(document.getElementById('pd-qty').value, 10) || 1));
     const item = {
       id: (product.id || 'item') + '-' + Date.now(),

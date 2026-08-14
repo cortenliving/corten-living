@@ -36,6 +36,9 @@
 /images/*
   Cache-Control: public, max-age=2592000, immutable
 
+/images/privacy/*
+  Cache-Control: public, max-age=2592000, immutable
+
 /css/*
   Cache-Control: public, max-age=86400
 

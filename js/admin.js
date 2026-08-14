@@ -231,9 +231,24 @@ function renderList() {
  if (!list) return;
  if (!catalogue.length) {
  list.innerHTML = `<p class="text-gray-500 text-sm py-8 text-center">No products yet. Click <strong class="text-corten-400">Add product</strong>.</p>`;
+ const cnt = document.getElementById('list-count');
+ if (cnt) cnt.textContent = '';
  return;
  }
- list.innerHTML = catalogue.map((p, i) => `
+ const catFilter = document.getElementById('list-filter-cat')?.value || 'all';
+ const q = (document.getElementById('list-filter-q')?.value || '').trim().toLowerCase();
+ const indexed = catalogue.map((p, i) => ({ p, i })).filter(({ p }) => {
+  if (catFilter !== 'all' && (p.category || '') !== catFilter) return false;
+  if (q && !String(p.name || '').toLowerCase().includes(q) && !String(p.id || '').toLowerCase().includes(q)) return false;
+  return true;
+ });
+ const cnt = document.getElementById('list-count');
+ if (cnt) cnt.textContent = `${indexed.length} of ${catalogue.length}`;
+ if (!indexed.length) {
+  list.innerHTML = `<p class="text-gray-500 text-sm py-8 text-center">No products match this filter.</p>`;
+  return;
+ }
+ list.innerHTML = indexed.map(({ p, i }) => `
  <div class="flex items-center gap-4 p-4 bg-metal-850 border border-corten-900/40 rounded-sm hover:border-corten-700/60 transition">
  ${productThumb(p)}
  <div class="flex-1 min-w-0">
@@ -1541,6 +1556,8 @@ document.addEventListener('DOMContentLoaded', async () => {
  });
 
  document.getElementById('btn-add')?.addEventListener('click', () => openEditor(null));
+ document.getElementById('list-filter-cat')?.addEventListener('change', () => renderList());
+ document.getElementById('list-filter-q')?.addEventListener('input', () => renderList());
  document.getElementById('btn-add-size')?.addEventListener('click', () => {
   syncPendingSizesFromDom();
   pendingSizes.push({
