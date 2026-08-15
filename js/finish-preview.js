@@ -1,40 +1,41 @@
 /**
- * Live finish preview — recolour product photos for Corten / powdercoat.
- * Same-origin images only (canvas read). Caches results per src+colour.
+ * Live finish preview — recolour cut-out panel photos for Corten / powdercoat.
+ * Images are typically dark metal + light cutouts on white stage.
  */
 
-/** Approximate Dulux powdercoat / finish colours for on-screen preview */
+/** Strong, clearly different preview colours */
 const FINISH_PREVIEW_COLOURS = {
-  // Materials
-  corten: '#C45A28',
-  aluminium: '#A8B0B8',
-  // Dulux-style powdercoat (approx brand hues for preview)
-  ebony: '#1A1A1A',
-  'grey-friars': '#4A4F52',
-  ironsand: '#3D3835',
-  flaxpod: '#5C5346',
-  karaka: '#2F4A28',
-  'sandstone-grey': '#8A857C',
-  'thunder-grey': '#5C5E62',
-  'windsor-grey': '#6B6E71',
-  titania: '#D6D2C4',
-  'desert-sand': '#C4A882',
-  lichen: '#7A8B6F',
-  'mist-green': '#8FA08A',
-  'permanent-green': '#2E5A3C',
-  'new-denim-blue': '#3A5169',
-  'pioneer-red': '#8B2E2A',
-  'matt-charcoal': '#2C2C2C',
-  white: '#F2F0EB',
-  black: '#0D0D0D',
+  // Materials — corten is bright rust-orange so it reads clearly
+  corten: '#E8611A',
+  aluminium: '#C5CCD3',
+  // Dulux-style powdercoat (pushed for screen contrast)
+  ebony: '#111111',
+  'grey-friars': '#5A6166',
+  ironsand: '#4A403A',
+  flaxpod: '#6B5E4A',
+  karaka: '#3D6B32',
+  'sandstone-grey': '#A39E94',
+  'thunder-grey': '#6E7278',
+  'windsor-grey': '#7A7E82',
+  titania: '#E8E4D6',
+  'desert-sand': '#D4B48A',
+  lichen: '#8A9B72',
+  'mist-green': '#9BB094',
+  'permanent-green': '#2F7A45',
+  'new-denim-blue': '#3F6A8C',
+  'pioneer-red': '#B83A34',
+  'matt-charcoal': '#333333',
+  white: '#F7F5F0',
+  black: '#0A0A0A',
 };
 
+const PREVIEW_ALGO = 'v3';
 const _previewCache = new Map();
 const _imgCache = new Map();
 
 function hexToRgb(hex) {
   const h = String(hex || '').replace('#', '');
-  if (h.length !== 6) return { r: 180, g: 90, b: 40 };
+  if (h.length !== 6) return { r: 232, g: 97, b: 26 };
   return {
     r: parseInt(h.slice(0, 2), 16),
     g: parseInt(h.slice(2, 4), 16),
@@ -42,18 +43,19 @@ function hexToRgb(hex) {
   };
 }
 
+function clamp(n) {
+  return Math.max(0, Math.min(255, Math.round(n)));
+}
+
 function resolveFinishHex(opts) {
   if (!opts) return FINISH_PREVIEW_COLOURS.corten;
   if (opts.hex) return opts.hex;
   if (opts.finish === 'powdercoat' && opts.colourId) {
     const id = String(opts.colourId).toLowerCase();
-    if (FINISH_PREVIEW_COLOURS[id]) return FINISH_PREVIEW_COLOURS[id];
-    // try match from cfg colours with hex field
     if (opts.colourHex) return opts.colourHex;
+    if (FINISH_PREVIEW_COLOURS[id]) return FINISH_PREVIEW_COLOURS[id];
   }
-  if (opts.materialId === 'aluminium' || opts.finish === 'raw' && opts.materialId === 'aluminium') {
-    return FINISH_PREVIEW_COLOURS.aluminium;
-  }
+  if (opts.materialId === 'aluminium') return FINISH_PREVIEW_COLOURS.aluminium;
   if (opts.finish === 'raw' || opts.materialId === 'corten') {
     return FINISH_PREVIEW_COLOURS.corten;
   }
@@ -67,6 +69,7 @@ function loadImage(src) {
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('Image load failed'));
+    // cache-bust relative paths so we always get a clean bitmap
     img.src = src;
   });
   _imgCache.set(src, p);
@@ -74,12 +77,33 @@ function loadImage(src) {
 }
 
 /**
- * Recolour metal pixels while keeping luminance (cut-out / photo detail).
- * Leaves near-white / near-transparent pixels alone.
+ * Recolour metal (dark) pixels to target finish; keep cut-outs bright/white.
+ * Much stronger tint than luminance-only multiply so colours read clearly.
  */
-function colorizeImageData(imageData, hex) {
+function colorizeImageData(imageData, hex, isCorten) {
   const { r: tr, g: tg, b: tb } = hexToRgb(hex);
   const d = imageData.data;
+  const n = d.length / 4;
+
+  // Pass 1: find metal luminance range (ignore near-white cutouts)
+  let minM = 1;
+  let maxM = 0;
+  let metalCount = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 12) continue;
+    const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+    if (lum >= 0.78) continue; // cutout / white
+    metalCount++;
+    if (lum < minM) minM = lum;
+    if (lum > maxM) maxM = lum;
+  }
+  if (metalCount < 10) {
+    minM = 0.05;
+    maxM = 0.55;
+  }
+  const span = Math.max(0.12, maxM - minM);
+
+  // Pass 2: recolour
   for (let i = 0; i < d.length; i += 4) {
     const a = d[i + 3];
     if (a < 12) continue;
@@ -87,30 +111,45 @@ function colorizeImageData(imageData, hex) {
     const g = d[i + 1];
     const b = d[i + 2];
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    // Skip bright background / paper white
     const maxc = Math.max(r, g, b);
     const minc = Math.min(r, g, b);
-    if (lum > 0.93 && maxc - minc < 28) continue;
-    // Soften very light greys (photo background)
-    if (lum > 0.88 && maxc - minc < 18) continue;
 
-    // Preserve shading: darker areas stay darker
-    let m = Math.pow(Math.max(0.08, lum), 0.78);
-    // Slight contrast for powdercoat “paint” look
-    m = Math.min(1.15, m * 1.05);
-    d[i] = Math.min(255, Math.round(tr * m));
-    d[i + 1] = Math.min(255, Math.round(tg * m));
-    d[i + 2] = Math.min(255, Math.round(tb * m));
+    // Cut-outs / white holes — pure white so they pop on white stage
+    if (lum > 0.78 || (lum > 0.7 && maxc - minc < 25)) {
+      d[i] = 255;
+      d[i + 1] = 255;
+      d[i + 2] = 255;
+      continue;
+    }
+
+    // Metal: map original darkness → shade of target colour
+    // t=0 darkest metal, t=1 lightest metal
+    let t = (lum - minM) / span;
+    t = Math.max(0, Math.min(1, t));
+    // Keep visible midtones so colour shows (not near-black)
+    // Corten: brighter overall, stronger orange midtones
+    let shade;
+    if (isCorten) {
+      // 0.55–1.15 range — sharp bright rust
+      shade = 0.55 + 0.6 * Math.pow(t, 0.7);
+      // Boost red/orange channel a bit more
+      d[i] = clamp(tr * shade * 1.08);
+      d[i + 1] = clamp(tg * shade * 0.95);
+      d[i + 2] = clamp(tb * shade * 0.75);
+    } else {
+      // Powdercoat / aluminium: 0.48–1.05 — solid paint look with light shading
+      shade = 0.48 + 0.57 * Math.pow(t, 0.75);
+      d[i] = clamp(tr * shade);
+      d[i + 1] = clamp(tg * shade);
+      d[i + 2] = clamp(tb * shade);
+    }
   }
   return imageData;
 }
 
-/**
- * Returns a data-URL of the recolored image (or original src on failure).
- */
-async function colorizeImageSrc(src, hex, maxSide) {
+async function colorizeImageSrc(src, hex, maxSide, isCorten) {
   if (!src || !hex) return src;
-  const key = src + '|' + hex + '|' + (maxSide || 0);
+  const key = PREVIEW_ALGO + '|' + src + '|' + hex + '|' + (maxSide || 0) + '|' + (isCorten ? 'c' : 'p');
   if (_previewCache.has(key)) return _previewCache.get(key);
 
   const promise = (async () => {
@@ -119,7 +158,7 @@ async function colorizeImageSrc(src, hex, maxSide) {
       let w = img.naturalWidth || img.width;
       let h = img.naturalHeight || img.height;
       if (!w || !h) return src;
-      const cap = maxSide || 900;
+      const cap = maxSide || 1000;
       if (Math.max(w, h) > cap) {
         const s = cap / Math.max(w, h);
         w = Math.round(w * s);
@@ -129,11 +168,14 @@ async function colorizeImageSrc(src, hex, maxSide) {
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
+      // White fill behind in case of transparency
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
       const id = ctx.getImageData(0, 0, w, h);
-      colorizeImageData(id, hex);
+      colorizeImageData(id, hex, !!isCorten);
       ctx.putImageData(id, 0, 0);
-      return canvas.toDataURL('image/jpeg', 0.88);
+      return canvas.toDataURL('image/png');
     } catch (_) {
       return src;
     }
@@ -143,10 +185,6 @@ async function colorizeImageSrc(src, hex, maxSide) {
   return promise;
 }
 
-/**
- * Apply finish preview to an <img>. Stores original in data-preview-original.
- * opts: { finish, materialId, colourId, colourHex }
- */
 async function applyFinishPreview(imgEl, opts) {
   if (!imgEl) return;
   const original =
@@ -160,11 +198,18 @@ async function applyFinishPreview(imgEl, opts) {
   if (!src) return;
 
   const hex = resolveFinishHex(opts);
-  imgEl.style.opacity = '0.55';
+  const isCorten =
+    opts &&
+    opts.finish !== 'powdercoat' &&
+    (opts.materialId === 'corten' || !opts.materialId || opts.materialId !== 'aluminium');
+
+  imgEl.style.opacity = '0.45';
   try {
-    const out = await colorizeImageSrc(src, hex, 1000);
-    // Only update if still the same original (user may have switched slides)
-    if (imgEl.getAttribute('data-preview-original') === src || !imgEl.getAttribute('data-preview-original')) {
+    const out = await colorizeImageSrc(src, hex, 1000, isCorten);
+    if (
+      imgEl.getAttribute('data-preview-original') === src ||
+      !imgEl.getAttribute('data-preview-original')
+    ) {
       imgEl.src = out;
     }
   } finally {
@@ -181,42 +226,36 @@ function finishPreviewLabel(opts) {
   return 'Preview: Corten steel';
 }
 
-/** Draw a simple post silhouette onto canvas and tint (fallback if no photo) */
 function drawPostSilhouette(canvas, kind, hex) {
   const w = canvas.width;
   const h = canvas.height;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, w, h);
-  // Background
-  ctx.fillStyle = '#1a1410';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
   const { r, g, b } = hexToRgb(hex);
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, `rgb(${Math.min(255, r + 30)},${Math.min(255, g + 20)},${Math.min(255, b + 10)})`);
-  grad.addColorStop(0.5, hex);
-  grad.addColorStop(1, `rgb(${Math.max(0, r - 40)},${Math.max(0, g - 35)},${Math.max(0, b - 30)})`);
+  const grad = ctx.createLinearGradient(0, 0, w * 0.3, h);
+  grad.addColorStop(0, `rgb(${clamp(r + 40)},${clamp(g + 25)},${clamp(b + 15)})`);
+  grad.addColorStop(0.45, hex);
+  grad.addColorStop(1, `rgb(${clamp(r * 0.55)},${clamp(g * 0.55)},${clamp(b * 0.55)})`);
   ctx.fillStyle = grad;
-  ctx.strokeStyle = `rgba(0,0,0,0.35)`;
+  ctx.strokeStyle = 'rgba(0,0,0,0.28)';
   ctx.lineWidth = 2;
 
   const cx = w / 2;
-  const postW = w * 0.14;
+  const postW = w * 0.16;
   const top = h * 0.08;
-  const bottom = h * 0.88;
-  // Main upright
+  const bottom = h * 0.86;
   ctx.fillRect(cx - postW / 2, top, postW, bottom - top);
   ctx.strokeRect(cx - postW / 2, top, postW, bottom - top);
 
-  // Decorative cut pattern (privacy-style slots)
-  ctx.fillStyle = '#1a1410';
-  const slots = 7;
-  for (let i = 0; i < slots; i++) {
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 7; i++) {
     const sy = top + (bottom - top) * (0.12 + i * 0.1);
-    ctx.fillRect(cx - postW * 0.28, sy, postW * 0.56, 6);
+    ctx.fillRect(cx - postW * 0.3, sy, postW * 0.6, 7);
   }
 
   if (kind === 'corner' || (kind && String(kind).includes('cor'))) {
-    // Second leg for corner
     ctx.fillStyle = grad;
     ctx.fillRect(cx - postW / 2, top, postW, (bottom - top) * 0.55);
     ctx.save();
@@ -227,20 +266,22 @@ function drawPostSilhouette(canvas, kind, hex) {
     ctx.restore();
   }
 
-  if (kind === 'flange' || (kind && kind.includes('fl'))) {
-    // Base plate
+  if (kind === 'flange' || (kind && String(kind).includes('fl'))) {
     ctx.fillStyle = grad;
-    ctx.fillRect(cx - postW * 1.6, bottom - 8, postW * 3.2, 14);
-    ctx.strokeRect(cx - postW * 1.6, bottom - 8, postW * 3.2, 14);
-    // Bolt holes
-    ctx.fillStyle = '#1a1410';
-    [[-1.2, -2], [1.2, -2], [-1.2, 6], [1.2, 6]].forEach(([dx, dy]) => {
+    ctx.fillRect(cx - postW * 1.7, bottom - 10, postW * 3.4, 16);
+    ctx.strokeRect(cx - postW * 1.7, bottom - 10, postW * 3.4, 16);
+    ctx.fillStyle = '#ffffff';
+    [
+      [-1.25, -1],
+      [1.25, -1],
+      [-1.25, 8],
+      [1.25, 8],
+    ].forEach(([dx, dy]) => {
       ctx.beginPath();
-      ctx.arc(cx + postW * dx, bottom + dy, 3, 0, Math.PI * 2);
+      ctx.arc(cx + postW * dx, bottom + dy, 3.5, 0, Math.PI * 2);
       ctx.fill();
     });
   } else {
-    // Pointed tip for inground
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(cx - postW / 2, bottom);
@@ -251,9 +292,6 @@ function drawPostSilhouette(canvas, kind, hex) {
   }
 }
 
-/**
- * Apply preview to a post card: use photo if data-post-photo set, else silhouette.
- */
 async function applyPostPreview(containerEl, opts) {
   if (!containerEl) return;
   const hex = resolveFinishHex(opts);

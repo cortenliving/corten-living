@@ -76,10 +76,6 @@ tailwind.config = {
     background: #ffffff !important;
     border-color: rgba(183, 65, 14, 0.25);
   }
-  #pd-gallery-stage.is-privacy-stage #pd-finish-preview-label {
-    background: rgba(0, 0, 0, 0.55);
-    color: #f5f5f5;
-  }
   .gallery-thumb.is-privacy-thumb {
     background: #ffffff !important;
     border-color: rgba(0, 0, 0, 0.12) !important;
@@ -152,9 +148,13 @@ tailwind.config = {
           <div id="pd-gallery-stage" class="pd-card rounded-sm overflow-hidden aspect-[4/3] sm:aspect-[5/4] bg-metal-950 relative flex items-center justify-center">
             <img id="pd-main-img" src="" alt="" class="w-full h-full object-contain transition-opacity duration-200">
             <span id="pd-tag" class="hidden absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wider bg-corten-600 text-white px-2 py-0.5 rounded-sm"></span>
-            <span id="pd-finish-preview-label" class="hidden absolute bottom-3 left-3 right-3 z-10 text-[11px] sm:text-xs text-center px-2 py-1.5 rounded-sm bg-black/65 text-gray-200 border border-white/10"></span>
           </div>
-          <p id="pd-finish-hint" class="hidden text-[11px] text-gray-500 text-center">Finish preview updates when you change Corten / powdercoat colour (indicative colour only).</p>
+          <!-- Preview label sits under the image so it never covers the design -->
+          <div id="pd-finish-preview-bar" class="hidden flex flex-wrap items-center justify-center gap-2 py-2 px-3 rounded-sm bg-metal-900/80 border border-white/10">
+            <span id="pd-finish-swatch" class="inline-block w-4 h-4 rounded-sm border border-white/30 shrink-0" style="background:#E8611A"></span>
+            <span id="pd-finish-preview-label" class="text-[11px] sm:text-xs text-gray-200 text-center"></span>
+          </div>
+          <p id="pd-finish-hint" class="hidden text-[11px] text-gray-500 text-center">Indicative finish preview — try Corten vs powdercoat colours to compare.</p>
           <div id="pd-thumbs" class="grid grid-cols-4 sm:grid-cols-6 gap-2"></div>
         </div>
 
@@ -255,7 +255,7 @@ tailwind.config = {
 
 <script src="/js/products.js"></script>
 <script src="/js/privacy-config.js?v=5"></script>
-<script src="/js/finish-preview.js?v=1"></script>
+<script src="/js/finish-preview.js?v=3"></script>
 <script src="/js/main.js?v=6"></script>
 <script>
 (function () {
@@ -318,20 +318,25 @@ tailwind.config = {
 
   async function updateFinishPreview() {
     const img = document.getElementById('pd-main-img');
+    const bar = document.getElementById('pd-finish-preview-bar');
     const label = document.getElementById('pd-finish-preview-label');
+    const swatch = document.getElementById('pd-finish-swatch');
     const hint = document.getElementById('pd-finish-hint');
     if (!privacyMode || !img) {
-      if (label) label.classList.add('hidden');
+      if (bar) bar.classList.add('hidden');
       if (hint) hint.classList.add('hidden');
       return;
     }
     if (hint) hint.classList.remove('hidden');
+    if (bar) bar.classList.remove('hidden');
     const opts = getPrivFinishOpts();
+    const hex =
+      typeof resolveFinishHex === 'function' ? resolveFinishHex(opts) : '#E8611A';
     if (label) {
-      label.classList.remove('hidden');
       label.textContent =
         typeof finishPreviewLabel === 'function' ? finishPreviewLabel(opts) : 'Finish preview';
     }
+    if (swatch) swatch.style.background = hex;
     if (typeof applyFinishPreview === 'function') {
       await applyFinishPreview(img, opts);
     }
