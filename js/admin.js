@@ -1122,18 +1122,24 @@ function showLogin() {
 }
 
 function switchTab(tab) {
+ if (!tab) return;
  document.querySelectorAll('[data-tab-panel]').forEach((el) => {
  el.classList.toggle('hidden', el.dataset.tabPanel !== tab);
  });
- document.querySelectorAll('[data-tab]').forEach((btn) => {
+ document.querySelectorAll('button[data-tab], a[data-tab]').forEach((btn) => {
  const on = btn.dataset.tab === tab;
  btn.classList.toggle('text-corten-400', on);
  btn.classList.toggle('border-corten-600', on);
  btn.classList.toggle('text-gray-400', !on);
  btn.classList.toggle('border-transparent', !on);
+ btn.classList.toggle('font-medium', on);
  });
+ try {
+  if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
+ } catch (_) {}
  if (tab === 'promo') loadPromoCodes();
  if (tab === 'privacy') loadPrivacyAdmin();
+ document.querySelector('main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* —— Shipping admin —— */
@@ -1982,8 +1988,11 @@ document.addEventListener('DOMContentLoaded', async () => {
  toast('Local password updated for this browser');
  });
 
- document.querySelectorAll('[data-tab]').forEach((btn) => {
- btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+ document.querySelectorAll('button[data-tab], a[data-tab]').forEach((btn) => {
+ btn.addEventListener('click', (e) => {
+  e.preventDefault();
+  switchTab(btn.dataset.tab);
+ });
  });
 
  document.getElementById('btn-create-promo')?.addEventListener('click', () => createPromoCode());
@@ -2001,4 +2010,20 @@ document.addEventListener('DOMContentLoaded', async () => {
    addPrivacyColour();
   }
  });
+
+ // Open Privacy prices from Products shortcuts
+ const goPrivacy = () => switchTab('privacy');
+ document.getElementById('btn-goto-privacy-pricing')?.addEventListener('click', goPrivacy);
+ document.getElementById('btn-goto-privacy-pricing-2')?.addEventListener('click', goPrivacy);
+
+ // Deep link: /admin#privacy or /admin?tab=privacy
+ if (isLoggedIn()) {
+  const params = new URLSearchParams(location.search);
+  const tabFromQuery = params.get('tab');
+  const tabFromHash = (location.hash || '').replace(/^#/, '');
+  const startTab = tabFromQuery || tabFromHash;
+  if (startTab && document.querySelector(`[data-tab-panel="${startTab}"]`)) {
+   switchTab(startTab);
+  }
+ }
 });
