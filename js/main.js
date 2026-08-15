@@ -327,7 +327,10 @@ function filterProducts(cat, opts) {
     url.searchParams.set('filter', cat);
    } else {
     url.searchParams.delete('filter');
+    url.searchParams.delete('view');
    }
+   // Keep view=posts only when still on privacy
+   if (cat !== 'privacy') url.searchParams.delete('view');
    history.replaceState(null, '', url.pathname + url.search + (url.hash || ''));
   } catch (_) {}
  }

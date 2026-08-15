@@ -63,21 +63,53 @@ tailwind.config = {
 <main id="main" class="flex-1 flex flex-col">
 <section class="pt-28 pb-20 flex-1">
  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+ <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
  <div>
- <h1 class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">The Collection</h1>
- <p class="mt-2 text-gray-400 max-w-xl">Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the weathering begins outdoors — or ask for pre-weathered.</p>
+ <h1 id="shop-title" class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">The Collection</h1>
+ <p id="shop-subtitle" class="mt-2 text-gray-400 max-w-xl">Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the weathering begins outdoors — or ask for pre-weathered.</p>
  </div>
  <div class="flex gap-2 text-sm flex-wrap">
  <button type="button" onclick="filterProducts('all')" class="filter-btn active px-4 py-1.5 rounded-sm border border-corten-700 text-corten-400" data-filter="all">All</button>
  <button type="button" onclick="filterProducts('privacy')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="privacy">Privacy screens</button>
- <a href="/posts" class="px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400">Posts</a>
  <button type="button" onclick="filterProducts('sculpture')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="sculpture">Sculptures</button>
  <button type="button" onclick="filterProducts('signage')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="signage">Signage</button>
  <button type="button" onclick="filterProducts('numbers')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="numbers">Numbers</button>
  <button type="button" onclick="filterProducts('planter')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="planter">Planters</button>
  </div>
  </div>
+
+ <!-- Privacy hub: screens vs posts + design run-through -->
+ <div id="privacy-hub" class="hidden mb-10 space-y-8">
+ <div class="flex flex-col sm:flex-row gap-3">
+ <button type="button" id="privacy-view-panels" data-privacy-view="panels"
+ class="flex-1 text-left px-5 py-4 rounded-sm border-2 border-corten-500 bg-corten-950/40 transition">
+ <span class="block font-display text-lg text-white">Privacy screens</span>
+ <span class="block text-xs text-gray-400 mt-1">Decorative panels · material, thickness &amp; size</span>
+ </button>
+ <button type="button" id="privacy-view-posts" data-privacy-view="posts"
+ class="flex-1 text-left px-5 py-4 rounded-sm border-2 border-white/15 bg-metal-850 hover:border-corten-600/60 transition">
+ <span class="block font-display text-lg text-white">Fence posts</span>
+ <span class="block text-xs text-gray-400 mt-1">End · middle · corner · powdercoat Dulux colours</span>
+ </button>
+ </div>
+
+ <div id="privacy-runthrough" class="space-y-3">
+ <div class="flex items-end justify-between gap-3">
+ <div>
+ <h2 class="font-display text-xl text-white">Design run-through</h2>
+ <p class="text-xs text-gray-500 mt-0.5">Scroll or use the arrows to browse panel styles — tap a design to open it.</p>
+ </div>
+ <div class="flex gap-2 shrink-0">
+ <button type="button" id="privacy-rt-prev" class="w-9 h-9 rounded-sm border border-white/20 text-white hover:border-corten-500" aria-label="Previous designs">‹</button>
+ <button type="button" id="privacy-rt-next" class="w-9 h-9 rounded-sm border border-white/20 text-white hover:border-corten-500" aria-label="Next designs">›</button>
+ </div>
+ </div>
+ <div id="privacy-rt-track" class="flex gap-3 overflow-x-auto pb-2 scroll-smooth snap-x snap-mandatory" style="scrollbar-width: thin;"></div>
+ </div>
+ </div>
+
+ <div id="privacy-posts-panel" class="hidden mb-10"></div>
+
  <div id="product-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"></div>
 
  <div class="mt-16 p-6 sm:p-8 bg-metal-850 border border-corten-900/40 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -135,7 +167,8 @@ tailwind.config = {
 </footer>
 
 <script src="/js/products.js"></script>
-<script src="/js/privacy-config.js?v=4"></script>
-<script src="/js/main.js?v=4"></script>
+<script src="/js/privacy-config.js?v=5"></script>
+<script src="/js/main.js?v=5"></script>
+<script src="/js/shop-privacy.js?v=1"></script>
 </body>
 </html>
