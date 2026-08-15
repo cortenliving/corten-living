@@ -25,7 +25,7 @@ body { background: #050505; }
   color: #d56f3d;
 }
 
-/* Vibrant UI theme (toggle via localStorage cortenUiTheme) */
+/* Vibrant UI theme (always on) */
 html.ui-vibrant .filter-btn {
   padding: 0.55rem 1.1rem;
   border-radius: 9999px;
@@ -58,31 +58,25 @@ html.ui-vibrant .filter-btn.active:hover {
   filter: brightness(1.06);
 }
 
-/* Theme toggle chip */
-.ui-theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.35rem 0.7rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.35);
-  color: #9ca3af;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+/* Privacy hub: screens vs posts — match filter-tab energy */
+.privacy-hub-btn {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
-.ui-theme-toggle:hover {
-  border-color: rgba(229, 122, 72, 0.55);
-  color: #e57a48;
+.privacy-hub-btn:hover {
+  border-color: rgba(229, 122, 72, 0.65);
+  background: rgba(183, 65, 14, 0.14);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -10px rgba(183, 65, 14, 0.55);
 }
-html.ui-vibrant .ui-theme-toggle {
-  border-color: rgba(229, 122, 72, 0.4);
-  color: #ffb07a;
-  background: rgba(183, 65, 14, 0.2);
+.privacy-hub-btn.is-active {
+  border-color: transparent;
+  background: linear-gradient(145deg, rgba(229, 122, 72, 0.35) 0%, rgba(183, 65, 14, 0.22) 45%, rgba(26, 16, 12, 0.95) 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 176, 122, 0.4),
+    0 12px 32px -10px rgba(183, 65, 14, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .file-drop.dragover {
   border-color: #d56f3d;

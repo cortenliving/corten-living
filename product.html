@@ -197,7 +197,7 @@ tailwind.config = {
     filter: brightness(1.08);
   }
 </style>
-<script src="/js/ui-theme.js?v=1"></script>
+<script>document.documentElement.classList.add('ui-vibrant');</script>
 </head>
 <body class="pd-bright font-sans text-gray-100 antialiased min-h-screen flex flex-col">
 
@@ -245,14 +245,7 @@ tailwind.config = {
     </div>
 
     <div id="product-view" class="hidden">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-        <a id="pd-back-shop" href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
-        <button type="button" class="ui-theme-toggle" data-ui-theme-toggle title="Toggle vibrant / classic look">
-          <span data-ui-theme-label>Vibrant look</span>
-          <span class="opacity-60">·</span>
-          <span data-ui-theme-hint>Switch to classic</span>
-        </button>
-      </div>
+      <a id="pd-back-shop" href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
 
       <!-- One parent for sticky: gallery sticks while config scrolls (phone + desktop) -->
       <div class="pd-product-layout mt-4">

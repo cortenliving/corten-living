@@ -94,7 +94,7 @@ const products = [
  size: 'Various',
  price: 49,
  priceLabel: 'From $37',
- desc: 'Profile-cut outdoor silhouettes — animals, icons and custom shapes. Ask about stakes and pre-weathering.',
+ desc: 'Profile-cut outdoor silhouettes — animals, icons and custom shapes. Ask about stakes. Supplied raw to weather naturally.',
  tag: 'Custom',
  featured: false,
  link: '/product?id=garden-sculptures',

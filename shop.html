@@ -23,8 +23,8 @@ tailwind.config = {
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/site.css?v=2">
-<script src="/js/ui-theme.js?v=1"></script>
+<link rel="stylesheet" href="/css/site.css?v=4">
+<script>document.documentElement.classList.add('ui-vibrant');</script>
 </head>
 <body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
 
@@ -67,13 +67,8 @@ tailwind.config = {
  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
  <div>
  <h1 id="shop-title" class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">The Collection</h1>
- <p id="shop-subtitle" class="mt-2 text-gray-400 max-w-xl">Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the weathering begins outdoors — or ask for pre-weathered.</p>
+ <p id="shop-subtitle" class="mt-2 text-gray-400 max-w-xl">Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the natural weathering begins outdoors.</p>
  </div>
- <button type="button" class="ui-theme-toggle shrink-0 self-start sm:self-end" data-ui-theme-toggle title="Toggle vibrant / classic look">
- <span data-ui-theme-label>Vibrant look</span>
- <span class="opacity-60">·</span>
- <span data-ui-theme-hint>Switch to classic</span>
- </button>
  </div>
  <div class="flex gap-2 sm:gap-2.5 text-sm flex-wrap mb-10" id="shop-filters">
  <button type="button" onclick="filterProducts('all')" class="filter-btn active px-4 py-1.5 rounded-sm border border-corten-700 text-corten-400" data-filter="all">All</button>
@@ -88,14 +83,14 @@ tailwind.config = {
  <div id="privacy-hub" class="hidden mb-10 space-y-8">
  <div class="flex flex-col sm:flex-row gap-3">
  <button type="button" id="privacy-view-panels" data-privacy-view="panels"
- class="flex-1 text-left px-5 py-4 rounded-sm border-2 border-corten-500 bg-corten-950/40 transition">
+ class="privacy-hub-btn is-active flex-1 text-left px-5 py-4 rounded-sm border-2 transition">
  <span class="block font-display text-lg text-white">Privacy screens</span>
- <span class="block text-xs text-gray-400 mt-1">Decorative panels · material, thickness &amp; size</span>
+ <span class="block text-xs text-gray-300/90 mt-1">Decorative panels · material, thickness &amp; size</span>
  </button>
  <button type="button" id="privacy-view-posts" data-privacy-view="posts"
- class="flex-1 text-left px-5 py-4 rounded-sm border-2 border-white/15 bg-metal-850 hover:border-corten-600/60 transition">
+ class="privacy-hub-btn flex-1 text-left px-5 py-4 rounded-sm border-2 transition">
  <span class="block font-display text-lg text-white">Fence posts</span>
- <span class="block text-xs text-gray-400 mt-1">End · middle · corner · powdercoat Dulux colours</span>
+ <span class="block text-xs text-gray-300/90 mt-1">End · middle · corner · powdercoat Dulux colours</span>
  </button>
  </div>
 
@@ -176,6 +171,6 @@ tailwind.config = {
 <script src="/js/privacy-config.js?v=6"></script>
 <script src="/js/finish-preview.js?v=3"></script>
 <script src="/js/main.js?v=8"></script>
-<script src="/js/shop-privacy.js?v=4"></script>
+<script src="/js/shop-privacy.js?v=5"></script>
 </body>
 </html>

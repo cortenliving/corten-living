@@ -22,21 +22,18 @@
     if (mode === 'privacy') {
       title.textContent = 'Privacy screens';
       sub.textContent =
-        'Decorative panels and matching fence posts. Choose screens or posts below — powdercoat colours from the Dulux range.';
+        'Decorative panels and matching fence posts. Corten supplied raw; aluminium available powdercoated in Dulux colours.';
     } else {
       title.textContent = 'The Collection';
       sub.textContent =
-        'Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the weathering begins outdoors — or ask for pre-weathered.';
+        'Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the natural weathering begins outdoors.';
     }
   }
 
   function updatePrivacyViewButtons() {
     document.querySelectorAll('[data-privacy-view]').forEach((btn) => {
       const on = btn.dataset.privacyView === privacyView;
-      btn.classList.toggle('border-corten-500', on);
-      btn.classList.toggle('bg-corten-950/40', on);
-      btn.classList.toggle('border-white/15', !on);
-      btn.classList.toggle('bg-metal-850', !on);
+      btn.classList.toggle('is-active', on);
     });
   }
 
