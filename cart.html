@@ -54,8 +54,22 @@ tailwind.config = {
     box-shadow: inset 0 0 40px rgba(183, 65, 14, 0.12), 0 6px 20px rgba(0,0,0,0.35);
     min-height: 7.5rem;
   }
+  .cart-preview-stage.is-photo {
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06), 0 6px 20px rgba(0,0,0,0.25);
+  }
+  .cart-preview-stage.is-photo img,
+  .cart-preview-stage.is-photo canvas {
+    max-height: 10rem;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
   @media (min-width: 640px) {
     .cart-preview-stage { min-height: 9rem; }
+    .cart-preview-stage.is-photo img,
+    .cart-preview-stage.is-photo canvas { max-height: 12rem; }
   }
   .cart-preview-text {
     font-family: 'Arial Narrow', Arial, sans-serif;
@@ -362,7 +376,8 @@ tailwind.config = {
   </div>
 </footer>
 
-<script src="/js/main.js"></script>
+<script src="/js/finish-preview.js?v=3"></script>
+<script src="/js/main.js?v=7"></script>
 <script src="/js/shipping.js"></script>
 <script src="/js/address-nz.js"></script>
 <script>
@@ -714,7 +729,7 @@ function renderCart() {
     const sizeClass = charLen >= 5 ? 'chars-5plus' : (charLen >= 4 ? 'chars-4' : '');
     const safeChars = chars.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const typeLabel = String(item.type || 'Item').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const isPrivacy = item.category === 'privacy' || item.privacyConfig;
+    const isPrivacy = item.category === 'privacy' || !!item.privacyConfig;
     const isAcc = item.category === 'privacy-accessory';
     const detail = isPrivacy || isAcc
       ? [item.material, item.thickness, item.finish, item.colour, item.size, item.mount]
@@ -726,17 +741,38 @@ function renderCart() {
     const previewLabel = isPrivacy || isAcc
       ? String(item.chars || (isAcc ? 'POST' : 'PANEL')).slice(0, 14)
       : safeChars;
+    const imgSrc = String(item.image || '').trim();
+    const showPhoto = (isPrivacy || isAcc);
+    const cfg = item.privacyConfig || {};
+    const finishOpts = {
+      finish: isAcc ? 'powdercoat' : (cfg.finish || (item.finish === 'Powdercoat' ? 'powdercoat' : 'raw')),
+      materialId: cfg.materialId || (String(item.material || '').toLowerCase().includes('alum') ? 'aluminium' : 'corten'),
+      colourId: cfg.colourId || item.colourId || '',
+      colourHex: cfg.colourHex || item.colourHex || '',
+      colourLabel: cfg.colourLabel || item.colour || '',
+      postKind: item.postKind || item.productId || '',
+    };
+    let previewHtml;
+    if (showPhoto && imgSrc) {
+      previewHtml = `<img src="${imgSrc.replace(/"/g, '')}" alt="${typeLabel}" class="cart-item-photo" data-preview-original="${imgSrc.replace(/"/g, '')}" data-cart-finish='${JSON.stringify(finishOpts).replace(/'/g, '&#39;')}' loading="lazy">`;
+    } else if (showPhoto && isAcc) {
+      previewHtml = `<canvas class="cart-post-canvas" width="200" height="260" data-cart-post-finish='${JSON.stringify(finishOpts).replace(/'/g, '&#39;')}'></canvas>`;
+    } else if (showPhoto) {
+      previewHtml = `<span class="cart-preview-text chars-5plus select-none" aria-hidden="true">${previewLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`;
+    } else {
+      previewHtml = `<span class="cart-preview-text ${sizeClass} select-none" aria-hidden="true">${safeChars}</span>`;
+    }
     return `
     <div class="c-item rounded-sm overflow-hidden">
-      <div class="cart-preview-stage flex items-center justify-center px-4 py-5 sm:px-6 sm:py-7 overflow-x-auto">
-        <span class="cart-preview-text ${isPrivacy ? 'chars-5plus' : sizeClass} select-none" aria-hidden="true">${previewLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>
+      <div class="cart-preview-stage ${showPhoto ? 'is-photo' : ''} flex items-center justify-center px-4 py-5 sm:px-6 sm:py-7 overflow-x-auto">
+        ${previewHtml}
       </div>
       <div class="p-4 sm:p-5 flex justify-between items-start gap-4">
         <div class="min-w-0">
           <p class="font-display text-lg text-white">${typeLabel}</p>
           <p class="text-sm text-gray-300 mt-1">
-            ${isPrivacy
-              ? `<span class="text-gray-200">${detail || 'Privacy panel'}</span>`
+            ${isPrivacy || isAcc
+              ? `<span class="text-gray-200">${detail || (isAcc ? 'Fence post' : 'Privacy panel')}</span>`
               : `<span class="text-white font-semibold tracking-wider">${safeChars}</span>${detail ? ' · ' + detail : ''}`}
             ${(item.qty && item.qty > 1) ? ' · ×' + item.qty : ''}
           </p>
@@ -756,6 +792,26 @@ function renderCart() {
       else localStorage.setItem('cortenCart', JSON.stringify(next));
       renderCart();
     });
+  });
+
+  // Apply finish colour to privacy panel / post images in cart
+  items.querySelectorAll('img.cart-item-photo[data-cart-finish]').forEach((img) => {
+    try {
+      const opts = JSON.parse(img.getAttribute('data-cart-finish') || '{}');
+      if (typeof applyFinishPreview === 'function') applyFinishPreview(img, opts);
+    } catch (_) {}
+  });
+  items.querySelectorAll('canvas.cart-post-canvas[data-cart-post-finish]').forEach((canvas) => {
+    try {
+      const opts = JSON.parse(canvas.getAttribute('data-cart-post-finish') || '{}');
+      const hex =
+        typeof resolveFinishHex === 'function'
+          ? resolveFinishHex({ finish: 'powdercoat', colourId: opts.colourId, colourHex: opts.colourHex })
+          : opts.colourHex || '#5A6166';
+      if (typeof drawPostSilhouette === 'function') {
+        drawPostSilhouette(canvas, opts.postKind || 'inground', hex);
+      }
+    } catch (_) {}
   });
 
   updateShippingTotals();

@@ -789,6 +789,10 @@ tailwind.config = {
       const col = (privacyCfg?.powdercoat?.colours || []).find((c) => c.id === privSel.colourId);
       const cart = typeof getCart === 'function' ? getCart() : [];
       const ts = Date.now();
+      const panelImage =
+        (product.slides && product.slides[0] && product.slides[0].src) ||
+        product.image ||
+        '';
       cart.push({
         id: (product.id || 'item') + '-' + ts,
         productId: product.id,
@@ -801,9 +805,15 @@ tailwind.config = {
         thickness: calc.thickness?.label || (privSel.materialId === 'aluminium' ? '3 mm' : ''),
         finish: privSel.finish === 'powdercoat' ? 'Powdercoat' : 'Raw',
         colour: privSel.finish === 'powdercoat' ? (col?.label || '') : '',
+        image: panelImage,
         price: calc.unit,
         qty,
-        privacyConfig: { ...privSel, unit: calc.unit },
+        privacyConfig: {
+          ...privSel,
+          unit: calc.unit,
+          colourHex: col?.hex || '',
+          colourLabel: col?.label || '',
+        },
       });
       if (typeof setCart === 'function') setCart(cart);
       else {

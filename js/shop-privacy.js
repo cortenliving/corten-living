@@ -202,6 +202,12 @@
           return;
         }
         const cart = typeof getCart === 'function' ? getCart() : [];
+        const postImage =
+          acc.id === 'inground-post'
+            ? '/images/posts/inground-post.jpg'
+            : acc.id === 'flange-post'
+              ? '/images/posts/flange-post.jpg'
+              : '';
         cart.push({
           id: 'acc-' + acc.id + '-' + Date.now(),
           productId: acc.id,
@@ -213,6 +219,10 @@
           material: 'Powder coated steel',
           finish: 'Powdercoat',
           colour: col?.label || '',
+          colourId: col?.id || colourId || '',
+          colourHex: col?.hex || '',
+          image: postImage,
+          postKind: acc.id + (String(variantId || '').includes('cor') ? '-cor' : ''),
           price: unit,
           qty,
         });
