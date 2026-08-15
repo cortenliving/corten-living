@@ -191,18 +191,11 @@ tailwind.config = {
               <div>
                 <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Thickness</p>
                 <div id="pd-priv-thickness" class="grid grid-cols-3 gap-2"></div>
+                <p id="pd-priv-th-note" class="text-[11px] text-gray-500 mt-1.5"></p>
               </div>
               <div>
                 <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Panel size</p>
                 <div id="pd-priv-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-              </div>
-              <div id="pd-priv-accessories-wrap" class="pt-2 border-t border-white/10">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-                  <p class="text-sm font-semibold text-white tracking-wide">Accessories</p>
-                  <a href="/shop?filter=privacy&view=posts" class="text-xs text-corten-400 hover:text-corten-300">Browse posts →</a>
-                </div>
-                <p class="text-xs text-gray-500 mb-3">Optional posts (powder coated · Dulux colours). Or open <a href="/shop?filter=privacy&view=posts" class="text-corten-400 hover:underline">Privacy screens → Posts</a> for end / middle / corner posts on their own.</p>
-                <div id="pd-priv-accessories" class="space-y-3"></div>
               </div>
               <p class="text-xs text-gray-400" id="pd-priv-breakdown"></p>
             </div>
@@ -226,6 +219,21 @@ tailwind.config = {
             <button type="button" id="pd-add-cart" class="pd-cta w-full py-4 corten-gradient text-white font-bold text-lg rounded-sm tracking-wide transition">
               Add to Cart
             </button>
+            <!-- After panel is in cart: choose posts (accessories) or checkout -->
+            <div id="pd-next-steps" class="hidden space-y-3 pt-1">
+              <p class="text-sm text-center text-corten-300 font-medium">Panel added to cart ✓</p>
+              <div class="grid sm:grid-cols-2 gap-2">
+                <a id="pd-goto-posts" href="/shop?filter=privacy&view=posts"
+                  class="block text-center px-4 py-3 border border-corten-500 text-corten-300 text-sm font-semibold rounded-sm hover:bg-corten-950/40 transition">
+                  Add fence posts →
+                </a>
+                <a href="/cart"
+                  class="block text-center px-4 py-3 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90 transition">
+                  Go to checkout →
+                </a>
+              </div>
+              <p class="text-[11px] text-gray-500 text-center">Posts are chosen on the posts page (end / middle / corner + Dulux colour).</p>
+            </div>
             <p id="pd-cart-feedback" class="text-sm text-center text-corten-300 hidden">Added to cart ✓ — <a href="/cart" class="underline text-white">View cart</a></p>
 
             <p class="text-xs text-gray-400 text-center leading-relaxed">
@@ -271,9 +279,6 @@ tailwind.config = {
     finish: 'raw',
     colourId: '',
   };
-  /** { [accId]: { on, variantId, colourId, qty } } */
-  let privAcc = {};
-
   function escapeHtml(s) {
     return String(s || '')
       .replace(/&/g, '&amp;')
@@ -352,10 +357,6 @@ tailwind.config = {
     if (privacyMode) {
       const calc = getPrivCalc();
       if (!calc) return;
-      const acc =
-        typeof calcPrivacyAccessories === 'function'
-          ? calcPrivacyAccessories(privacyCfg, privAcc)
-          : { lines: [], total: 0 };
       if (calc.quoteOnly) {
         priceEl.textContent = 'Quote for size';
         detailEl.textContent = (calc.size?.size || '') + ' · we will confirm price';
@@ -363,18 +364,15 @@ tailwind.config = {
         if (br) br.textContent = 'Custom size — tell us dimensions on the quote form.';
       } else {
         const panelTotal = calc.unit * qty;
-        const grand = panelTotal + (acc.total || 0);
-        priceEl.textContent = '$' + grand;
+        priceEl.textContent = '$' + panelTotal;
         detailEl.textContent =
           (typeof privacySelectionSummary === 'function'
             ? privacySelectionSummary(privacyCfg, privSel, calc)
-            : '') +
-          (qty > 1 ? ' · ×' + qty + ' panels' : '') +
-          (acc.lines.length ? ' · +' + acc.lines.length + ' accessory type(s)' : '');
-        if (btn) btn.textContent = 'Add to Cart';
+            : '') + (qty > 1 ? ' · ×' + qty + ' panels' : '');
+        if (btn) btn.textContent = 'Add panel to cart';
         if (br) {
           const b = calc.breakdown || {};
-          let t =
+          br.textContent =
             'Panel: size $' +
             b.size +
             (b.material ? ' + mat $' + b.material : '') +
@@ -382,18 +380,8 @@ tailwind.config = {
             (b.powdercoat ? ' + coat $' + b.powdercoat : '') +
             ' = $' +
             calc.unit +
-            (qty > 1 ? ' ×' + qty : '');
-          if (acc.lines.length) {
-            t +=
-              ' · Posts: $' +
-              acc.total +
-              ' · Total $' +
-              grand +
-              ' excl. GST';
-          } else {
-            t += ' excl. GST';
-          }
-          br.textContent = t;
+            (qty > 1 ? ' ×' + qty : '') +
+            ' excl. GST';
         }
       }
       return;
@@ -484,7 +472,8 @@ tailwind.config = {
     const colours = en(pc.colours || []);
     const finishes = buildFinishPresets(privacyCfg);
 
-    if (!ths.find((t) => t.id === privSel.thicknessId) && ths[0]) privSel.thicknessId = ths[0].id;
+    if (privSel.materialId === 'aluminium') privSel.thicknessId = '3';
+    else if (!ths.find((t) => t.id === privSel.thicknessId) && ths[0]) privSel.thicknessId = ths[0].id;
     if (!szs.find((s) => s.id === privSel.sizeId) && szs[0]) privSel.sizeId = szs[0].id;
 
     // Ensure current material/finish maps to a valid preset
@@ -511,6 +500,8 @@ tailwind.config = {
         privSel.materialId = f.materialId;
         privSel.finish = f.finish;
         if (f.finish !== 'powdercoat') privSel.colourId = '';
+        // Aluminium panels: thickness locked to 3 mm
+        if (f.materialId === 'aluminium') privSel.thicknessId = '3';
         renderPrivacyConfig();
         updatePriceUI();
         updateFinishPreview();
@@ -539,9 +530,29 @@ tailwind.config = {
       privSel.colourId = '';
     }
 
-    // —— Thickness ——
+    // —— Thickness (aluminium = 3 mm only) ——
     const thBox = document.getElementById('pd-priv-thickness');
-    thBox.innerHTML = ths
+    let thsShow = ths;
+    if (privSel.materialId === 'aluminium') {
+      thsShow = ths.filter((t) => String(t.id) === '3' || Number(t.mm) === 3);
+      if (!thsShow.length) {
+        thsShow = [{ id: '3', label: '3 mm', mm: 3, adder: 0, enabled: true }];
+      }
+      // Force selection to 3 mm
+      if (!thsShow.find((t) => t.id === privSel.thicknessId)) {
+        privSel.thicknessId = thsShow[0].id;
+      }
+    } else if (!ths.find((t) => t.id === privSel.thicknessId) && ths[0]) {
+      privSel.thicknessId = ths[0].id;
+    }
+    const thNote = document.getElementById('pd-priv-th-note');
+    if (thNote) {
+      thNote.textContent =
+        privSel.materialId === 'aluminium'
+          ? 'Aluminium panels are 3 mm only.'
+          : 'Choose thickness (price adder applies).';
+    }
+    thBox.innerHTML = thsShow
       .map((t) => {
         const active = t.id === privSel.thicknessId;
         const add = Number(t.adder) || 0;
@@ -554,8 +565,13 @@ tailwind.config = {
         )}</div>`;
       })
       .join('');
+    thBox.className =
+      thsShow.length === 1
+        ? 'grid grid-cols-1 sm:grid-cols-1 gap-2 max-w-xs'
+        : 'grid grid-cols-3 gap-2';
     thBox.querySelectorAll('[data-priv-th]').forEach((el) => {
       el.querySelector('button')?.addEventListener('click', () => {
+        if (privSel.materialId === 'aluminium') return; // locked to 3 mm
         privSel.thicknessId = el.dataset.privTh;
         renderPrivacyConfig();
         updatePriceUI();
@@ -585,128 +601,7 @@ tailwind.config = {
       });
     });
 
-    // —— Accessories (posts) ——
-    renderPrivacyAccessories();
     updateFinishPreview();
-  }
-
-  function renderPrivacyAccessories() {
-    const box = document.getElementById('pd-priv-accessories');
-    const wrap = document.getElementById('pd-priv-accessories-wrap');
-    if (!box || !privacyCfg) return;
-    const accList =
-      typeof getPrivacyAccessories === 'function'
-        ? getPrivacyAccessories(privacyCfg)
-        : [];
-    const colours =
-      typeof enabledPrivacyList === 'function'
-        ? enabledPrivacyList(privacyCfg.powdercoat?.colours || [])
-        : (privacyCfg.powdercoat?.colours || []).filter((c) => c.enabled !== false);
-
-    if (!accList.length) {
-      if (wrap) wrap.classList.add('hidden');
-      box.innerHTML = '';
-      return;
-    }
-    if (wrap) wrap.classList.remove('hidden');
-
-    // Init selection state
-    accList.forEach((a) => {
-      if (!privAcc[a.id]) {
-        privAcc[a.id] = {
-          on: false,
-          variantId: a.variants[0]?.id || '',
-          colourId: colours[0]?.id || '',
-          qty: 1,
-        };
-      } else {
-        if (!a.variants.find((v) => v.id === privAcc[a.id].variantId)) {
-          privAcc[a.id].variantId = a.variants[0]?.id || '';
-        }
-        if (colours.length && !colours.find((c) => c.id === privAcc[a.id].colourId)) {
-          privAcc[a.id].colourId = colours[0].id;
-        }
-      }
-    });
-
-    box.innerHTML = accList
-      .map((a) => {
-        const sel = privAcc[a.id];
-        const price = Number(a.price) || 0;
-        const opts = (a.variants || [])
-          .map(
-            (v) =>
-              `<option value="${escapeHtml(v.id)}" ${
-                v.id === sel.variantId ? 'selected' : ''
-              }>${escapeHtml(v.label)}</option>`
-          )
-          .join('');
-        const colOpts = colours
-          .map(
-            (c) =>
-              `<option value="${escapeHtml(c.id)}" ${
-                c.id === sel.colourId ? 'selected' : ''
-              }>${escapeHtml(c.label)}</option>`
-          )
-          .join('');
-        return `
- <div class="border border-white/15 rounded-sm p-3 bg-black/20" data-acc-id="${escapeHtml(a.id)}">
-  <label class="flex items-start gap-3 cursor-pointer">
-   <input type="checkbox" data-acc-on class="mt-1 rounded border-gray-500 text-corten-600" ${
-     sel.on ? 'checked' : ''
-   }>
-   <span class="flex-1 min-w-0">
-    <span class="block text-sm font-medium text-white">${escapeHtml(a.name)}</span>
-    <span class="block text-corten-400 font-semibold text-sm mt-0.5">$${price.toFixed(2)}</span>
-    ${a.note ? `<span class="block text-[11px] text-gray-500 mt-0.5">${escapeHtml(a.note)}</span>` : ''}
-   </span>
-  </label>
-  <div class="mt-3 space-y-2 ${sel.on ? '' : 'opacity-40 pointer-events-none'}" data-acc-fields>
-   <div>
-    <label class="block text-[10px] uppercase text-gray-500 mb-1">Size / type</label>
-    <select data-acc-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-2 py-2 text-white text-xs focus:border-corten-400 outline-none">${opts}</select>
-   </div>
-   <div>
-    <label class="block text-[10px] uppercase text-gray-500 mb-1">Powdercoat colour (Dulux)</label>
-    <select data-acc-colour class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-2 py-2 text-white text-xs focus:border-corten-400 outline-none">${colOpts}</select>
-   </div>
-   <div class="flex items-center gap-2">
-    <label class="text-[10px] uppercase text-gray-500">Qty</label>
-    <input type="number" data-acc-qty min="1" max="50" value="${sel.qty || 1}" class="w-20 bg-[#120e0c] border border-white/20 rounded-sm px-2 py-1.5 text-white text-sm">
-   </div>
-  </div>
- </div>`;
-      })
-      .join('');
-
-    box.querySelectorAll('[data-acc-id]').forEach((row) => {
-      const id = row.dataset.accId;
-      const fields = row.querySelector('[data-acc-fields]');
-      row.querySelector('[data-acc-on]')?.addEventListener('change', (e) => {
-        if (!privAcc[id]) privAcc[id] = {};
-        privAcc[id].on = !!e.target.checked;
-        if (fields) {
-          fields.classList.toggle('opacity-40', !e.target.checked);
-          fields.classList.toggle('pointer-events-none', !e.target.checked);
-        }
-        updatePriceUI();
-      });
-      row.querySelector('[data-acc-variant]')?.addEventListener('change', (e) => {
-        if (!privAcc[id]) privAcc[id] = {};
-        privAcc[id].variantId = e.target.value;
-        updatePriceUI();
-      });
-      row.querySelector('[data-acc-colour]')?.addEventListener('change', (e) => {
-        if (!privAcc[id]) privAcc[id] = {};
-        privAcc[id].colourId = e.target.value;
-        updatePriceUI();
-      });
-      row.querySelector('[data-acc-qty]')?.addEventListener('input', (e) => {
-        if (!privAcc[id]) privAcc[id] = {};
-        privAcc[id].qty = Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1));
-        updatePriceUI();
-      });
-    });
   }
 
   function renderSizes() {
@@ -868,10 +763,6 @@ tailwind.config = {
     if (privacyMode) {
       const calc = getPrivCalc();
       if (!calc) return;
-      const acc =
-        typeof calcPrivacyAccessories === 'function'
-          ? calcPrivacyAccessories(privacyCfg, privAcc)
-          : { lines: [], total: 0 };
       if (calc.quoteOnly || !(calc.unit > 0)) {
         const q = new URLSearchParams({
           product: product.name || product.id || '',
@@ -881,9 +772,6 @@ tailwind.config = {
             calc.thickness?.label,
             calc.size?.size,
             privSel.finish === 'powdercoat' ? 'Powdercoat' : 'Raw',
-            ...acc.lines.map(
-              (l) => l.name + ': ' + l.variantLabel + ' / ' + l.colourLabel + ' ×' + l.qty
-            ),
           ]
             .filter(Boolean)
             .join(' · '),
@@ -891,6 +779,8 @@ tailwind.config = {
         window.location.href = '/quote?' + q.toString();
         return;
       }
+      // Aluminium always 3 mm
+      if (privSel.materialId === 'aluminium') privSel.thicknessId = '3';
       const qty = Math.max(1, Math.min(50, parseInt(document.getElementById('pd-qty').value, 10) || 1));
       const summary =
         typeof privacySelectionSummary === 'function'
@@ -908,41 +798,28 @@ tailwind.config = {
         size: calc.size?.size || '',
         mount: summary,
         material: calc.material?.label || '',
-        thickness: calc.thickness?.label || '',
+        thickness: calc.thickness?.label || (privSel.materialId === 'aluminium' ? '3 mm' : ''),
         finish: privSel.finish === 'powdercoat' ? 'Powdercoat' : 'Raw',
         colour: privSel.finish === 'powdercoat' ? (col?.label || '') : '',
         price: calc.unit,
         qty,
         privacyConfig: { ...privSel, unit: calc.unit },
       });
-      // Optional powder-coated posts (no brackets)
-      acc.lines.forEach((line, i) => {
-        cart.push({
-          id: 'acc-' + line.id + '-' + ts + '-' + i,
-          productId: line.id,
-          type: line.name,
-          category: 'privacy-accessory',
-          chars: line.variantLabel || 'Post',
-          size: line.variantLabel || '',
-          mount: 'Powder Coated · ' + (line.colourLabel || 'Dulux'),
-          material: 'Powder coated steel',
-          thickness: '',
-          finish: 'Powdercoat',
-          colour: line.colourLabel || '',
-          price: line.unit,
-          qty: line.qty,
-          parentPanelId: product.id,
-          parentPanelName: product.name,
-        });
-      });
       if (typeof setCart === 'function') setCart(cart);
       else {
         localStorage.setItem('cortenCart', JSON.stringify(cart));
         if (typeof updateCartCount === 'function') updateCartCount();
       }
-      const fb = document.getElementById('pd-cart-feedback');
-      fb.classList.remove('hidden');
-      setTimeout(() => fb.classList.add('hidden'), 4000);
+      // Next step: accessories (posts page) or checkout — not inline posts
+      const next = document.getElementById('pd-next-steps');
+      const postsLink = document.getElementById('pd-goto-posts');
+      if (postsLink) {
+        postsLink.href =
+          '/shop?filter=privacy&view=posts&from=' + encodeURIComponent(product.id || '');
+      }
+      if (next) next.classList.remove('hidden');
+      const btnEl = document.getElementById('pd-add-cart');
+      if (btnEl) btnEl.textContent = 'Add another panel';
       return;
     }
 
