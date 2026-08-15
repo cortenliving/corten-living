@@ -715,12 +715,16 @@ function renderCart() {
     const safeChars = chars.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const typeLabel = String(item.type || 'Item').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const isPrivacy = item.category === 'privacy' || item.privacyConfig;
-    const detail = isPrivacy
-      ? [item.material, item.thickness, item.finish, item.colour, item.size].filter(Boolean).join(' · ')
+    const isAcc = item.category === 'privacy-accessory';
+    const detail = isPrivacy || isAcc
+      ? [item.material, item.thickness, item.finish, item.colour, item.size, item.mount]
+          .filter(Boolean)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(' · ')
       : [item.size, item.mount].filter(Boolean).join(' · ');
     const line = money(item.price * (item.qty || 1));
-    const previewLabel = isPrivacy
-      ? String(item.chars || 'PANEL').slice(0, 12)
+    const previewLabel = isPrivacy || isAcc
+      ? String(item.chars || (isAcc ? 'POST' : 'PANEL')).slice(0, 14)
       : safeChars;
     return `
     <div class="c-item rounded-sm overflow-hidden">

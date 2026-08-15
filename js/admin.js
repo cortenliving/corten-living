@@ -1638,6 +1638,36 @@ function fillPrivacyAdminForm(cfg) {
    )
    .join('');
  }
+
+ // Accessories (posts)
+ const accBox = document.getElementById('priv-accessories-body');
+ if (accBox) {
+  const accs = c.accessories || [];
+  if (!accs.length) {
+   accBox.innerHTML =
+    '<p class="text-xs text-gray-600">No accessories configured. Save once after deploy to seed posts, or re-open this tab.</p>';
+  } else {
+   accBox.innerHTML = accs
+    .map(
+     (a, i) => `
+ <div class="border border-gray-800 rounded-sm p-4 bg-metal-950/40 space-y-2" data-priv-acc="${i}">
+  <div class="flex flex-wrap items-center gap-3">
+   <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
+    <input type="checkbox" data-acc-on ${a.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
+    On
+   </label>
+   <input type="text" data-acc-name value="${escapeHtml(a.name || '')}" class="flex-1 min-w-[12rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-medium">
+   <div class="flex items-center gap-1">
+    <span class="text-xs text-gray-500">$</span>
+    <input type="number" data-acc-price step="0.01" min="0" value="${Number(a.price) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-corten-400 font-semibold text-sm">
+   </div>
+  </div>
+  <p class="text-[11px] text-gray-600">${escapeHtml(a.id || '')} · ${(a.variants || []).length} size/type options · powdercoat only</p>
+ </div>`
+    )
+    .join('');
+  }
+ }
 }
 
 function collectPrivacyConfig() {
@@ -1698,11 +1728,28 @@ function collectPrivacyConfig() {
   };
  });
 
+ const accessories = [];
+ document.querySelectorAll('[data-priv-acc]').forEach((row, i) => {
+  const prev = (base.accessories || [])[i] || {};
+  accessories.push({
+   ...prev,
+   id: prev.id || 'acc-' + i,
+   name: row.querySelector('[data-acc-name]')?.value.trim() || prev.name || 'Accessory',
+   enabled: !!row.querySelector('[data-acc-on]')?.checked,
+   price: Number(row.querySelector('[data-acc-price]')?.value) || 0,
+   variants: Array.isArray(prev.variants) ? prev.variants : [],
+   note: prev.note || '',
+  });
+ });
+ // Keep full list from base if form not rendered yet
+ const accOut = accessories.length ? accessories : base.accessories || [];
+
  return {
   ...base,
   materials,
   thicknesses,
   sizes,
+  accessories: accOut,
   powdercoat: {
    ...(base.powdercoat || {}),
    enabled: !!document.getElementById('priv-pc-enabled')?.checked,

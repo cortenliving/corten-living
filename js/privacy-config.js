@@ -52,6 +52,45 @@ function defaultPrivacyConfig() {
       { id: 'sz-1800x1200', label: 'Wide', size: '1800 × 1200 mm', price: 640, enabled: true },
       { id: 'sz-custom', label: 'Custom size', size: 'Custom — we will confirm', price: 0, enabled: true, quoteOnly: true },
     ],
+    /** Optional posts sold with each panel (no mounting brackets). Posts are powdercoat only. */
+    accessories: [
+      {
+        id: 'inground-post',
+        name: 'Inground Fence Post - Soft Ground',
+        enabled: true,
+        price: 149,
+        note: 'Powder coated only (Dulux colours). For soft ground / fence runs.',
+        variants: [
+          { id: 'ig-1200-end', label: '1200/1650 mm / Powder Coated / End Post', enabled: true },
+          { id: 'ig-1200-mid', label: '1200/1650 mm / Powder Coated / Middle Post', enabled: true },
+          { id: 'ig-1200-cor', label: '1200/1650 mm / Powder Coated / Corner Post', enabled: true },
+          { id: 'ig-1500-end', label: '1500/2100 mm / Powder Coated / End Post', enabled: true },
+          { id: 'ig-1500-mid', label: '1500/2100 mm / Powder Coated / Middle Post', enabled: true },
+          { id: 'ig-1500-cor', label: '1500/2100 mm / Powder Coated / Corner Post', enabled: true },
+          { id: 'ig-1800-end', label: '1800/2400 mm / Powder Coated / End Post', enabled: true },
+          { id: 'ig-1800-mid', label: '1800/2400 mm / Powder Coated / Middle Post', enabled: true },
+          { id: 'ig-1800-cor', label: '1800/2400 mm / Powder Coated / Corner Post', enabled: true },
+        ],
+      },
+      {
+        id: 'flange-post',
+        name: 'Flange Mounted Fence Post - Deck & Patio',
+        enabled: true,
+        price: 169,
+        note: 'Powder coated only (Dulux colours). Flange base for deck / patio mounting.',
+        variants: [
+          { id: 'fl-1200-end', label: '1200 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
+          { id: 'fl-1200-mid', label: '1200 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
+          { id: 'fl-1200-cor', label: '1200 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
+          { id: 'fl-1500-end', label: '1500 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
+          { id: 'fl-1500-mid', label: '1500 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
+          { id: 'fl-1500-cor', label: '1500 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
+          { id: 'fl-1800-end', label: '1800 mm (75 × 75 mm) / Powder Coated / End Post', enabled: true },
+          { id: 'fl-1800-mid', label: '1800 mm (75 × 75 mm) / Powder Coated / Middle Post', enabled: true },
+          { id: 'fl-1800-cor', label: '1800 mm (75 × 75 mm) / Powder Coated / Corner Post', enabled: true },
+        ],
+      },
+    ],
     defaultMaterial: 'corten',
     defaultThickness: '3',
     defaultFinish: 'raw',
@@ -173,6 +212,52 @@ function isPrivacyProduct(p) {
 }
 
 // Browser globals
+/** Enabled accessories with only enabled variants */
+function getPrivacyAccessories(cfg) {
+  const c = cfg || defaultPrivacyConfig();
+  return (c.accessories || [])
+    .filter((a) => a && a.enabled !== false)
+    .map((a) => ({
+      ...a,
+      variants: (a.variants || []).filter((v) => v && v.enabled !== false),
+    }))
+    .filter((a) => a.variants.length > 0);
+}
+
+/**
+ * accessoriesSel: { [accessoryId]: { on, variantId, colourId, qty } }
+ * Returns { lines: [{ id, name, variant, colour, unit, qty, lineTotal }], total }
+ */
+function calcPrivacyAccessories(cfg, accessoriesSel) {
+  const list = getPrivacyAccessories(cfg);
+  const colours = enabledList(cfg?.powdercoat?.colours || []);
+  const lines = [];
+  let total = 0;
+  for (const acc of list) {
+    const sel = accessoriesSel && accessoriesSel[acc.id];
+    if (!sel || !sel.on) continue;
+    const qty = Math.max(1, Math.min(50, parseInt(sel.qty, 10) || 1));
+    const variant =
+      (acc.variants || []).find((v) => v.id === sel.variantId) || acc.variants[0];
+    const col = colours.find((c) => c.id === sel.colourId) || colours[0];
+    const unit = Number(acc.price) || 0;
+    const lineTotal = unit * qty;
+    total += lineTotal;
+    lines.push({
+      id: acc.id,
+      name: acc.name,
+      variantId: variant?.id || '',
+      variantLabel: variant?.label || '',
+      colourId: col?.id || '',
+      colourLabel: col?.label || '',
+      unit,
+      qty,
+      lineTotal,
+    });
+  }
+  return { lines, total };
+}
+
 if (typeof window !== 'undefined') {
   window.defaultPrivacyConfig = defaultPrivacyConfig;
   window.calcPrivacyPrice = calcPrivacyPrice;
@@ -181,4 +266,6 @@ if (typeof window !== 'undefined') {
   window.loadPrivacySettings = loadPrivacySettings;
   window.isPrivacyProduct = isPrivacyProduct;
   window.enabledPrivacyList = enabledList;
+  window.getPrivacyAccessories = getPrivacyAccessories;
+  window.calcPrivacyAccessories = calcPrivacyAccessories;
 }

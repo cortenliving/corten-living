@@ -49,6 +49,44 @@ const DEFAULT_CONFIG = {
     { id: 'sz-1800x1200', label: 'Wide', size: '1800 × 1200 mm', price: 640, enabled: true },
     { id: 'sz-custom', label: 'Custom size', size: 'Custom — we will confirm', price: 0, enabled: true, quoteOnly: true },
   ],
+  accessories: [
+    {
+      id: 'inground-post',
+      name: 'Inground Fence Post - Soft Ground',
+      enabled: true,
+      price: 149,
+      note: 'Powder coated only (Dulux colours).',
+      variants: [
+        { id: 'ig-1200-end', label: '1200/1650 mm / Powder Coated / End Post', enabled: true },
+        { id: 'ig-1200-mid', label: '1200/1650 mm / Powder Coated / Middle Post', enabled: true },
+        { id: 'ig-1200-cor', label: '1200/1650 mm / Powder Coated / Corner Post', enabled: true },
+        { id: 'ig-1500-end', label: '1500/2100 mm / Powder Coated / End Post', enabled: true },
+        { id: 'ig-1500-mid', label: '1500/2100 mm / Powder Coated / Middle Post', enabled: true },
+        { id: 'ig-1500-cor', label: '1500/2100 mm / Powder Coated / Corner Post', enabled: true },
+        { id: 'ig-1800-end', label: '1800/2400 mm / Powder Coated / End Post', enabled: true },
+        { id: 'ig-1800-mid', label: '1800/2400 mm / Powder Coated / Middle Post', enabled: true },
+        { id: 'ig-1800-cor', label: '1800/2400 mm / Powder Coated / Corner Post', enabled: true },
+      ],
+    },
+    {
+      id: 'flange-post',
+      name: 'Flange Mounted Fence Post - Deck & Patio',
+      enabled: true,
+      price: 169,
+      note: 'Powder coated only (Dulux colours).',
+      variants: [
+        { id: 'fl-1200-end', label: '1200 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
+        { id: 'fl-1200-mid', label: '1200 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
+        { id: 'fl-1200-cor', label: '1200 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
+        { id: 'fl-1500-end', label: '1500 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
+        { id: 'fl-1500-mid', label: '1500 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
+        { id: 'fl-1500-cor', label: '1500 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
+        { id: 'fl-1800-end', label: '1800 mm (75 × 75 mm) / Powder Coated / End Post', enabled: true },
+        { id: 'fl-1800-mid', label: '1800 mm (75 × 75 mm) / Powder Coated / Middle Post', enabled: true },
+        { id: 'fl-1800-cor', label: '1800 mm (75 × 75 mm) / Powder Coated / Corner Post', enabled: true },
+      ],
+    },
+  ],
   defaultMaterial: 'corten',
   defaultThickness: '3',
   defaultFinish: 'raw',
@@ -66,6 +104,10 @@ function mergeConfig(raw) {
     materials: Array.isArray(raw.materials) ? raw.materials : DEFAULT_CONFIG.materials,
     thicknesses: Array.isArray(raw.thicknesses) ? raw.thicknesses : DEFAULT_CONFIG.thicknesses,
     sizes: Array.isArray(raw.sizes) ? raw.sizes : DEFAULT_CONFIG.sizes,
+    accessories:
+      Array.isArray(raw.accessories) && raw.accessories.length
+        ? raw.accessories
+        : DEFAULT_CONFIG.accessories || [],
     powdercoat: {
       ...DEFAULT_CONFIG.powdercoat,
       ...(raw.powdercoat || {}),
