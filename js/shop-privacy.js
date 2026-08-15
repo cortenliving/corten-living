@@ -117,12 +117,22 @@
   ${accs
     .map((a) => {
       const vOpts = (a.variants || [])
-        .map((v) => `<option value="${esc(v.id)}">${esc(v.label)}</option>`)
+        .map((v) => {
+          const vp =
+            typeof getPostVariantPrice === 'function'
+              ? getPostVariantPrice(a, v)
+              : Number(v.price != null ? v.price : a.price) || 0;
+          return `<option value="${esc(v.id)}" data-price="${vp}">${esc(v.label)} — $${vp.toFixed(2)}</option>`;
+        })
         .join('');
       const cOpts = colours
         .map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)
         .join('');
-      const price = Number(a.price) || 0;
+      const firstV = (a.variants || [])[0];
+      const price =
+        typeof getPostVariantPrice === 'function'
+          ? getPostVariantPrice(a, firstV)
+          : Number(a.price) || 0;
       return `
  <article class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 sm:p-6" data-shop-post="${esc(a.id)}">
   <div class="grid sm:grid-cols-5 gap-4">
@@ -137,7 +147,7 @@
       <h3 class="font-display text-lg text-white">${esc(a.name)}</h3>
       <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated · Dulux colours')}</p>
      </div>
-     <p class="text-xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+     <p class="text-xl font-display font-bold text-corten-400" data-sp-price>$${price.toFixed(2)}</p>
     </div>
     <div class="mt-4 grid sm:grid-cols-2 gap-3">
      <div class="sm:col-span-2">
@@ -165,6 +175,15 @@
     function refreshShopPostPreview(card, acc) {
       const colourId = card.querySelector('[data-sp-colour]')?.value;
       const variantId = card.querySelector('[data-sp-variant]')?.value || '';
+      const variant = (acc.variants || []).find((v) => v.id === variantId) || acc.variants[0];
+      const priceEl = card.querySelector('[data-sp-price]');
+      if (priceEl) {
+        const vp =
+          typeof getPostVariantPrice === 'function'
+            ? getPostVariantPrice(acc, variant)
+            : Number(variant?.price != null ? variant.price : acc.price) || 0;
+        priceEl.textContent = '$' + vp.toFixed(2);
+      }
       const col = colours.find((c) => c.id === colourId);
       const box = card.querySelector('[data-post-preview]');
       if (typeof applyPostPreview === 'function') {
@@ -196,7 +215,10 @@
         const variant =
           (acc.variants || []).find((v) => v.id === variantId) || acc.variants[0];
         const col = colours.find((c) => c.id === colourId) || colours[0];
-        const unit = Number(acc.price) || 0;
+        const unit =
+          typeof getPostVariantPrice === 'function'
+            ? getPostVariantPrice(acc, variant)
+            : Number(variant?.price != null ? variant.price : acc.price) || 0;
         if (!(unit > 0)) {
           alert('This post is not priced yet — please contact us.');
           return;

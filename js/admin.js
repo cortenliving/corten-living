@@ -1639,7 +1639,7 @@ function fillPrivacyAdminForm(cfg) {
    .join('');
  }
 
- // Accessories (posts)
+ // Accessories (posts) — per-height prices
  const accBox = document.getElementById('priv-accessories-body');
  if (accBox) {
   const accs = c.accessories || [];
@@ -1648,23 +1648,52 @@ function fillPrivacyAdminForm(cfg) {
     '<p class="text-xs text-gray-600">No accessories configured. Save once after deploy to seed posts, or re-open this tab.</p>';
   } else {
    accBox.innerHTML = accs
-    .map(
-     (a, i) => `
- <div class="border border-gray-800 rounded-sm p-4 bg-metal-950/40 space-y-2" data-priv-acc="${i}">
+    .map((a, i) => {
+     const groups =
+      typeof getPostHeightGroups === 'function'
+       ? getPostHeightGroups(a)
+       : [];
+     const heightRows = groups.length
+      ? groups
+         .map(
+          (g, hi) => `
+ <tr data-acc-height="${escapeHtml(g.heightKey)}" class="border-t border-gray-800">
+  <td class="py-2 pr-3 text-sm text-gray-200">${escapeHtml(g.heightLabel)}</td>
+  <td class="py-2 pr-3 text-[11px] text-gray-600">End · Middle · Corner</td>
+  <td class="py-2">
+   <div class="flex items-center gap-1">
+    <span class="text-xs text-gray-500">$</span>
+    <input type="number" data-acc-height-price data-height-key="${escapeHtml(g.heightKey)}" step="0.01" min="0" value="${Number(g.price) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-corten-400 font-semibold text-sm">
+   </div>
+  </td>
+ </tr>`
+         )
+         .join('')
+      : `<tr><td colspan="3" class="py-2 text-xs text-gray-600">No height variants</td></tr>`;
+     return `
+ <div class="border border-gray-800 rounded-sm p-4 bg-metal-950/40 space-y-3" data-priv-acc="${i}">
   <div class="flex flex-wrap items-center gap-3">
    <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
     <input type="checkbox" data-acc-on ${a.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
     On
    </label>
    <input type="text" data-acc-name value="${escapeHtml(a.name || '')}" class="flex-1 min-w-[12rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-medium">
-   <div class="flex items-center gap-1">
-    <span class="text-xs text-gray-500">$</span>
-    <input type="number" data-acc-price step="0.01" min="0" value="${Number(a.price) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-corten-400 font-semibold text-sm">
-   </div>
   </div>
-  <p class="text-[11px] text-gray-600">${escapeHtml(a.id || '')} · ${(a.variants || []).length} size/type options · powdercoat only</p>
- </div>`
-    )
+  <p class="text-[11px] text-gray-600">${escapeHtml(a.id || '')} · powdercoat only · set price per height below (applies to end, middle &amp; corner)</p>
+  <div class="overflow-x-auto">
+   <table class="w-full text-sm text-left">
+    <thead class="text-[10px] uppercase text-gray-500">
+     <tr>
+      <th class="pb-2 pr-3">Height / size</th>
+      <th class="pb-2 pr-3">Post types</th>
+      <th class="pb-2">Price $</th>
+     </tr>
+    </thead>
+    <tbody>${heightRows}</tbody>
+   </table>
+  </div>
+ </div>`;
+    })
     .join('');
   }
  }
@@ -1731,13 +1760,38 @@ function collectPrivacyConfig() {
  const accessories = [];
  document.querySelectorAll('[data-priv-acc]').forEach((row, i) => {
   const prev = (base.accessories || [])[i] || {};
+  // heightKey → price from admin table
+  const heightPrices = {};
+  row.querySelectorAll('[data-acc-height-price]').forEach((inp) => {
+   const hk = inp.getAttribute('data-height-key') || '';
+   if (hk) heightPrices[hk] = Number(inp.value) || 0;
+  });
+  const variants = (Array.isArray(prev.variants) ? prev.variants : []).map((v) => {
+   const hk =
+    typeof postHeightKey === 'function' ? postHeightKey(v) : v.heightKey || '';
+   const next = { ...v };
+   if (hk && Object.prototype.hasOwnProperty.call(heightPrices, hk)) {
+    next.price = heightPrices[hk];
+    next.heightKey = hk;
+    if (!next.heightLabel && typeof postHeightLabel === 'function') {
+     next.heightLabel = postHeightLabel(v);
+    }
+   }
+   return next;
+  });
+  // Default accessory price = cheapest height (for fallbacks)
+  const heightVals = Object.values(heightPrices).filter((n) => n > 0);
+  const defaultPrice =
+   heightVals.length > 0
+    ? Math.min(...heightVals)
+    : Number(prev.price) || 0;
   accessories.push({
    ...prev,
    id: prev.id || 'acc-' + i,
    name: row.querySelector('[data-acc-name]')?.value.trim() || prev.name || 'Accessory',
    enabled: !!row.querySelector('[data-acc-on]')?.checked,
-   price: Number(row.querySelector('[data-acc-price]')?.value) || 0,
-   variants: Array.isArray(prev.variants) ? prev.variants : [],
+   price: defaultPrice,
+   variants,
    note: prev.note || '',
   });
  });

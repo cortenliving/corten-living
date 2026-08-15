@@ -61,15 +61,15 @@ function defaultPrivacyConfig() {
         price: 149,
         note: 'Powder coated only (Dulux colours). For soft ground / fence runs.',
         variants: [
-          { id: 'ig-1200-end', label: '1200/1650 mm / Powder Coated / End Post', enabled: true },
-          { id: 'ig-1200-mid', label: '1200/1650 mm / Powder Coated / Middle Post', enabled: true },
-          { id: 'ig-1200-cor', label: '1200/1650 mm / Powder Coated / Corner Post', enabled: true },
-          { id: 'ig-1500-end', label: '1500/2100 mm / Powder Coated / End Post', enabled: true },
-          { id: 'ig-1500-mid', label: '1500/2100 mm / Powder Coated / Middle Post', enabled: true },
-          { id: 'ig-1500-cor', label: '1500/2100 mm / Powder Coated / Corner Post', enabled: true },
-          { id: 'ig-1800-end', label: '1800/2400 mm / Powder Coated / End Post', enabled: true },
-          { id: 'ig-1800-mid', label: '1800/2400 mm / Powder Coated / Middle Post', enabled: true },
-          { id: 'ig-1800-cor', label: '1800/2400 mm / Powder Coated / Corner Post', enabled: true },
+          { id: 'ig-1200-end', label: '1200/1650 mm / Powder Coated / End Post', heightKey: 'ig-1200', heightLabel: '1200/1650 mm', price: 149, enabled: true },
+          { id: 'ig-1200-mid', label: '1200/1650 mm / Powder Coated / Middle Post', heightKey: 'ig-1200', heightLabel: '1200/1650 mm', price: 149, enabled: true },
+          { id: 'ig-1200-cor', label: '1200/1650 mm / Powder Coated / Corner Post', heightKey: 'ig-1200', heightLabel: '1200/1650 mm', price: 149, enabled: true },
+          { id: 'ig-1500-end', label: '1500/2100 mm / Powder Coated / End Post', heightKey: 'ig-1500', heightLabel: '1500/2100 mm', price: 169, enabled: true },
+          { id: 'ig-1500-mid', label: '1500/2100 mm / Powder Coated / Middle Post', heightKey: 'ig-1500', heightLabel: '1500/2100 mm', price: 169, enabled: true },
+          { id: 'ig-1500-cor', label: '1500/2100 mm / Powder Coated / Corner Post', heightKey: 'ig-1500', heightLabel: '1500/2100 mm', price: 169, enabled: true },
+          { id: 'ig-1800-end', label: '1800/2400 mm / Powder Coated / End Post', heightKey: 'ig-1800', heightLabel: '1800/2400 mm', price: 189, enabled: true },
+          { id: 'ig-1800-mid', label: '1800/2400 mm / Powder Coated / Middle Post', heightKey: 'ig-1800', heightLabel: '1800/2400 mm', price: 189, enabled: true },
+          { id: 'ig-1800-cor', label: '1800/2400 mm / Powder Coated / Corner Post', heightKey: 'ig-1800', heightLabel: '1800/2400 mm', price: 189, enabled: true },
         ],
       },
       {
@@ -79,15 +79,15 @@ function defaultPrivacyConfig() {
         price: 169,
         note: 'Powder coated only (Dulux colours). Flange base for deck / patio mounting.',
         variants: [
-          { id: 'fl-1200-end', label: '1200 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
-          { id: 'fl-1200-mid', label: '1200 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
-          { id: 'fl-1200-cor', label: '1200 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
-          { id: 'fl-1500-end', label: '1500 mm (65 × 65 mm) / Powder Coated / End Post', enabled: true },
-          { id: 'fl-1500-mid', label: '1500 mm (65 × 65 mm) / Powder Coated / Middle Post', enabled: true },
-          { id: 'fl-1500-cor', label: '1500 mm (65 × 65 mm) / Powder Coated / Corner Post', enabled: true },
-          { id: 'fl-1800-end', label: '1800 mm (75 × 75 mm) / Powder Coated / End Post', enabled: true },
-          { id: 'fl-1800-mid', label: '1800 mm (75 × 75 mm) / Powder Coated / Middle Post', enabled: true },
-          { id: 'fl-1800-cor', label: '1800 mm (75 × 75 mm) / Powder Coated / Corner Post', enabled: true },
+          { id: 'fl-1200-end', label: '1200 mm (65 × 65 mm) / Powder Coated / End Post', heightKey: 'fl-1200', heightLabel: '1200 mm (65 × 65 mm)', price: 169, enabled: true },
+          { id: 'fl-1200-mid', label: '1200 mm (65 × 65 mm) / Powder Coated / Middle Post', heightKey: 'fl-1200', heightLabel: '1200 mm (65 × 65 mm)', price: 169, enabled: true },
+          { id: 'fl-1200-cor', label: '1200 mm (65 × 65 mm) / Powder Coated / Corner Post', heightKey: 'fl-1200', heightLabel: '1200 mm (65 × 65 mm)', price: 169, enabled: true },
+          { id: 'fl-1500-end', label: '1500 mm (65 × 65 mm) / Powder Coated / End Post', heightKey: 'fl-1500', heightLabel: '1500 mm (65 × 65 mm)', price: 189, enabled: true },
+          { id: 'fl-1500-mid', label: '1500 mm (65 × 65 mm) / Powder Coated / Middle Post', heightKey: 'fl-1500', heightLabel: '1500 mm (65 × 65 mm)', price: 189, enabled: true },
+          { id: 'fl-1500-cor', label: '1500 mm (65 × 65 mm) / Powder Coated / Corner Post', heightKey: 'fl-1500', heightLabel: '1500 mm (65 × 65 mm)', price: 189, enabled: true },
+          { id: 'fl-1800-end', label: '1800 mm (75 × 75 mm) / Powder Coated / End Post', heightKey: 'fl-1800', heightLabel: '1800 mm (75 × 75 mm)', price: 209, enabled: true },
+          { id: 'fl-1800-mid', label: '1800 mm (75 × 75 mm) / Powder Coated / Middle Post', heightKey: 'fl-1800', heightLabel: '1800 mm (75 × 75 mm)', price: 209, enabled: true },
+          { id: 'fl-1800-cor', label: '1800 mm (75 × 75 mm) / Powder Coated / Corner Post', heightKey: 'fl-1800', heightLabel: '1800 mm (75 × 75 mm)', price: 209, enabled: true },
         ],
       },
     ],
@@ -212,6 +212,59 @@ function isPrivacyProduct(p) {
 }
 
 // Browser globals
+/** Height group key from variant id (ig-1200-end → ig-1200) or heightKey field */
+function postHeightKey(v) {
+  if (!v) return '';
+  if (v.heightKey) return String(v.heightKey);
+  const id = String(v.id || '');
+  const m = id.match(/^(ig|fl)-(\d+)/i);
+  if (m) return m[1].toLowerCase() + '-' + m[2];
+  // fallback: first segment of label before " / "
+  const lab = String(v.label || '');
+  const slash = lab.indexOf(' / ');
+  return slash > 0 ? lab.slice(0, slash) : id;
+}
+
+function postHeightLabel(v) {
+  if (v?.heightLabel) return v.heightLabel;
+  const lab = String(v?.label || '');
+  const slash = lab.indexOf(' / ');
+  return slash > 0 ? lab.slice(0, slash) : lab || postHeightKey(v);
+}
+
+/** Unique heights for admin pricing UI */
+function getPostHeightGroups(acc) {
+  const map = new Map();
+  (acc?.variants || []).forEach((v) => {
+    if (!v || v.enabled === false) return;
+    const key = postHeightKey(v);
+    if (!key) return;
+    if (!map.has(key)) {
+      const p =
+        v.price != null && v.price !== ''
+          ? Number(v.price)
+          : Number(acc.price) || 0;
+      map.set(key, {
+        heightKey: key,
+        heightLabel: postHeightLabel(v),
+        price: Number.isFinite(p) ? p : 0,
+        variantIds: [v.id],
+      });
+    } else {
+      map.get(key).variantIds.push(v.id);
+    }
+  });
+  return Array.from(map.values());
+}
+
+/** Unit price for a selected post variant (height-specific, else accessory default) */
+function getPostVariantPrice(acc, variant) {
+  if (variant && variant.price != null && variant.price !== '' && Number.isFinite(Number(variant.price))) {
+    return Number(variant.price);
+  }
+  return Number(acc?.price) || 0;
+}
+
 /** Enabled accessories with only enabled variants */
 function getPrivacyAccessories(cfg) {
   const c = cfg || defaultPrivacyConfig();
@@ -240,7 +293,7 @@ function calcPrivacyAccessories(cfg, accessoriesSel) {
     const variant =
       (acc.variants || []).find((v) => v.id === sel.variantId) || acc.variants[0];
     const col = colours.find((c) => c.id === sel.colourId) || colours[0];
-    const unit = Number(acc.price) || 0;
+    const unit = getPostVariantPrice(acc, variant);
     const lineTotal = unit * qty;
     total += lineTotal;
     lines.push({
@@ -268,4 +321,8 @@ if (typeof window !== 'undefined') {
   window.enabledPrivacyList = enabledList;
   window.getPrivacyAccessories = getPrivacyAccessories;
   window.calcPrivacyAccessories = calcPrivacyAccessories;
+  window.getPostHeightGroups = getPostHeightGroups;
+  window.getPostVariantPrice = getPostVariantPrice;
+  window.postHeightKey = postHeightKey;
+  window.postHeightLabel = postHeightLabel;
 }

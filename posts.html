@@ -108,7 +108,7 @@ tailwind.config = {
   </div>
 </footer>
 
-<script src="/js/privacy-config.js?v=5"></script>
+<script src="/js/privacy-config.js?v=6"></script>
 <script src="/js/finish-preview.js?v=3"></script>
 <script src="/js/main.js?v=5"></script>
 <script>
@@ -129,7 +129,10 @@ tailwind.config = {
         ? enabledPrivacyList(window._postsCfg?.powdercoat?.colours || [])
         : (window._postsCfg?.powdercoat?.colours || []).filter((c) => c.enabled !== false);
     const col = colours.find((c) => c.id === colourId) || colours[0];
-    const unit = Number(acc.price) || 0;
+    const unit =
+      typeof getPostVariantPrice === 'function'
+        ? getPostVariantPrice(acc, variant)
+        : Number(variant?.price != null ? variant.price : acc.price) || 0;
     const q = Math.max(1, Math.min(50, parseInt(qty, 10) || 1));
     if (!(unit > 0)) {
       alert('This post is not priced yet — please contact us for a quote.');
@@ -202,19 +205,29 @@ tailwind.config = {
 
     list.innerHTML = accs
       .map((a) => {
-        const vOpts = (a.variants || [])
-          .map((v) => `<option value="${esc(v.id)}">${esc(v.label)}</option>`)
-          .join('');
         const cOpts = colours
           .map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)
           .join('');
-        const price = Number(a.price) || 0;
+        const firstV = (a.variants || [])[0];
+        const price =
+          typeof getPostVariantPrice === 'function'
+            ? getPostVariantPrice(a, firstV)
+            : Number(a.price) || 0;
         const photo =
           a.id === 'inground-post'
             ? '/images/posts/inground-post.jpg'
             : a.id === 'flange-post'
               ? '/images/posts/flange-post.jpg'
               : '';
+        const vOptsPriced = (a.variants || [])
+          .map((v) => {
+            const vp =
+              typeof getPostVariantPrice === 'function'
+                ? getPostVariantPrice(a, v)
+                : Number(v.price != null ? v.price : a.price) || 0;
+            return `<option value="${esc(v.id)}" data-price="${vp}">${esc(v.label)} — $${vp.toFixed(2)}</option>`;
+          })
+          .join('');
         return `
  <article class="post-card rounded-sm p-5 sm:p-6" data-post-id="${esc(a.id)}" data-post-photo="${esc(photo)}">
   <div class="grid sm:grid-cols-5 gap-5">
@@ -229,13 +242,13 @@ tailwind.config = {
       <h2 class="font-display text-xl text-white">${esc(a.name)}</h2>
       <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated only · Dulux colours')}</p>
      </div>
-     <p class="text-2xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+     <p class="text-2xl font-display font-bold text-corten-400" data-post-price>$${price.toFixed(2)}</p>
     </div>
     <div class="mt-5 grid sm:grid-cols-2 gap-3">
      <div class="sm:col-span-2">
       <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Size / post type</label>
-      <select data-post-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${vOpts}</select>
-      <p class="text-[11px] text-gray-600 mt-1">End, middle or corner post — pick the size that matches your run.</p>
+      <select data-post-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${vOptsPriced}</select>
+      <p class="text-[11px] text-gray-600 mt-1">End, middle or corner — price updates with height.</p>
      </div>
      <div>
       <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Powdercoat colour (Dulux)</label>
@@ -259,6 +272,15 @@ tailwind.config = {
     function refreshPostPreview(card, acc) {
       const colourId = card.querySelector('[data-post-colour]')?.value;
       const variantId = card.querySelector('[data-post-variant]')?.value || '';
+      const variant = (acc.variants || []).find((v) => v.id === variantId) || acc.variants[0];
+      const priceEl = card.querySelector('[data-post-price]');
+      if (priceEl) {
+        const vp =
+          typeof getPostVariantPrice === 'function'
+            ? getPostVariantPrice(acc, variant)
+            : Number(variant?.price != null ? variant.price : acc.price) || 0;
+        priceEl.textContent = '$' + vp.toFixed(2);
+      }
       const col = colours.find((c) => c.id === colourId);
       const box = card.querySelector('[data-post-preview]');
       const photo = card.getAttribute('data-post-photo') || '';
