@@ -108,8 +108,9 @@ tailwind.config = {
   </div>
 </footer>
 
-<script src="/js/privacy-config.js?v=4"></script>
-<script src="/js/main.js?v=4"></script>
+<script src="/js/privacy-config.js?v=5"></script>
+<script src="/js/finish-preview.js?v=1"></script>
+<script src="/js/main.js?v=5"></script>
 <script>
 (function () {
   function esc(s) {
@@ -198,40 +199,94 @@ tailwind.config = {
           .map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)
           .join('');
         const price = Number(a.price) || 0;
+        const photo =
+          a.id === 'inground-post'
+            ? '/images/posts/inground-post.jpg'
+            : a.id === 'flange-post'
+              ? '/images/posts/flange-post.jpg'
+              : '';
         return `
- <article class="post-card rounded-sm p-5 sm:p-6" data-post-id="${esc(a.id)}">
-  <div class="flex flex-wrap items-start justify-between gap-3">
-   <div>
-    <h2 class="font-display text-xl text-white">${esc(a.name)}</h2>
-    <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated only · Dulux colours')}</p>
+ <article class="post-card rounded-sm p-5 sm:p-6" data-post-id="${esc(a.id)}" data-post-photo="${esc(photo)}">
+  <div class="grid sm:grid-cols-5 gap-5">
+   <div class="sm:col-span-2 relative rounded-sm overflow-hidden bg-[#120e0c] border border-white/10 aspect-[3/4] flex items-center justify-center" data-post-preview>
+    <img data-post-preview-img class="hidden w-full h-full object-contain" alt="">
+    <canvas data-post-preview-canvas width="320" height="420" class="w-full h-full"></canvas>
+    <span data-post-preview-label class="absolute bottom-2 left-2 right-2 text-[10px] text-center px-2 py-1 rounded-sm bg-black/60 text-gray-200"></span>
    </div>
-   <p class="text-2xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+   <div class="sm:col-span-3">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+     <div>
+      <h2 class="font-display text-xl text-white">${esc(a.name)}</h2>
+      <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated only · Dulux colours')}</p>
+     </div>
+     <p class="text-2xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+    </div>
+    <div class="mt-5 grid sm:grid-cols-2 gap-3">
+     <div class="sm:col-span-2">
+      <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Size / post type</label>
+      <select data-post-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${vOpts}</select>
+      <p class="text-[11px] text-gray-600 mt-1">End, middle or corner post — pick the size that matches your run.</p>
+     </div>
+     <div>
+      <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Powdercoat colour (Dulux)</label>
+      <select data-post-colour class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${cOpts}</select>
+     </div>
+     <div>
+      <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Quantity</label>
+      <input type="number" data-post-qty min="1" max="50" value="1" class="w-28 bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">
+     </div>
+    </div>
+    <button type="button" data-post-add class="mt-5 w-full sm:w-auto px-6 py-3 corten-gradient text-white font-semibold rounded-sm text-sm hover:opacity-90">
+     Add post to cart
+    </button>
+    <p class="text-[11px] text-gray-600 mt-2">Colour preview updates live (indicative). Drop real photos in <code class="text-gray-500">/images/posts/</code> when ready.</p>
+   </div>
   </div>
-  <div class="mt-5 grid sm:grid-cols-2 gap-3">
-   <div class="sm:col-span-2">
-    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Size / post type</label>
-    <select data-post-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${vOpts}</select>
-    <p class="text-[11px] text-gray-600 mt-1">End, middle or corner post — pick the size that matches your run.</p>
-   </div>
-   <div>
-    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Powdercoat colour (Dulux)</label>
-    <select data-post-colour class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${cOpts}</select>
-   </div>
-   <div>
-    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Quantity</label>
-    <input type="number" data-post-qty min="1" max="50" value="1" class="w-28 bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">
-   </div>
-  </div>
-  <button type="button" data-post-add class="mt-5 w-full sm:w-auto px-6 py-3 corten-gradient text-white font-semibold rounded-sm text-sm hover:opacity-90">
-   Add post to cart
-  </button>
  </article>`;
       })
       .join('');
 
+    function refreshPostPreview(card, acc) {
+      const colourId = card.querySelector('[data-post-colour]')?.value;
+      const variantId = card.querySelector('[data-post-variant]')?.value || '';
+      const col = colours.find((c) => c.id === colourId);
+      const box = card.querySelector('[data-post-preview]');
+      const photo = card.getAttribute('data-post-photo') || '';
+      // Use photo only if it actually loads — applyPostPreview falls back to silhouette
+      const opts = {
+        finish: 'powdercoat',
+        colourId,
+        colourHex: col?.hex,
+        colourLabel: col?.label,
+        accessoryId: acc.id,
+        postKind: acc.id + (variantId.includes('cor') ? '-cor' : ''),
+        photoSrc: photo,
+      };
+      if (typeof applyPostPreview === 'function') {
+        // Probe photo existence
+        if (photo) {
+          const test = new Image();
+          test.onload = () => {
+            box?.setAttribute('data-post-photo', photo);
+            applyPostPreview(box, { ...opts, photoSrc: photo });
+          };
+          test.onerror = () => {
+            box?.removeAttribute('data-post-photo');
+            applyPostPreview(box, { ...opts, photoSrc: '' });
+          };
+          test.src = photo;
+        } else {
+          applyPostPreview(box, opts);
+        }
+      }
+    }
+
     list.querySelectorAll('[data-post-id]').forEach((card) => {
       const id = card.dataset.postId;
       const acc = accs.find((a) => a.id === id);
+      refreshPostPreview(card, acc);
+      card.querySelector('[data-post-colour]')?.addEventListener('change', () => refreshPostPreview(card, acc));
+      card.querySelector('[data-post-variant]')?.addEventListener('change', () => refreshPostPreview(card, acc));
       card.querySelector('[data-post-add]')?.addEventListener('click', () => {
         const variantId = card.querySelector('[data-post-variant]')?.value;
         const colourId = card.querySelector('[data-post-colour]')?.value;

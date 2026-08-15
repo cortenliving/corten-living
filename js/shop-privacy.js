@@ -125,37 +125,67 @@
       const price = Number(a.price) || 0;
       return `
  <article class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 sm:p-6" data-shop-post="${esc(a.id)}">
-  <div class="flex flex-wrap items-start justify-between gap-3">
-   <div>
-    <h3 class="font-display text-lg text-white">${esc(a.name)}</h3>
-    <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated · Dulux colours')}</p>
+  <div class="grid sm:grid-cols-5 gap-4">
+   <div class="sm:col-span-2 relative rounded-sm overflow-hidden bg-metal-950 border border-white/10 aspect-[3/4] flex items-center justify-center" data-post-preview>
+    <img data-post-preview-img class="hidden w-full h-full object-contain" alt="">
+    <canvas data-post-preview-canvas width="280" height="360" class="w-full h-full"></canvas>
+    <span data-post-preview-label class="absolute bottom-2 left-2 right-2 text-[10px] text-center px-2 py-1 rounded-sm bg-black/60 text-gray-200"></span>
    </div>
-   <p class="text-xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+   <div class="sm:col-span-3">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+     <div>
+      <h3 class="font-display text-lg text-white">${esc(a.name)}</h3>
+      <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated · Dulux colours')}</p>
+     </div>
+     <p class="text-xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+    </div>
+    <div class="mt-4 grid sm:grid-cols-2 gap-3">
+     <div class="sm:col-span-2">
+      <label class="block text-[10px] uppercase text-gray-500 mb-1">Size / post type (end · middle · corner)</label>
+      <select data-sp-variant class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-500 outline-none">${vOpts}</select>
+     </div>
+     <div>
+      <label class="block text-[10px] uppercase text-gray-500 mb-1">Powdercoat colour (Dulux)</label>
+      <select data-sp-colour class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-500 outline-none">${cOpts}</select>
+     </div>
+     <div>
+      <label class="block text-[10px] uppercase text-gray-500 mb-1">Qty</label>
+      <input type="number" data-sp-qty min="1" max="50" value="1" class="w-24 bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm">
+     </div>
+    </div>
+    <button type="button" data-sp-add class="mt-4 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Add post to cart</button>
+   </div>
   </div>
-  <div class="mt-4 grid sm:grid-cols-2 gap-3">
-   <div class="sm:col-span-2">
-    <label class="block text-[10px] uppercase text-gray-500 mb-1">Size / post type (end · middle · corner)</label>
-    <select data-sp-variant class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-500 outline-none">${vOpts}</select>
-   </div>
-   <div>
-    <label class="block text-[10px] uppercase text-gray-500 mb-1">Powdercoat colour (Dulux)</label>
-    <select data-sp-colour class="w-full bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-500 outline-none">${cOpts}</select>
-   </div>
-   <div>
-    <label class="block text-[10px] uppercase text-gray-500 mb-1">Qty</label>
-    <input type="number" data-sp-qty min="1" max="50" value="1" class="w-24 bg-metal-950 border border-gray-700 rounded-sm px-3 py-2.5 text-white text-sm">
-   </div>
-  </div>
-  <button type="button" data-sp-add class="mt-4 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm hover:opacity-90">Add post to cart</button>
  </article>`;
     })
     .join('')}
   <p class="text-xs text-gray-600">Prefer a full-page view? <a href="/posts" class="text-corten-400 hover:underline">Open posts page →</a></p>
  </div>`;
 
+    function refreshShopPostPreview(card, acc) {
+      const colourId = card.querySelector('[data-sp-colour]')?.value;
+      const variantId = card.querySelector('[data-sp-variant]')?.value || '';
+      const col = colours.find((c) => c.id === colourId);
+      const box = card.querySelector('[data-post-preview]');
+      if (typeof applyPostPreview === 'function') {
+        applyPostPreview(box, {
+          finish: 'powdercoat',
+          colourId,
+          colourHex: col?.hex || (typeof FINISH_PREVIEW_COLOURS !== 'undefined' ? FINISH_PREVIEW_COLOURS[colourId] : ''),
+          colourLabel: col?.label,
+          accessoryId: acc.id,
+          postKind: acc.id + (String(variantId).includes('cor') ? '-cor' : ''),
+          photoSrc: '',
+        });
+      }
+    }
+
     panel.querySelectorAll('[data-shop-post]').forEach((card) => {
       const id = card.dataset.shopPost;
       const acc = accs.find((a) => a.id === id);
+      refreshShopPostPreview(card, acc);
+      card.querySelector('[data-sp-colour]')?.addEventListener('change', () => refreshShopPostPreview(card, acc));
+      card.querySelector('[data-sp-variant]')?.addEventListener('change', () => refreshShopPostPreview(card, acc));
       card.querySelector('[data-sp-add]')?.addEventListener('click', () => {
         const variantId = card.querySelector('[data-sp-variant]')?.value;
         const colourId = card.querySelector('[data-sp-colour]')?.value;
@@ -191,8 +221,7 @@
           localStorage.setItem('cortenCart', JSON.stringify(cart));
           if (typeof updateCartCount === 'function') updateCartCount();
         }
-        if (typeof toast === 'function') toast('Post added to cart');
-        else alert('Added to cart: ' + acc.name);
+        alert('Added to cart: ' + acc.name);
       });
     });
   }

@@ -137,9 +137,11 @@ tailwind.config = {
         <!-- Gallery -->
         <div class="lg:col-span-7 space-y-3">
           <div class="pd-card rounded-sm overflow-hidden aspect-[4/3] sm:aspect-[5/4] bg-metal-950 relative flex items-center justify-center">
-            <img id="pd-main-img" src="" alt="" class="w-full h-full object-contain">
+            <img id="pd-main-img" src="" alt="" class="w-full h-full object-contain transition-opacity duration-200">
             <span id="pd-tag" class="hidden absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wider bg-corten-600 text-white px-2 py-0.5 rounded-sm"></span>
+            <span id="pd-finish-preview-label" class="hidden absolute bottom-3 left-3 right-3 z-10 text-[11px] sm:text-xs text-center px-2 py-1.5 rounded-sm bg-black/65 text-gray-200 border border-white/10"></span>
           </div>
+          <p id="pd-finish-hint" class="hidden text-[11px] text-gray-500 text-center">Finish preview updates when you change Corten / powdercoat colour (indicative colour only).</p>
           <div id="pd-thumbs" class="grid grid-cols-4 sm:grid-cols-6 gap-2"></div>
         </div>
 
@@ -239,8 +241,9 @@ tailwind.config = {
 </footer>
 
 <script src="/js/products.js"></script>
-<script src="/js/privacy-config.js?v=4"></script>
-<script src="/js/main.js?v=4"></script>
+<script src="/js/privacy-config.js?v=5"></script>
+<script src="/js/finish-preview.js?v=1"></script>
+<script src="/js/main.js?v=5"></script>
 <script>
 (function () {
   let product = null;
@@ -286,6 +289,39 @@ tailwind.config = {
   function getPrivCalc() {
     if (!privacyCfg || typeof calcPrivacyPrice !== 'function') return null;
     return calcPrivacyPrice(privacyCfg, privSel);
+  }
+
+  function getPrivFinishOpts() {
+    const colours = privacyCfg?.powdercoat?.colours || [];
+    const col = colours.find((c) => c.id === privSel.colourId);
+    return {
+      finish: privSel.finish,
+      materialId: privSel.materialId,
+      colourId: privSel.colourId,
+      colourHex: col?.hex || (typeof FINISH_PREVIEW_COLOURS !== 'undefined' ? FINISH_PREVIEW_COLOURS[privSel.colourId] : ''),
+      colourLabel: col?.label || '',
+    };
+  }
+
+  async function updateFinishPreview() {
+    const img = document.getElementById('pd-main-img');
+    const label = document.getElementById('pd-finish-preview-label');
+    const hint = document.getElementById('pd-finish-hint');
+    if (!privacyMode || !img) {
+      if (label) label.classList.add('hidden');
+      if (hint) hint.classList.add('hidden');
+      return;
+    }
+    if (hint) hint.classList.remove('hidden');
+    const opts = getPrivFinishOpts();
+    if (label) {
+      label.classList.remove('hidden');
+      label.textContent =
+        typeof finishPreviewLabel === 'function' ? finishPreviewLabel(opts) : 'Finish preview';
+    }
+    if (typeof applyFinishPreview === 'function') {
+      await applyFinishPreview(img, opts);
+    }
   }
 
   function updatePriceUI() {
@@ -459,6 +495,7 @@ tailwind.config = {
         if (f.finish !== 'powdercoat') privSel.colourId = '';
         renderPrivacyConfig();
         updatePriceUI();
+        updateFinishPreview();
       });
     });
 
@@ -532,6 +569,7 @@ tailwind.config = {
 
     // —— Accessories (posts) ——
     renderPrivacyAccessories();
+    updateFinishPreview();
   }
 
   function renderPrivacyAccessories() {
@@ -687,29 +725,35 @@ tailwind.config = {
     const main = document.getElementById('pd-main-img');
     if (!slides.length) {
       main.removeAttribute('src');
+      main.removeAttribute('data-preview-original');
       main.alt = p.name;
       return;
     }
-    main.src = slides[0].src;
+    const first = slides[0].src;
+    main.setAttribute('data-preview-original', first);
+    main.src = first;
     main.alt = p.name;
     const thumbs = document.getElementById('pd-thumbs');
     if (slides.length < 2) {
       thumbs.innerHTML = '';
-      return;
-    }
-    thumbs.innerHTML = slides.map((s, i) => `
+    } else {
+      thumbs.innerHTML = slides.map((s, i) => `
       <button type="button" data-src="${escapeHtml(s.src)}"
         class="gallery-thumb ${i === 0 ? 'is-selected' : ''} border border-white/10 rounded-sm overflow-hidden aspect-square bg-metal-950">
         <img src="${escapeHtml(s.src)}" alt="" class="w-full h-full object-contain" loading="lazy">
       </button>
     `).join('');
-    thumbs.querySelectorAll('.gallery-thumb').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        main.src = btn.dataset.src;
-        thumbs.querySelectorAll('.gallery-thumb').forEach((b) => b.classList.remove('is-selected'));
-        btn.classList.add('is-selected');
+      thumbs.querySelectorAll('.gallery-thumb').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          main.setAttribute('data-preview-original', btn.dataset.src);
+          main.src = btn.dataset.src;
+          thumbs.querySelectorAll('.gallery-thumb').forEach((b) => b.classList.remove('is-selected'));
+          btn.classList.add('is-selected');
+          if (privacyMode) updateFinishPreview();
+        });
       });
-    });
+    }
+    if (privacyMode) updateFinishPreview();
   }
 
   async function showProduct(p) {
@@ -794,6 +838,7 @@ tailwind.config = {
   document.getElementById('pd-priv-colour')?.addEventListener('change', (e) => {
     privSel.colourId = e.target.value;
     updatePriceUI();
+    updateFinishPreview();
   });
 
   document.getElementById('pd-add-cart')?.addEventListener('click', () => {
