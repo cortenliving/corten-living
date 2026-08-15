@@ -23,7 +23,7 @@ tailwind.config = {
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/site.css?v=4">
+<link rel="stylesheet" href="/css/site.css?v=5">
 <script>document.documentElement.classList.add('ui-vibrant');</script>
 </head>
 <body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
@@ -81,16 +81,30 @@ tailwind.config = {
 
  <!-- Privacy hub: screens vs posts + design run-through -->
  <div id="privacy-hub" class="hidden mb-10 space-y-8">
- <div class="flex flex-col sm:flex-row gap-3">
+ <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
  <button type="button" id="privacy-view-panels" data-privacy-view="panels"
- class="privacy-hub-btn is-active flex-1 text-left px-5 py-4 rounded-sm border-2 transition">
- <span class="block font-display text-lg text-white">Privacy screens</span>
- <span class="block text-xs text-gray-300/90 mt-1">Decorative panels · material, thickness &amp; size</span>
+ class="privacy-hub-btn is-active flex-1 text-left px-5 sm:px-6 py-5 border transition">
+ <span class="flex items-start gap-3.5">
+ <span class="privacy-hub-icon mt-0.5" aria-hidden="true">
+ <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10M4 18h14"/></svg>
+ </span>
+ <span class="min-w-0">
+ <span class="privacy-hub-title block font-display text-lg sm:text-xl">Privacy screens</span>
+ <span class="privacy-hub-sub block text-xs sm:text-[13px] mt-1.5 leading-snug">Decorative panels · material, thickness &amp; size</span>
+ </span>
+ </span>
  </button>
  <button type="button" id="privacy-view-posts" data-privacy-view="posts"
- class="privacy-hub-btn flex-1 text-left px-5 py-4 rounded-sm border-2 transition">
- <span class="block font-display text-lg text-white">Fence posts</span>
- <span class="block text-xs text-gray-300/90 mt-1">End · middle · corner · powdercoat Dulux colours</span>
+ class="privacy-hub-btn flex-1 text-left px-5 sm:px-6 py-5 border transition">
+ <span class="flex items-start gap-3.5">
+ <span class="privacy-hub-icon mt-0.5" aria-hidden="true">
+ <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4v16M16 4v16M5 8h14M5 16h14"/></svg>
+ </span>
+ <span class="min-w-0">
+ <span class="privacy-hub-title block font-display text-lg sm:text-xl">Fence posts</span>
+ <span class="privacy-hub-sub block text-xs sm:text-[13px] mt-1.5 leading-snug">End · middle · corner · powdercoat Dulux colours</span>
+ </span>
+ </span>
  </button>
  </div>
 

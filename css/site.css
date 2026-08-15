@@ -58,25 +58,99 @@ html.ui-vibrant .filter-btn.active:hover {
   filter: brightness(1.06);
 }
 
-/* Privacy hub: screens vs posts — match filter-tab energy */
+/* Privacy hub: screens vs posts — bold, filter-tab energy */
 .privacy-hub-btn {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  border-width: 1px !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  border-radius: 0.65rem !important;
+  background:
+    linear-gradient(155deg, rgba(55, 36, 26, 0.95) 0%, rgba(22, 16, 12, 0.98) 100%);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    filter 0.18s ease;
+}
+.privacy-hub-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255, 160, 100, 0.08) 50%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
 }
 .privacy-hub-btn:hover {
-  border-color: rgba(229, 122, 72, 0.65);
-  background: rgba(183, 65, 14, 0.14);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px -10px rgba(183, 65, 14, 0.55);
+  border-color: rgba(229, 122, 72, 0.75) !important;
+  background:
+    linear-gradient(155deg, rgba(90, 48, 28, 0.95) 0%, rgba(35, 22, 14, 0.98) 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(229, 122, 72, 0.25),
+    0 14px 32px -10px rgba(183, 65, 14, 0.65),
+    inset 0 1px 0 rgba(255, 200, 150, 0.1);
+}
+.privacy-hub-btn:hover::before {
+  opacity: 1;
 }
 .privacy-hub-btn.is-active {
-  border-color: transparent;
-  background: linear-gradient(145deg, rgba(229, 122, 72, 0.35) 0%, rgba(183, 65, 14, 0.22) 45%, rgba(26, 16, 12, 0.95) 100%);
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #f08a55 0%, #e57a48 18%, #b7410e 55%, #8a2e08 100%);
   box-shadow:
-    0 0 0 1px rgba(255, 176, 122, 0.4),
-    0 12px 32px -10px rgba(183, 65, 14, 0.75),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 0 0 1px rgba(255, 200, 150, 0.45),
+    0 0 36px -4px rgba(229, 122, 72, 0.75),
+    0 16px 36px -10px rgba(183, 65, 14, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+.privacy-hub-btn.is-active:hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 0 0 1px rgba(255, 210, 170, 0.55),
+    0 0 42px -2px rgba(255, 150, 90, 0.8),
+    0 18px 40px -10px rgba(183, 65, 14, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.privacy-hub-btn .privacy-hub-title {
+  color: #f3f4f6;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.privacy-hub-btn .privacy-hub-sub {
+  color: rgba(209, 213, 219, 0.85);
+}
+.privacy-hub-btn.is-active .privacy-hub-title {
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(80, 25, 5, 0.45);
+}
+.privacy-hub-btn.is-active .privacy-hub-sub {
+  color: rgba(255, 245, 235, 0.92) !important;
+}
+.privacy-hub-btn .privacy-hub-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e57a48;
+  flex-shrink: 0;
+}
+.privacy-hub-btn.is-active .privacy-hub-icon {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .file-drop.dragover {
   border-color: #d56f3d;
