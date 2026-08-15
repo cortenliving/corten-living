@@ -270,9 +270,14 @@ function productCardHTML(p, options = {}) {
       .replace(/"/g, '&quot;')}</span>`
   : '';
 
+ const isPriv =
+  typeof isPrivacyProduct === 'function' ? isPrivacyProduct(p) : p.category === 'privacy';
+ const imgStage = isPriv
+  ? 'block aspect-[4/3] bg-white relative overflow-hidden flex items-center justify-center'
+  : 'block aspect-[4/3] bg-metal-950 relative overflow-hidden flex items-center justify-center';
  return `
  <article class="product-card group bg-metal-850 border border-corten-900/40 rounded-sm overflow-hidden transition-all duration-300">
- <a href="${href}" class="block aspect-[4/3] bg-metal-950 relative overflow-hidden flex items-center justify-center">
+ <a href="${href}" class="${imgStage}">
  ${media}
  ${tagHtml}
  </a>

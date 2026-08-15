@@ -70,7 +70,7 @@
         const short = name.replace(/^Privacy Screen\s*/i, '') || name;
         return `
  <a href="${esc(href)}" class="snap-start shrink-0 w-36 sm:w-44 group">
-  <div class="aspect-[3/4] rounded-sm overflow-hidden border border-corten-900/50 bg-metal-950 flex items-center justify-center">
+  <div class="aspect-[3/4] rounded-sm overflow-hidden border border-corten-900/40 bg-white flex items-center justify-center">
    ${
      img
        ? `<img src="${esc(img)}" alt="${esc(name)}" class="w-full h-full object-contain group-hover:scale-105 transition duration-300" loading="lazy">`
