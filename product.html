@@ -127,11 +127,11 @@ tailwind.config = {
     <div id="product-missing" class="hidden pd-card rounded-sm text-center py-16 px-6 max-w-xl mx-auto">
       <p class="text-white text-lg font-display">Product not found</p>
       <p class="text-sm text-gray-400 mt-2">This item may have been removed or the link is wrong.</p>
-      <a href="/shop" class="inline-block mt-6 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Back to Shop</a>
+      <a id="pd-back-missing" href="/shop" class="inline-block mt-6 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm">Back to Shop</a>
     </div>
 
     <div id="product-view" class="hidden">
-      <a href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
+      <a id="pd-back-shop" href="/shop" class="text-sm text-corten-400 hover:text-corten-300">← Back to Shop</a>
 
       <div class="mt-4 grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         <!-- Gallery -->
@@ -182,8 +182,11 @@ tailwind.config = {
                 <div id="pd-priv-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
               </div>
               <div id="pd-priv-accessories-wrap" class="pt-2 border-t border-white/10">
-                <p class="text-sm font-semibold text-white mb-1 tracking-wide">Accessories</p>
-                <p class="text-xs text-gray-500 mb-3">Optional posts (powder coated to Dulux colours). Tick to add.</p>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <p class="text-sm font-semibold text-white tracking-wide">Accessories</p>
+                  <a href="/posts" class="text-xs text-corten-400 hover:text-corten-300">Browse all posts →</a>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Optional posts (powder coated · Dulux colours). Or open the <a href="/posts" class="text-corten-400 hover:underline">posts page</a> to pick end / middle / corner posts on their own.</p>
                 <div id="pd-priv-accessories" class="space-y-3"></div>
               </div>
               <p class="text-xs text-gray-400" id="pd-priv-breakdown"></p>
@@ -236,8 +239,8 @@ tailwind.config = {
 </footer>
 
 <script src="/js/products.js"></script>
-<script src="/js/privacy-config.js?v=3"></script>
-<script src="/js/main.js"></script>
+<script src="/js/privacy-config.js?v=4"></script>
+<script src="/js/main.js?v=4"></script>
 <script>
 (function () {
   let product = null;
@@ -720,6 +723,20 @@ tailwind.config = {
     privacyMode = typeof isPrivacyProduct === 'function' ? isPrivacyProduct(p) : (p.category === 'privacy');
     document.getElementById('pd-standard-config')?.classList.toggle('hidden', privacyMode);
     document.getElementById('pd-privacy-config')?.classList.toggle('hidden', !privacyMode);
+
+    // Privacy panels return to privacy filter on shop (not full catalogue)
+    const backHref = privacyMode ? '/shop?filter=privacy' : '/shop';
+    const backLabel = privacyMode ? '← Back to Privacy screens' : '← Back to Shop';
+    const backShop = document.getElementById('pd-back-shop');
+    if (backShop) {
+      backShop.href = backHref;
+      backShop.textContent = backLabel;
+    }
+    const backMissing = document.getElementById('pd-back-missing');
+    if (backMissing) {
+      backMissing.href = backHref;
+      backMissing.textContent = privacyMode ? 'Back to Privacy screens' : 'Back to Shop';
+    }
 
     const kicker = document.getElementById('pd-kicker');
     if (kicker) {

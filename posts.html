@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fence Posts | Corten Living</title>
+<meta name="description" content="Powder coated fence posts for privacy screens — end, middle and corner posts. Dulux colours. NZ made." />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<style>
+  body.posts-page {
+    background: #1a1410;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.22), transparent 55%),
+      linear-gradient(180deg, #241c16 0%, #1a1410 40%, #12100e 100%);
+  }
+  .post-card {
+    background: linear-gradient(165deg, #2a221c 0%, #1e1814 100%);
+    border: 1px solid rgba(229, 122, 72, 0.35);
+    box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55);
+  }
+</style>
+</head>
+<body class="posts-page font-sans text-gray-200 antialiased min-h-screen flex flex-col">
+
+<nav class="fixed top-0 inset-x-0 z-50 bg-metal-950/90 backdrop-blur-md border-b border-corten-900/40">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+    <div class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/images/logo.svg" alt="" class="w-9 h-9" width="36" height="36">
+        <span class="font-display text-xl tracking-wide text-white group-hover:text-corten-400 transition">CORTEN <span class="text-corten-500">LIVING</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium">
+        <a href="/" class="hover:text-corten-400 transition">Home</a>
+        <a href="/shop?filter=privacy" class="hover:text-corten-400 transition">Privacy screens</a>
+        <a href="/posts" class="text-corten-400">Posts</a>
+        <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+        <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+        <a href="/cart" class="relative hover:text-corten-400 transition">Cart <span data-cart-count class="hidden ml-1 text-xs bg-corten-600 text-white rounded-full w-5 h-5 inline-flex items-center justify-center">0</span></a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-corten-400" aria-label="Open menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-metal-900 border-t border-corten-900/40">
+    <div class="px-4 py-4 space-y-3 text-sm">
+      <a href="/shop?filter=privacy" class="block hover:text-corten-400">Privacy screens</a>
+      <a href="/posts" class="block text-corten-400">Posts</a>
+      <a href="/shop" class="block hover:text-corten-400">Shop</a>
+      <a href="/cart" class="block hover:text-corten-400">Cart</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main" class="flex-1 flex flex-col">
+<section class="pt-24 pb-16 sm:pt-28 sm:pb-20 flex-1">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <a href="/shop?filter=privacy" class="text-sm text-corten-400 hover:text-corten-300">← Privacy screens</a>
+    <h1 class="mt-4 font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">Fence posts</h1>
+    <p class="mt-2 text-gray-400 max-w-2xl text-sm sm:text-base leading-relaxed">
+      Choose <strong class="text-gray-300">end</strong>, <strong class="text-gray-300">middle</strong> or <strong class="text-gray-300">corner</strong> posts separately.
+      Powder coated only — pick a Dulux colour. Pair with any privacy screen panel.
+    </p>
+
+    <div id="posts-loading" class="mt-10 text-sm text-gray-500">Loading post options…</div>
+    <div id="posts-list" class="mt-8 space-y-6 hidden"></div>
+    <p id="posts-empty" class="hidden mt-10 text-sm text-gray-500">No posts available right now. Check back soon or <a href="/quote" class="text-corten-400 hover:underline">request a quote</a>.</p>
+
+    <div class="mt-12 p-5 post-card rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <p class="font-display text-white text-lg">Need a full privacy run?</p>
+        <p class="text-xs text-gray-500 mt-1">Browse panels, then add posts here or on the panel page.</p>
+      </div>
+      <a href="/shop?filter=privacy" class="shrink-0 px-5 py-2.5 corten-gradient text-white text-sm font-semibold rounded-sm text-center">Browse privacy screens →</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="border-t border-corten-600/25 bg-[#120e0c] mt-auto">
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10">
+    <div class="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-gray-500 mb-4">
+      <a href="/shop?filter=privacy" class="hover:text-corten-400 transition">Privacy screens</a>
+      <a href="/posts" class="hover:text-corten-400 transition">Posts</a>
+      <a href="/shop" class="hover:text-corten-400 transition">Shop</a>
+      <a href="/quote" class="hover:text-corten-400 transition">Custom Quote</a>
+      <a href="/contact" class="hover:text-corten-400 transition">Contact</a>
+    </div>
+    <p class="text-center text-xs text-gray-500">© 2026 Corten Living · Gisborne, New Zealand</p>
+  </div>
+</footer>
+
+<script src="/js/privacy-config.js?v=4"></script>
+<script src="/js/main.js?v=4"></script>
+<script>
+(function () {
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function addPostToCart(acc, variantId, colourId, qty) {
+    const variants = acc.variants || [];
+    const variant = variants.find((v) => v.id === variantId) || variants[0];
+    const colours =
+      typeof enabledPrivacyList === 'function'
+        ? enabledPrivacyList(window._postsCfg?.powdercoat?.colours || [])
+        : (window._postsCfg?.powdercoat?.colours || []).filter((c) => c.enabled !== false);
+    const col = colours.find((c) => c.id === colourId) || colours[0];
+    const unit = Number(acc.price) || 0;
+    const q = Math.max(1, Math.min(50, parseInt(qty, 10) || 1));
+    if (!(unit > 0)) {
+      alert('This post is not priced yet — please contact us for a quote.');
+      return;
+    }
+    const cart = typeof getCart === 'function' ? getCart() : [];
+    cart.push({
+      id: 'acc-' + acc.id + '-' + Date.now(),
+      productId: acc.id,
+      type: acc.name,
+      category: 'privacy-accessory',
+      chars: variant?.label || 'Post',
+      size: variant?.label || '',
+      mount: 'Powder Coated · ' + (col?.label || 'Dulux'),
+      material: 'Powder coated steel',
+      finish: 'Powdercoat',
+      colour: col?.label || '',
+      price: unit,
+      qty: q,
+    });
+    if (typeof setCart === 'function') setCart(cart);
+    else {
+      localStorage.setItem('cortenCart', JSON.stringify(cart));
+      if (typeof updateCartCount === 'function') updateCartCount();
+    }
+    const msg = document.getElementById('post-toast');
+    if (msg) {
+      msg.textContent = 'Added to cart — ' + acc.name;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3500);
+    }
+  }
+
+  async function init() {
+    if (typeof initMobileMenu === 'function') initMobileMenu();
+    if (typeof updateCartCount === 'function') updateCartCount();
+
+    const cfg =
+      typeof loadPrivacySettings === 'function'
+        ? await loadPrivacySettings(true)
+        : null;
+    window._postsCfg = cfg;
+    const loading = document.getElementById('posts-loading');
+    const list = document.getElementById('posts-list');
+    const empty = document.getElementById('posts-empty');
+    const accs =
+      typeof getPrivacyAccessories === 'function' ? getPrivacyAccessories(cfg) : [];
+
+    if (loading) loading.classList.add('hidden');
+    if (!accs.length) {
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (list) list.classList.remove('hidden');
+
+    const colours =
+      typeof enabledPrivacyList === 'function'
+        ? enabledPrivacyList(cfg?.powdercoat?.colours || [])
+        : (cfg?.powdercoat?.colours || []).filter((c) => c.enabled !== false);
+
+    list.innerHTML = accs
+      .map((a) => {
+        const vOpts = (a.variants || [])
+          .map((v) => `<option value="${esc(v.id)}">${esc(v.label)}</option>`)
+          .join('');
+        const cOpts = colours
+          .map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`)
+          .join('');
+        const price = Number(a.price) || 0;
+        return `
+ <article class="post-card rounded-sm p-5 sm:p-6" data-post-id="${esc(a.id)}">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+   <div>
+    <h2 class="font-display text-xl text-white">${esc(a.name)}</h2>
+    <p class="text-xs text-gray-500 mt-1">${esc(a.note || 'Powder coated only · Dulux colours')}</p>
+   </div>
+   <p class="text-2xl font-display font-bold text-corten-400">$${price.toFixed(2)}</p>
+  </div>
+  <div class="mt-5 grid sm:grid-cols-2 gap-3">
+   <div class="sm:col-span-2">
+    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Size / post type</label>
+    <select data-post-variant class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${vOpts}</select>
+    <p class="text-[11px] text-gray-600 mt-1">End, middle or corner post — pick the size that matches your run.</p>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Powdercoat colour (Dulux)</label>
+    <select data-post-colour class="w-full bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">${cOpts}</select>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wide">Quantity</label>
+    <input type="number" data-post-qty min="1" max="50" value="1" class="w-28 bg-[#120e0c] border border-white/20 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none">
+   </div>
+  </div>
+  <button type="button" data-post-add class="mt-5 w-full sm:w-auto px-6 py-3 corten-gradient text-white font-semibold rounded-sm text-sm hover:opacity-90">
+   Add post to cart
+  </button>
+ </article>`;
+      })
+      .join('');
+
+    list.querySelectorAll('[data-post-id]').forEach((card) => {
+      const id = card.dataset.postId;
+      const acc = accs.find((a) => a.id === id);
+      card.querySelector('[data-post-add]')?.addEventListener('click', () => {
+        const variantId = card.querySelector('[data-post-variant]')?.value;
+        const colourId = card.querySelector('[data-post-colour]')?.value;
+        const qty = card.querySelector('[data-post-qty]')?.value;
+        addPostToCart(acc, variantId, colourId, qty);
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+<p id="post-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-metal-900 border border-corten-600 text-white text-sm rounded-sm shadow-lg"></p>
+</body>
+</html>

@@ -308,7 +308,8 @@ function renderProducts(filter = 'all') {
  grid.querySelectorAll('.product-slides').forEach(startSlideShow);
 }
 
-function filterProducts(cat) {
+function filterProducts(cat, opts) {
+ const skipUrl = opts && opts.skipUrl;
  document.querySelectorAll('.filter-btn').forEach((btn) => {
  const active = btn.dataset.filter === cat;
  btn.classList.toggle('active', active);
@@ -318,6 +319,30 @@ function filterProducts(cat) {
  btn.classList.toggle('text-gray-400', !active);
  });
  renderProducts(cat);
+ // Keep shop URL in sync so Back links can return to this filter
+ if (!skipUrl && document.getElementById('product-grid')) {
+  try {
+   const url = new URL(location.href);
+   if (cat && cat !== 'all') {
+    url.searchParams.set('filter', cat);
+   } else {
+    url.searchParams.delete('filter');
+   }
+   history.replaceState(null, '', url.pathname + url.search + (url.hash || ''));
+  } catch (_) {}
+ }
+}
+
+/** Read ?filter=privacy or #privacy on shop page */
+function getShopFilterFromUrl() {
+ try {
+  const params = new URLSearchParams(location.search);
+  const q = (params.get('filter') || params.get('category') || '').trim().toLowerCase();
+  if (q) return q;
+  const hash = (location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  if (hash && hash !== 'main') return hash;
+ } catch (_) {}
+ return 'all';
 }
 
 function renderFeatured() {
@@ -434,9 +459,14 @@ function initQuotePrefill() {
 document.addEventListener('DOMContentLoaded', async () => {
  initMobileMenu();
  updateCartCount();
+ const startFilter = document.getElementById('product-grid')
+  ? getShopFilterFromUrl()
+  : 'all';
  // Paint seed quickly, then refresh from cloud
  loadActiveProducts();
- renderProducts('all');
+ if (document.getElementById('product-grid')) {
+  filterProducts(startFilter, { skipUrl: true });
+ }
  renderFeatured();
  await loadActiveProductsAsync();
  // Privacy “From $…” on shop cards
@@ -445,7 +475,9 @@ document.addEventListener('DOMContentLoaded', async () => {
    _shopPrivacyCfg = await loadPrivacySettings();
   } catch (_) {}
  }
- renderProducts('all');
+ if (document.getElementById('product-grid')) {
+  filterProducts(startFilter, { skipUrl: true });
+ }
  renderFeatured();
  initEstimator();
  initFileDrop();
@@ -454,6 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Expose for inline onclick handlers
 window.filterProducts = filterProducts;
+window.getShopFilterFromUrl = getShopFilterFromUrl;
 window.getCart = getCart;
 window.setCart = setCart;
 window.updateCartCount = updateCartCount;
