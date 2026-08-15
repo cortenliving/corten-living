@@ -159,35 +159,35 @@
                   {
                       "id":  "sz-1200x600",
                       "label":  "Compact",
-                      "size":  "1200 Ã— 600 mm",
+                      "size":  "1200 Ãƒâ€” 600 mm",
                       "price":  320,
                       "enabled":  true
                   },
                   {
                       "id":  "sz-1500x750",
                       "label":  "Medium",
-                      "size":  "1500 Ã— 750 mm",
+                      "size":  "1500 Ãƒâ€” 750 mm",
                       "price":  420,
                       "enabled":  true
                   },
                   {
                       "id":  "sz-1800x900",
                       "label":  "Standard",
-                      "size":  "1800 Ã— 900 mm",
+                      "size":  "1800 Ãƒâ€” 900 mm",
                       "price":  520,
                       "enabled":  true
                   },
                   {
                       "id":  "sz-1800x1200",
                       "label":  "Wide",
-                      "size":  "1800 Ã— 1200 mm",
+                      "size":  "1800 Ãƒâ€” 1200 mm",
                       "price":  640,
                       "enabled":  true
                   },
                   {
                       "id":  "sz-custom",
                       "label":  "Custom size",
-                      "size":  "Custom â€” we will confirm",
+                      "size":  "Custom Ã¢â‚¬â€ we will confirm",
                       "price":  0,
                       "enabled":  true,
                       "quoteOnly":  true
@@ -204,46 +204,73 @@
                                              {
                                                  "id":  "ig-1200-end",
                                                  "label":  "1200/1650 mm / Powder Coated / End Post",
+                                                 "heightLabel":  "1200/1650 mm",
+                                                 "price":  149,
+                                                 "heightKey":  "ig-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1200-mid",
                                                  "label":  "1200/1650 mm / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1200/1650 mm",
+                                                 "price":  149,
+                                                 "heightKey":  "ig-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1200-cor",
                                                  "label":  "1200/1650 mm / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1200/1650 mm",
+                                                 "price":  149,
+                                                 "heightKey":  "ig-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1500-end",
                                                  "label":  "1500/2100 mm / Powder Coated / End Post",
+                                                 "heightLabel":  "1500/2100 mm",
+                                                 "price":  169,
+                                                 "heightKey":  "ig-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1500-mid",
                                                  "label":  "1500/2100 mm / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1500/2100 mm",
+                                                 "price":  169,
+                                                 "heightKey":  "ig-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1500-cor",
                                                  "label":  "1500/2100 mm / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1500/2100 mm",
+                                                 "price":  169,
+                                                 "heightKey":  "ig-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1800-end",
                                                  "label":  "1800/2400 mm / Powder Coated / End Post",
+                                                 "heightLabel":  "1800/2400 mm",
+                                                 "price":  189,
+                                                 "heightKey":  "ig-1800",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1800-mid",
                                                  "label":  "1800/2400 mm / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1800/2400 mm",
+                                                 "price":  189,
+                                                 "heightKey":  "ig-1800",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "ig-1800-cor",
                                                  "label":  "1800/2400 mm / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1800/2400 mm",
+                                                 "price":  189,
+                                                 "heightKey":  "ig-1800",
                                                  "enabled":  true
                                              }
                                          ]
@@ -257,47 +284,74 @@
                             "variants":  [
                                              {
                                                  "id":  "fl-1200-end",
-                                                 "label":  "1200 mm (65 Ã— 65 mm) / Powder Coated / End Post",
+                                                 "label":  "1200 mm (65 × 65 mm) / Powder Coated / End Post",
+                                                 "heightLabel":  "1200 mm (65 × 65 mm)",
+                                                 "price":  169,
+                                                 "heightKey":  "fl-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1200-mid",
-                                                 "label":  "1200 mm (65 Ã— 65 mm) / Powder Coated / Middle Post",
+                                                 "label":  "1200 mm (65 × 65 mm) / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1200 mm (65 × 65 mm)",
+                                                 "price":  169,
+                                                 "heightKey":  "fl-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1200-cor",
-                                                 "label":  "1200 mm (65 Ã— 65 mm) / Powder Coated / Corner Post",
+                                                 "label":  "1200 mm (65 × 65 mm) / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1200 mm (65 × 65 mm)",
+                                                 "price":  169,
+                                                 "heightKey":  "fl-1200",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1500-end",
-                                                 "label":  "1500 mm (65 Ã— 65 mm) / Powder Coated / End Post",
+                                                 "label":  "1500 mm (65 × 65 mm) / Powder Coated / End Post",
+                                                 "heightLabel":  "1500 mm (65 × 65 mm)",
+                                                 "price":  189,
+                                                 "heightKey":  "fl-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1500-mid",
-                                                 "label":  "1500 mm (65 Ã— 65 mm) / Powder Coated / Middle Post",
+                                                 "label":  "1500 mm (65 × 65 mm) / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1500 mm (65 × 65 mm)",
+                                                 "price":  189,
+                                                 "heightKey":  "fl-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1500-cor",
-                                                 "label":  "1500 mm (65 Ã— 65 mm) / Powder Coated / Corner Post",
+                                                 "label":  "1500 mm (65 × 65 mm) / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1500 mm (65 × 65 mm)",
+                                                 "price":  189,
+                                                 "heightKey":  "fl-1500",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1800-end",
-                                                 "label":  "1800 mm (75 Ã— 75 mm) / Powder Coated / End Post",
+                                                 "label":  "1800 mm (75 × 75 mm) / Powder Coated / End Post",
+                                                 "heightLabel":  "1800 mm (75 × 75 mm)",
+                                                 "price":  209,
+                                                 "heightKey":  "fl-1800",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1800-mid",
-                                                 "label":  "1800 mm (75 Ã— 75 mm) / Powder Coated / Middle Post",
+                                                 "label":  "1800 mm (75 × 75 mm) / Powder Coated / Middle Post",
+                                                 "heightLabel":  "1800 mm (75 × 75 mm)",
+                                                 "price":  209,
+                                                 "heightKey":  "fl-1800",
                                                  "enabled":  true
                                              },
                                              {
                                                  "id":  "fl-1800-cor",
-                                                 "label":  "1800 mm (75 Ã— 75 mm) / Powder Coated / Corner Post",
+                                                 "label":  "1800 mm (75 × 75 mm) / Powder Coated / Corner Post",
+                                                 "heightLabel":  "1800 mm (75 × 75 mm)",
+                                                 "price":  209,
+                                                 "heightKey":  "fl-1800",
                                                  "enabled":  true
                                              }
                                          ]
