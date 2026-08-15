@@ -315,13 +315,20 @@ function renderProducts(filter = 'all') {
 
 function filterProducts(cat, opts) {
  const skipUrl = opts && opts.skipUrl;
+ const vibrant = document.documentElement.classList.contains('ui-vibrant');
  document.querySelectorAll('.filter-btn').forEach((btn) => {
  const active = btn.dataset.filter === cat;
  btn.classList.toggle('active', active);
- btn.classList.toggle('border-corten-700', active);
- btn.classList.toggle('text-corten-400', active);
- btn.classList.toggle('border-gray-700', !active);
- btn.classList.toggle('text-gray-400', !active);
+ // Classic theme uses Tailwind border/text toggles; vibrant styles active via CSS
+ if (!vibrant) {
+  btn.classList.toggle('border-corten-700', active);
+  btn.classList.toggle('text-corten-400', active);
+  btn.classList.toggle('border-gray-700', !active);
+  btn.classList.toggle('text-gray-400', !active);
+ } else {
+  // Keep base classes but avoid fighting gradient with text-gray-400
+  btn.classList.remove('border-gray-700', 'text-gray-400', 'border-corten-700', 'text-corten-400');
+ }
  });
  renderProducts(cat);
  // Keep shop URL in sync so Back links can return to this filter

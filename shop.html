@@ -23,7 +23,8 @@ tailwind.config = {
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/site.css">
+<link rel="stylesheet" href="/css/site.css?v=2">
+<script src="/js/ui-theme.js?v=1"></script>
 </head>
 <body class="font-sans text-gray-200 antialiased metal-texture min-h-screen flex flex-col">
 
@@ -63,19 +64,24 @@ tailwind.config = {
 <main id="main" class="flex-1 flex flex-col">
 <section class="pt-28 pb-20 flex-1">
  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
- <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+ <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
  <div>
  <h1 id="shop-title" class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">The Collection</h1>
  <p id="shop-subtitle" class="mt-2 text-gray-400 max-w-xl">Ready-to-order pieces cut from 3 mm Corten. Supplied raw so the weathering begins outdoors — or ask for pre-weathered.</p>
  </div>
- <div class="flex gap-2 text-sm flex-wrap">
+ <button type="button" class="ui-theme-toggle shrink-0 self-start sm:self-end" data-ui-theme-toggle title="Toggle vibrant / classic look">
+ <span data-ui-theme-label>Vibrant look</span>
+ <span class="opacity-60">·</span>
+ <span data-ui-theme-hint>Switch to classic</span>
+ </button>
+ </div>
+ <div class="flex gap-2 sm:gap-2.5 text-sm flex-wrap mb-10" id="shop-filters">
  <button type="button" onclick="filterProducts('all')" class="filter-btn active px-4 py-1.5 rounded-sm border border-corten-700 text-corten-400" data-filter="all">All</button>
  <button type="button" onclick="filterProducts('privacy')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="privacy">Privacy screens</button>
  <button type="button" onclick="filterProducts('sculpture')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="sculpture">Sculptures</button>
  <button type="button" onclick="filterProducts('signage')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="signage">Signage</button>
  <button type="button" onclick="filterProducts('numbers')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="numbers">Numbers</button>
  <button type="button" onclick="filterProducts('planter')" class="filter-btn px-4 py-1.5 rounded-sm border border-gray-700 text-gray-400 hover:border-corten-700 hover:text-corten-400" data-filter="planter">Planters</button>
- </div>
  </div>
 
  <!-- Privacy hub: screens vs posts + design run-through -->
@@ -169,7 +175,7 @@ tailwind.config = {
 <script src="/js/products.js"></script>
 <script src="/js/privacy-config.js?v=6"></script>
 <script src="/js/finish-preview.js?v=3"></script>
-<script src="/js/main.js?v=7"></script>
+<script src="/js/main.js?v=8"></script>
 <script src="/js/shop-privacy.js?v=4"></script>
 </body>
 </html>
