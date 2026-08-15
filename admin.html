@@ -420,21 +420,24 @@ tailwind.config = {
  Customer price = <strong class="text-gray-400">size base</strong> + <strong class="text-gray-400">material</strong> + <strong class="text-gray-400">thickness</strong> + <strong class="text-gray-400">powdercoat</strong> (if chosen). Edit these for all privacy panels at once.
  </p>
  <div class="space-y-6">
+ <!-- PANEL SIZES -->
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 space-y-3">
  <div class="flex flex-wrap items-center justify-between gap-2">
- <h2 class="font-display text-lg text-white">Panel sizes &amp; base prices</h2>
- <button type="button" id="btn-priv-add-size" class="text-xs text-corten-400 hover:text-corten-300">+ Add size</button>
+ <div>
+ <h2 class="font-display text-lg text-white">Panel sizes &amp; prices</h2>
+ <p class="text-xs text-gray-500 mt-0.5">Base price for each size (before material / thickness / powdercoat). Edit dimensions and $ freely.</p>
  </div>
- <p class="text-xs text-gray-500">Base price for that panel size before material / thickness / powdercoat adders.</p>
+ <button type="button" id="btn-priv-add-size" class="px-3 py-1.5 text-xs font-semibold border border-corten-600 text-corten-400 rounded-sm hover:bg-corten-950/40">+ Add size</button>
+ </div>
  <div class="overflow-x-auto">
  <table class="w-full text-sm text-left">
  <thead class="text-[10px] uppercase text-gray-500">
  <tr>
- <th class="pb-2 pr-2">Label</th>
+ <th class="pb-2 pr-2">Name</th>
  <th class="pb-2 pr-2">Dimensions</th>
- <th class="pb-2 pr-2">Base $</th>
- <th class="pb-2 pr-2">On</th>
- <th class="pb-2 pr-2">Quote only</th>
+ <th class="pb-2 pr-2">Price $</th>
+ <th class="pb-2 pr-2 text-center">On</th>
+ <th class="pb-2 pr-2 text-center">Quote only</th>
  <th class="pb-2 w-16"></th>
  </tr>
  </thead>
@@ -443,16 +446,48 @@ tailwind.config = {
  </div>
  </div>
 
- <div class="grid lg:grid-cols-2 gap-6">
+ <!-- THICKNESS PRICES -->
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 space-y-3">
- <h2 class="font-display text-lg text-white">Material (+ $ adder)</h2>
- <p class="text-xs text-gray-500">Added on top of size base. Corten usually $0; aluminium often a surcharge.</p>
- <div id="priv-materials-body" class="space-y-2"></div>
+ <div class="flex flex-wrap items-center justify-between gap-2">
+ <div>
+ <h2 class="font-display text-lg text-white">Thickness &amp; prices</h2>
+ <p class="text-xs text-gray-500 mt-0.5">Extra $ added on top of panel size price (e.g. 1.6 mm = $0, 3 mm = +$45).</p>
  </div>
+ <button type="button" id="btn-priv-add-thickness" class="px-3 py-1.5 text-xs font-semibold border border-corten-600 text-corten-400 rounded-sm hover:bg-corten-950/40">+ Add thickness</button>
+ </div>
+ <div class="overflow-x-auto">
+ <table class="w-full text-sm text-left">
+ <thead class="text-[10px] uppercase text-gray-500">
+ <tr>
+ <th class="pb-2 pr-2">Label</th>
+ <th class="pb-2 pr-2">mm</th>
+ <th class="pb-2 pr-2">Price adder $</th>
+ <th class="pb-2 pr-2 text-center">On</th>
+ <th class="pb-2 w-16"></th>
+ </tr>
+ </thead>
+ <tbody id="priv-thickness-body"></tbody>
+ </table>
+ </div>
+ </div>
+
+ <!-- MATERIALS -->
  <div class="bg-metal-850 border border-corten-900/40 rounded-sm p-5 space-y-3">
- <h2 class="font-display text-lg text-white">Thickness (+ $ adder)</h2>
- <p class="text-xs text-gray-500">1.6 mm, 2.5 mm, 3 mm options customers can pick.</p>
- <div id="priv-thickness-body" class="space-y-2"></div>
+ <div>
+ <h2 class="font-display text-lg text-white">Material &amp; prices</h2>
+ <p class="text-xs text-gray-500 mt-0.5">Extra $ for material choice (Corten usually $0; Aluminium often a surcharge).</p>
+ </div>
+ <div class="overflow-x-auto">
+ <table class="w-full text-sm text-left">
+ <thead class="text-[10px] uppercase text-gray-500">
+ <tr>
+ <th class="pb-2 pr-2">Material</th>
+ <th class="pb-2 pr-2">Price adder $</th>
+ <th class="pb-2 pr-2 text-center">On</th>
+ </tr>
+ </thead>
+ <tbody id="priv-materials-body"></tbody>
+ </table>
  </div>
  </div>
 
@@ -488,7 +523,7 @@ tailwind.config = {
  <p id="priv-save-msg" class="text-sm text-gray-500"></p>
  </div>
  <p class="text-[11px] text-gray-600 leading-relaxed max-w-2xl">
- Example: Standard 1800×900 ($520) + Aluminium (+$40) + 3 mm (+$45) + Grey Friars powdercoat (+$85) = <strong class="text-gray-400">$690</strong> excl. GST.
+ <strong class="text-gray-500">How pricing works:</strong> customer total = panel size price + material adder + thickness adder + powdercoat price (if chosen). Edit any $ above and hit Save. Example: size $520 + aluminium $40 + 3 mm $45 + powdercoat $85 = <strong class="text-gray-400">$690</strong> excl. GST.
  </p>
  </div>
  </div>

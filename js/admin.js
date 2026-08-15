@@ -1535,58 +1535,77 @@ function fillPrivacyAdminForm(cfg) {
  const pr = document.getElementById('priv-pc-price');
  if (pr) pr.value = pc.price != null ? pc.price : 85;
 
- // Materials
+ // Materials table
  const matBox = document.getElementById('priv-materials-body');
  if (matBox) {
   matBox.innerHTML = (c.materials || [])
    .map(
     (m, i) => `
- <div class="flex flex-wrap items-center gap-2 border border-gray-800 rounded-sm px-3 py-2 bg-metal-950/50" data-priv-mat="${i}">
- <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
- <input type="checkbox" data-mat-on ${m.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
- On
- </label>
- <input type="text" data-mat-label value="${escapeHtml(m.label || '')}" class="flex-1 min-w-[7rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
- <span class="text-xs text-gray-500">+$</span>
- <input type="number" data-mat-adder step="1" value="${Number(m.adder) || 0}" class="w-20 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
- <span class="text-[10px] text-gray-600 font-mono">${escapeHtml(m.id || '')}</span>
- </div>`
+ <tr data-priv-mat="${i}" class="border-t border-gray-800">
+ <td class="py-2 pr-2">
+  <input type="text" data-mat-label value="${escapeHtml(m.label || '')}" class="w-full min-w-[8rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+  <span class="text-[10px] text-gray-600 font-mono">${escapeHtml(m.id || '')}</span>
+ </td>
+ <td class="py-2 pr-2">
+  <div class="flex items-center gap-1">
+   <span class="text-xs text-gray-500">+$</span>
+   <input type="number" data-mat-adder step="1" value="${Number(m.adder) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-semibold text-corten-400">
+  </div>
+ </td>
+ <td class="py-2 text-center"><input type="checkbox" data-mat-on ${m.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600"></td>
+ </tr>`
    )
    .join('');
  }
 
- // Thickness
+ // Thickness table
  const thBox = document.getElementById('priv-thickness-body');
  if (thBox) {
   thBox.innerHTML = (c.thicknesses || [])
    .map(
     (t, i) => `
- <div class="flex flex-wrap items-center gap-2 border border-gray-800 rounded-sm px-3 py-2 bg-metal-950/50" data-priv-th="${i}">
- <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
- <input type="checkbox" data-th-on ${t.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
- On
- </label>
- <input type="text" data-th-label value="${escapeHtml(t.label || '')}" class="flex-1 min-w-[6rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
- <span class="text-xs text-gray-500">+$</span>
- <input type="number" data-th-adder step="1" value="${Number(t.adder) || 0}" class="w-20 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
- </div>`
+ <tr data-priv-th="${i}" class="border-t border-gray-800">
+ <td class="py-2 pr-2"><input type="text" data-th-label value="${escapeHtml(t.label || '')}" placeholder="3 mm" class="w-full min-w-[6rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm"></td>
+ <td class="py-2 pr-2"><input type="number" data-th-mm step="0.1" min="0" value="${t.mm != null ? t.mm : ''}" placeholder="3" class="w-24 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm"></td>
+ <td class="py-2 pr-2">
+  <div class="flex items-center gap-1">
+   <span class="text-xs text-gray-500">+$</span>
+   <input type="number" data-th-adder step="1" value="${Number(t.adder) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-semibold text-corten-400">
+  </div>
+ </td>
+ <td class="py-2 pr-2 text-center"><input type="checkbox" data-th-on ${t.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600"></td>
+ <td class="py-2"><button type="button" data-th-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button></td>
+ </tr>`
    )
    .join('');
+  thBox.querySelectorAll('[data-th-del]').forEach((btn) => {
+   btn.addEventListener('click', () => {
+    const i = parseInt(btn.dataset.thDel, 10);
+    privacyDraft = collectPrivacyConfig();
+    privacyDraft.thicknesses.splice(i, 1);
+    fillPrivacyAdminForm(privacyDraft);
+   });
+  });
  }
 
- // Sizes
+ // Sizes table
  const szBody = document.getElementById('priv-sizes-body');
  if (szBody) {
   szBody.innerHTML = (c.sizes || [])
    .map(
     (s, i) => `
  <tr data-priv-sz="${i}" class="border-t border-gray-800">
- <td class="py-1.5 pr-2"><input type="text" data-sz-label value="${escapeHtml(s.label || '')}" class="w-full min-w-[5rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
- <td class="py-1.5 pr-2"><input type="text" data-sz-size value="${escapeHtml(s.size || '')}" class="w-full min-w-[8rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
- <td class="py-1.5 pr-2"><input type="number" data-sz-price step="1" min="0" value="${Number(s.price) || 0}" class="w-24 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
- <td class="py-1.5 pr-2 text-center"><input type="checkbox" data-sz-on ${s.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600"></td>
- <td class="py-1.5 pr-2 text-center"><input type="checkbox" data-sz-quote ${s.quoteOnly ? 'checked' : ''} class="rounded border-gray-600 text-corten-600" title="Quote only (no fixed price)"></td>
- <td class="py-1.5"><button type="button" data-sz-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button></td>
+ <td class="py-2 pr-2"><input type="text" data-sz-label value="${escapeHtml(s.label || '')}" placeholder="Standard" class="w-full min-w-[5rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm"></td>
+ <td class="py-2 pr-2"><input type="text" data-sz-size value="${escapeHtml(s.size || '')}" placeholder="1800 × 900 mm" class="w-full min-w-[9rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm"></td>
+ <td class="py-2 pr-2">
+  <div class="flex items-center gap-1">
+   <span class="text-xs text-gray-500">$</span>
+   <input type="number" data-sz-price step="1" min="0" value="${Number(s.price) || 0}" class="w-28 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-semibold text-corten-400">
+  </div>
+ </td>
+ <td class="py-2 pr-2 text-center"><input type="checkbox" data-sz-on ${s.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600"></td>
+ <td class="py-2 pr-2 text-center"><input type="checkbox" data-sz-quote ${s.quoteOnly ? 'checked' : ''} class="rounded border-gray-600 text-corten-600" title="Quote only (no fixed price)"></td>
+ <td class="py-2"><button type="button" data-sz-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button></td>
  </tr>`
    )
    .join('');
@@ -1637,10 +1656,16 @@ function collectPrivacyConfig() {
  const thicknesses = [];
  document.querySelectorAll('[data-priv-th]').forEach((row, i) => {
   const prev = (base.thicknesses || [])[i] || {};
+  const mmVal = Number(row.querySelector('[data-th-mm]')?.value);
+  const mm = Number.isFinite(mmVal) && mmVal > 0 ? mmVal : prev.mm || 0;
+  const label =
+   row.querySelector('[data-th-label]')?.value.trim() ||
+   (mm ? mm + ' mm' : prev.label || 'Thickness');
+  const id = prev.id && String(prev.mm) === String(mm) ? prev.id : String(mm || prev.id || i);
   thicknesses.push({
-   id: prev.id || String(prev.mm || i),
-   label: row.querySelector('[data-th-label]')?.value.trim() || prev.label || 'Thickness',
-   mm: prev.mm != null ? prev.mm : Number(String(prev.id).replace(/[^\d.]/g, '')) || 0,
+   id,
+   label,
+   mm,
    enabled: !!row.querySelector('[data-th-on]')?.checked,
    adder: Number(row.querySelector('[data-th-adder]')?.value) || 0,
   });
@@ -1712,6 +1737,19 @@ function addPrivacySizeRow() {
   price: 0,
   enabled: true,
   quoteOnly: false,
+ });
+ fillPrivacyAdminForm(privacyDraft);
+}
+
+function addPrivacyThicknessRow() {
+ privacyDraft = collectPrivacyConfig();
+ if (!Array.isArray(privacyDraft.thicknesses)) privacyDraft.thicknesses = [];
+ privacyDraft.thicknesses.push({
+  id: 'th-' + Date.now().toString(36),
+  label: 'New',
+  mm: 0,
+  adder: 0,
+  enabled: true,
  });
  fillPrivacyAdminForm(privacyDraft);
 }
@@ -1955,6 +1993,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
  document.getElementById('btn-save-privacy')?.addEventListener('click', () => savePrivacyLive());
  document.getElementById('btn-priv-add-size')?.addEventListener('click', () => addPrivacySizeRow());
+ document.getElementById('btn-priv-add-thickness')?.addEventListener('click', () => addPrivacyThicknessRow());
  document.getElementById('btn-priv-add-colour')?.addEventListener('click', () => addPrivacyColour());
  document.getElementById('priv-colour-new')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
