@@ -1656,10 +1656,12 @@ function fillPrivacyAdminForm(cfg) {
      const heightRows = groups.length
       ? groups
          .map(
-          (g, hi) => `
+          (g) => `
  <tr data-acc-height="${escapeHtml(g.heightKey)}" class="border-t border-gray-800">
-  <td class="py-2 pr-3 text-sm text-gray-200">${escapeHtml(g.heightLabel)}</td>
-  <td class="py-2 pr-3 text-[11px] text-gray-600">End · Middle · Corner</td>
+  <td class="py-2 pr-3">
+   <input type="text" data-acc-height-label data-height-key="${escapeHtml(g.heightKey)}" value="${escapeHtml(g.heightLabel)}" placeholder="e.g. 1200/1650 mm or 1200 mm (65 x 65 mm)" class="w-full min-w-[12rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+  </td>
+  <td class="py-2 pr-3 text-[11px] text-gray-600 whitespace-nowrap">End · Middle · Corner</td>
   <td class="py-2">
    <div class="flex items-center gap-1">
     <span class="text-xs text-gray-500">$</span>
@@ -1679,12 +1681,12 @@ function fillPrivacyAdminForm(cfg) {
    </label>
    <input type="text" data-acc-name value="${escapeHtml(a.name || '')}" class="flex-1 min-w-[12rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm font-medium">
   </div>
-  <p class="text-[11px] text-gray-600">${escapeHtml(a.id || '')} · powdercoat only · set price per height below (applies to end, middle &amp; corner)</p>
+  <p class="text-[11px] text-gray-600">${escapeHtml(a.id || '')} · powdercoat only · edit <strong class="text-gray-500">length/height</strong> and price (applies to end, middle &amp; corner)</p>
   <div class="overflow-x-auto">
    <table class="w-full text-sm text-left">
     <thead class="text-[10px] uppercase text-gray-500">
      <tr>
-      <th class="pb-2 pr-3">Height / size</th>
+      <th class="pb-2 pr-3">Post length / height (editable)</th>
       <th class="pb-2 pr-3">Post types</th>
       <th class="pb-2">Price $</th>
      </tr>
@@ -1760,20 +1762,44 @@ function collectPrivacyConfig() {
  const accessories = [];
  document.querySelectorAll('[data-priv-acc]').forEach((row, i) => {
   const prev = (base.accessories || [])[i] || {};
-  // heightKey → price from admin table
+  // heightKey → price + editable length label from admin table
   const heightPrices = {};
+  const heightLabels = {};
   row.querySelectorAll('[data-acc-height-price]').forEach((inp) => {
    const hk = inp.getAttribute('data-height-key') || '';
    if (hk) heightPrices[hk] = Number(inp.value) || 0;
   });
+  row.querySelectorAll('[data-acc-height-label]').forEach((inp) => {
+   const hk = inp.getAttribute('data-height-key') || '';
+   if (hk) heightLabels[hk] = String(inp.value || '').trim();
+  });
+
+  function postTypeSuffix(v) {
+   const lab = String(v.label || '');
+   // Keep "End Post" / "Middle Post" / "Corner Post" from full label
+   const m = lab.match(/\b(End|Middle|Corner)\s*Post\b/i);
+   if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' Post';
+   if (/end/i.test(v.id || '')) return 'End Post';
+   if (/mid/i.test(v.id || '')) return 'Middle Post';
+   if (/cor/i.test(v.id || '')) return 'Corner Post';
+   return 'Post';
+  }
+
   const variants = (Array.isArray(prev.variants) ? prev.variants : []).map((v) => {
    const hk =
     typeof postHeightKey === 'function' ? postHeightKey(v) : v.heightKey || '';
    const next = { ...v };
-   if (hk && Object.prototype.hasOwnProperty.call(heightPrices, hk)) {
-    next.price = heightPrices[hk];
+   if (hk) {
     next.heightKey = hk;
-    if (!next.heightLabel && typeof postHeightLabel === 'function') {
+    if (Object.prototype.hasOwnProperty.call(heightPrices, hk)) {
+     next.price = heightPrices[hk];
+    }
+    const newLen = heightLabels[hk];
+    if (newLen) {
+     next.heightLabel = newLen;
+     // Rebuild full customer-facing option label
+     next.label = newLen + ' / Powder Coated / ' + postTypeSuffix(v);
+    } else if (!next.heightLabel && typeof postHeightLabel === 'function') {
      next.heightLabel = postHeightLabel(v);
     }
    }
