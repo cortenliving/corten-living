@@ -714,19 +714,27 @@ function renderCart() {
     const sizeClass = charLen >= 5 ? 'chars-5plus' : (charLen >= 4 ? 'chars-4' : '');
     const safeChars = chars.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const typeLabel = String(item.type || 'Item').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const detail = [item.size, item.mount].filter(Boolean).join(' · ');
+    const isPrivacy = item.category === 'privacy' || item.privacyConfig;
+    const detail = isPrivacy
+      ? [item.material, item.thickness, item.finish, item.colour, item.size].filter(Boolean).join(' · ')
+      : [item.size, item.mount].filter(Boolean).join(' · ');
     const line = money(item.price * (item.qty || 1));
+    const previewLabel = isPrivacy
+      ? String(item.chars || 'PANEL').slice(0, 12)
+      : safeChars;
     return `
     <div class="c-item rounded-sm overflow-hidden">
       <div class="cart-preview-stage flex items-center justify-center px-4 py-5 sm:px-6 sm:py-7 overflow-x-auto">
-        <span class="cart-preview-text ${sizeClass} select-none" aria-hidden="true">${safeChars}</span>
+        <span class="cart-preview-text ${isPrivacy ? 'chars-5plus' : sizeClass} select-none" aria-hidden="true">${previewLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>
       </div>
       <div class="p-4 sm:p-5 flex justify-between items-start gap-4">
         <div class="min-w-0">
           <p class="font-display text-lg text-white">${typeLabel}</p>
           <p class="text-sm text-gray-300 mt-1">
-            <span class="text-white font-semibold tracking-wider">${safeChars}</span>
-            ${detail ? ' · ' + detail : ''}${(item.qty && item.qty > 1) ? ' · ×' + item.qty : ''}
+            ${isPrivacy
+              ? `<span class="text-gray-200">${detail || 'Privacy panel'}</span>`
+              : `<span class="text-white font-semibold tracking-wider">${safeChars}</span>${detail ? ' · ' + detail : ''}`}
+            ${(item.qty && item.qty > 1) ? ' · ×' + item.qty : ''}
           </p>
           <p class="text-corten-400 font-bold text-xl mt-2">${fmtMoney(line)} <span class="text-xs font-normal text-gray-500">excl. GST</span></p>
         </div>

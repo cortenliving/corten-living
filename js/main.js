@@ -185,9 +185,21 @@ function scaleSizeLabel(label, factor) {
  });
 }
 
+/** Cached privacy settings for shop card “From $…” */
+let _shopPrivacyCfg = null;
+
 /** Display price for cards: always prefer lowest size option when sizes exist */
 function productPriceDisplay(p) {
  if (!p) return '';
+ // Privacy panels use global configurator pricing
+ if (typeof isPrivacyProduct === 'function' ? isPrivacyProduct(p) : p.category === 'privacy') {
+  if (_shopPrivacyCfg && typeof privacyFromPrice === 'function') {
+   const from = privacyFromPrice(_shopPrivacyCfg);
+   if (from != null && from > 0) return 'From $' + from;
+  }
+  if (p.priceLabel && String(p.priceLabel).trim()) return p.priceLabel;
+  return 'Configure';
+ }
  if (!isHouseNumberProduct(p) && Array.isArray(p.sizes) && p.sizes.length) {
   const prices = p.sizes.map((s) => Number(s.price)).filter((n) => !Number.isNaN(n) && n > 0);
   if (prices.length) {
@@ -411,6 +423,7 @@ function initQuotePrefill() {
  if (params.get('mount')) parts.push('Mount: ' + params.get('mount'));
  if (params.get('chars')) parts.push('Characters: ' + params.get('chars'));
  if (params.get('price')) parts.push('Est. price: ' + params.get('price'));
+ if (params.get('note')) parts.push(params.get('note'));
  if (params.get('message')) parts.push(params.get('message'));
 
  if (parts.length && !notes.value) {
@@ -426,6 +439,12 @@ document.addEventListener('DOMContentLoaded', async () => {
  renderProducts('all');
  renderFeatured();
  await loadActiveProductsAsync();
+ // Privacy “From $…” on shop cards
+ if (typeof loadPrivacySettings === 'function') {
+  try {
+   _shopPrivacyCfg = await loadPrivacySettings();
+  } catch (_) {}
+ }
  renderProducts('all');
  renderFeatured();
  initEstimator();

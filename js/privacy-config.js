@@ -1,0 +1,184 @@
+/**
+ * Privacy screen configurator — pricing & options (shared by shop + product page).
+ * Admin edits live in data/privacy-settings.json via /api/privacy-settings.
+ */
+
+const PRIVACY_SETTINGS_KEY = 'cortenPrivacySettings';
+
+function defaultPrivacyConfig() {
+  return {
+    enabled: true,
+    currency: 'NZD',
+    materials: [
+      { id: 'corten', label: 'Corten steel', enabled: true, adder: 0 },
+      { id: 'aluminium', label: 'Aluminium', enabled: true, adder: 40 },
+    ],
+    thicknesses: [
+      { id: '1.6', label: '1.6 mm', mm: 1.6, enabled: true, adder: 0 },
+      { id: '2.5', label: '2.5 mm', mm: 2.5, enabled: true, adder: 25 },
+      { id: '3', label: '3 mm', mm: 3, enabled: true, adder: 45 },
+    ],
+    powdercoat: {
+      enabled: true,
+      label: 'Powder coated (Dulux)',
+      price: 85,
+      note: 'Powder coating available. Colours from the Dulux powdercoat range.',
+      allowOnCorten: true,
+      colours: [
+        { id: 'ebony', label: 'Ebony', enabled: true },
+        { id: 'grey-friars', label: 'Grey Friars', enabled: true },
+        { id: 'ironsand', label: 'Ironsand', enabled: true },
+        { id: 'flaxpod', label: 'FlaxPod', enabled: true },
+        { id: 'karaka', label: 'Karaka', enabled: true },
+        { id: 'sandstone-grey', label: 'Sandstone Grey', enabled: true },
+        { id: 'thunder-grey', label: 'Thunder Grey', enabled: true },
+        { id: 'windsor-grey', label: 'Windsor Grey', enabled: true },
+        { id: 'titania', label: 'Titania', enabled: true },
+        { id: 'desert-sand', label: 'Desert Sand', enabled: true },
+        { id: 'lichen', label: 'Lichen', enabled: true },
+        { id: 'mist-green', label: 'Mist Green', enabled: true },
+        { id: 'permanent-green', label: 'Permanent Green', enabled: true },
+        { id: 'new-denim-blue', label: 'New Denim Blue', enabled: true },
+        { id: 'pioneer-red', label: 'Pioneer Red', enabled: true },
+        { id: 'matt-charcoal', label: 'Matt Charcoal', enabled: true },
+        { id: 'white', label: 'White', enabled: true },
+        { id: 'black', label: 'Black', enabled: true },
+      ],
+    },
+    sizes: [
+      { id: 'sz-1200x600', label: 'Compact', size: '1200 × 600 mm', price: 320, enabled: true },
+      { id: 'sz-1500x750', label: 'Medium', size: '1500 × 750 mm', price: 420, enabled: true },
+      { id: 'sz-1800x900', label: 'Standard', size: '1800 × 900 mm', price: 520, enabled: true },
+      { id: 'sz-1800x1200', label: 'Wide', size: '1800 × 1200 mm', price: 640, enabled: true },
+      { id: 'sz-custom', label: 'Custom size', size: 'Custom — we will confirm', price: 0, enabled: true, quoteOnly: true },
+    ],
+    defaultMaterial: 'corten',
+    defaultThickness: '3',
+    defaultFinish: 'raw',
+  };
+}
+
+function enabledList(arr) {
+  return (arr || []).filter((x) => x && x.enabled !== false);
+}
+
+/**
+ * Price = size base + material adder + thickness adder + powdercoat price (if coated)
+ */
+function calcPrivacyPrice(cfg, selection) {
+  const c = cfg || defaultPrivacyConfig();
+  const mat = (c.materials || []).find((m) => m.id === selection.materialId);
+  const th = (c.thicknesses || []).find((t) => t.id === selection.thicknessId);
+  const sz = (c.sizes || []).find((s) => s.id === selection.sizeId);
+  if (!mat || !th || !sz) {
+    return { unit: 0, quoteOnly: true, breakdown: {}, error: 'Incomplete selection' };
+  }
+  if (sz.quoteOnly || !(Number(sz.price) > 0)) {
+    return {
+      unit: 0,
+      quoteOnly: true,
+      breakdown: {
+        size: 0,
+        material: Number(mat.adder) || 0,
+        thickness: Number(th.adder) || 0,
+        powdercoat: 0,
+      },
+      size: sz,
+      material: mat,
+      thickness: th,
+    };
+  }
+  const sizeP = Number(sz.price) || 0;
+  const matP = Number(mat.adder) || 0;
+  const thP = Number(th.adder) || 0;
+  let pcP = 0;
+  if (selection.finish === 'powdercoat' && c.powdercoat?.enabled !== false) {
+    pcP = Number(c.powdercoat.price) || 0;
+  }
+  const unit = sizeP + matP + thP + pcP;
+  return {
+    unit,
+    quoteOnly: false,
+    breakdown: { size: sizeP, material: matP, thickness: thP, powdercoat: pcP },
+    size: sz,
+    material: mat,
+    thickness: th,
+  };
+}
+
+/** Lowest non-quote size + cheapest material/thickness, raw finish */
+function privacyFromPrice(cfg) {
+  const c = cfg || defaultPrivacyConfig();
+  const sizes = enabledList(c.sizes).filter((s) => !s.quoteOnly && Number(s.price) > 0);
+  const mats = enabledList(c.materials);
+  const ths = enabledList(c.thicknesses);
+  if (!sizes.length || !mats.length || !ths.length) return null;
+  const minSize = Math.min(...sizes.map((s) => Number(s.price) || 0));
+  const minMat = Math.min(...mats.map((m) => Number(m.adder) || 0));
+  const minTh = Math.min(...ths.map((t) => Number(t.adder) || 0));
+  return minSize + minMat + minTh;
+}
+
+function privacySelectionSummary(cfg, selection, calc) {
+  const parts = [];
+  if (calc?.material) parts.push(calc.material.label);
+  if (calc?.thickness) parts.push(calc.thickness.label);
+  if (selection.finish === 'powdercoat') {
+    const col = (cfg?.powdercoat?.colours || []).find((x) => x.id === selection.colourId);
+    parts.push('Powdercoat' + (col ? ': ' + col.label : ''));
+  } else {
+    parts.push('Raw / uncoated');
+  }
+  if (calc?.size) parts.push(calc.size.size || calc.size.label);
+  return parts.join(' · ');
+}
+
+let _privacyCfgPromise = null;
+let _privacyCfg = null;
+
+async function loadPrivacySettings(force) {
+  if (!force && _privacyCfg) return _privacyCfg;
+  if (!force && _privacyCfgPromise) return _privacyCfgPromise;
+  _privacyCfgPromise = (async () => {
+    try {
+      const res = await fetch('/api/privacy-settings', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.config) {
+          _privacyCfg = data.config;
+          try {
+            sessionStorage.setItem(PRIVACY_SETTINGS_KEY, JSON.stringify(data.config));
+          } catch (_) {}
+          return _privacyCfg;
+        }
+      }
+    } catch (_) {}
+    try {
+      const raw = sessionStorage.getItem(PRIVACY_SETTINGS_KEY);
+      if (raw) {
+        _privacyCfg = JSON.parse(raw);
+        return _privacyCfg;
+      }
+    } catch (_) {}
+    _privacyCfg = defaultPrivacyConfig();
+    return _privacyCfg;
+  })();
+  return _privacyCfgPromise;
+}
+
+function isPrivacyProduct(p) {
+  if (!p) return false;
+  if (String(p.category || '').toLowerCase() === 'privacy') return true;
+  return String(p.id || '').startsWith('privacy-panel-');
+}
+
+// Browser globals
+if (typeof window !== 'undefined') {
+  window.defaultPrivacyConfig = defaultPrivacyConfig;
+  window.calcPrivacyPrice = calcPrivacyPrice;
+  window.privacyFromPrice = privacyFromPrice;
+  window.privacySelectionSummary = privacySelectionSummary;
+  window.loadPrivacySettings = loadPrivacySettings;
+  window.isPrivacyProduct = isPrivacyProduct;
+  window.enabledPrivacyList = enabledList;
+}

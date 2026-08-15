@@ -123,16 +123,45 @@ tailwind.config = {
         <div class="lg:col-span-5">
           <div class="pd-card rounded-sm p-6 sm:p-8 lg:sticky lg:top-24 space-y-6">
             <div>
-              <p class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-1">3 mm Corten steel</p>
+              <p id="pd-kicker" class="text-xs text-corten-400 uppercase tracking-widest font-medium mb-1">3 mm Corten steel</p>
               <h1 id="pd-name" class="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight"></h1>
             </div>
 
             <p id="pd-desc" class="text-sm text-gray-300 leading-relaxed whitespace-pre-line"></p>
 
-            <div>
-              <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Choose size</p>
-              <div id="pd-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-              <p class="text-xs text-gray-400 mt-2">All sizes · profile-cut 3 mm Corten · NZ made</p>
+            <!-- Standard products: size picker -->
+            <div id="pd-standard-config">
+              <div>
+                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Choose size</p>
+                <div id="pd-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <p class="text-xs text-gray-400 mt-2">All sizes · profile-cut 3 mm Corten · NZ made</p>
+              </div>
+            </div>
+
+            <!-- Privacy screens: full configurator -->
+            <div id="pd-privacy-config" class="hidden space-y-5">
+              <div>
+                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Material</p>
+                <div id="pd-priv-materials" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Thickness</p>
+                <div id="pd-priv-thickness" class="grid grid-cols-3 gap-2"></div>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Panel size</p>
+                <div id="pd-priv-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Finish</p>
+                <div id="pd-priv-finish" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <div id="pd-priv-colour-wrap" class="mt-3 hidden">
+                  <label class="block text-xs text-gray-400 mb-1.5" for="pd-priv-colour">Dulux powdercoat colour</label>
+                  <select id="pd-priv-colour" class="w-full bg-[#120e0c] border border-corten-500/40 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none"></select>
+                  <p class="text-[11px] text-gray-500 mt-1.5" id="pd-priv-pc-note"></p>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400" id="pd-priv-breakdown"></p>
             </div>
 
             <div>
@@ -182,12 +211,22 @@ tailwind.config = {
 </footer>
 
 <script src="/js/products.js"></script>
+<script src="/js/privacy-config.js"></script>
 <script src="/js/main.js"></script>
 <script>
 (function () {
   let product = null;
   let sizes = [];
   let selectedIdx = 0;
+  let privacyMode = false;
+  let privacyCfg = null;
+  let privSel = {
+    materialId: 'corten',
+    thicknessId: '3',
+    sizeId: '',
+    finish: 'raw',
+    colourId: '',
+  };
 
   function escapeHtml(s) {
     return String(s || '')
@@ -203,6 +242,10 @@ tailwind.config = {
 
   function isQuoteOnly() {
     if (!product) return false;
+    if (privacyMode) {
+      const calc = getPrivCalc();
+      return !!(calc && calc.quoteOnly);
+    }
     const label = String(product.priceLabel || '').toLowerCase();
     if (label.includes('quote') || label.includes('poa') || label.includes('on request')) return true;
     const allZero = sizes.length && sizes.every((s) => !(Number(s.price) > 0));
@@ -210,14 +253,52 @@ tailwind.config = {
     return false;
   }
 
+  function getPrivCalc() {
+    if (!privacyCfg || typeof calcPrivacyPrice !== 'function') return null;
+    return calcPrivacyPrice(privacyCfg, privSel);
+  }
+
   function updatePriceUI() {
-    const s = selectedSize();
-    if (!s) return;
     const qty = Math.max(1, parseInt(document.getElementById('pd-qty').value, 10) || 1);
-    const unit = Number(s.price) || 0;
     const priceEl = document.getElementById('pd-price');
     const detailEl = document.getElementById('pd-price-detail');
     const btn = document.getElementById('pd-add-cart');
+    const br = document.getElementById('pd-priv-breakdown');
+
+    if (privacyMode) {
+      const calc = getPrivCalc();
+      if (!calc) return;
+      if (calc.quoteOnly) {
+        priceEl.textContent = 'Quote for size';
+        detailEl.textContent = (calc.size?.size || '') + ' · we will confirm price';
+        if (btn) btn.textContent = 'Request a quote';
+        if (br) br.textContent = 'Custom size — tell us dimensions on the quote form.';
+      } else {
+        priceEl.textContent = '$' + (calc.unit * qty);
+        detailEl.textContent =
+          (typeof privacySelectionSummary === 'function'
+            ? privacySelectionSummary(privacyCfg, privSel, calc)
+            : '') + (qty > 1 ? ' · ×' + qty : '');
+        if (btn) btn.textContent = 'Add to Cart';
+        if (br) {
+          const b = calc.breakdown || {};
+          br.textContent =
+            'Price: size $' +
+            b.size +
+            (b.material ? ' + material $' + b.material : '') +
+            (b.thickness ? ' + thickness $' + b.thickness : '') +
+            (b.powdercoat ? ' + powdercoat $' + b.powdercoat : '') +
+            ' = $' +
+            calc.unit +
+            ' excl. GST';
+        }
+      }
+      return;
+    }
+
+    const s = selectedSize();
+    if (!s) return;
+    const unit = Number(s.price) || 0;
     if (isQuoteOnly() && unit <= 0) {
       priceEl.textContent = product.priceLabel || 'Quote for size';
       detailEl.textContent = (s.size || product.size || '') + ' · priced by size';
@@ -230,8 +311,160 @@ tailwind.config = {
     }
   }
 
+  function optBtn(active, html) {
+    return `<button type="button" class="pd-opt text-left px-3 py-3 rounded-sm border text-sm font-medium ${
+      active ? 'is-active border-corten-500 text-white' : 'border-white/15 text-gray-200'
+    }">${html}</button>`;
+  }
+
+  function renderPrivacyConfig() {
+    if (!privacyCfg) return;
+    const en = typeof enabledPrivacyList === 'function' ? enabledPrivacyList : (a) => (a || []).filter((x) => x.enabled !== false);
+    const mats = en(privacyCfg.materials);
+    const ths = en(privacyCfg.thicknesses);
+    const szs = en(privacyCfg.sizes);
+    const pc = privacyCfg.powdercoat || {};
+    const colours = en(pc.colours || []);
+
+    if (!mats.find((m) => m.id === privSel.materialId) && mats[0]) privSel.materialId = mats[0].id;
+    if (!ths.find((t) => t.id === privSel.thicknessId) && ths[0]) privSel.thicknessId = ths[0].id;
+    if (!szs.find((s) => s.id === privSel.sizeId) && szs[0]) privSel.sizeId = szs[0].id;
+
+    const matBox = document.getElementById('pd-priv-materials');
+    matBox.innerHTML = mats
+      .map((m) => {
+        const active = m.id === privSel.materialId;
+        const add = Number(m.adder) || 0;
+        return `<div data-priv-mat="${escapeHtml(m.id)}">${optBtn(
+          active,
+          `<span class="block font-semibold">${escapeHtml(m.label)}</span>
+           <span class="block text-xs mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${
+             add > 0 ? '+$' + add : add < 0 ? '-$' + Math.abs(add) : 'Base material'
+           }</span>`
+        )}</div>`;
+      })
+      .join('');
+    matBox.querySelectorAll('[data-priv-mat]').forEach((el) => {
+      el.querySelector('button')?.addEventListener('click', () => {
+        privSel.materialId = el.dataset.privMat;
+        // If powdercoat not allowed on corten, force raw
+        if (
+          privSel.materialId === 'corten' &&
+          pc.allowOnCorten === false &&
+          privSel.finish === 'powdercoat'
+        ) {
+          privSel.finish = 'raw';
+        }
+        renderPrivacyConfig();
+        updatePriceUI();
+      });
+    });
+
+    const thBox = document.getElementById('pd-priv-thickness');
+    thBox.innerHTML = ths
+      .map((t) => {
+        const active = t.id === privSel.thicknessId;
+        const add = Number(t.adder) || 0;
+        return `<div data-priv-th="${escapeHtml(t.id)}">${optBtn(
+          active,
+          `<span class="block font-semibold text-center">${escapeHtml(t.label)}</span>
+           <span class="block text-[10px] text-center mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${
+             add ? '+$' + add : 'incl.'
+           }</span>`
+        )}</div>`;
+      })
+      .join('');
+    thBox.querySelectorAll('[data-priv-th]').forEach((el) => {
+      el.querySelector('button')?.addEventListener('click', () => {
+        privSel.thicknessId = el.dataset.privTh;
+        renderPrivacyConfig();
+        updatePriceUI();
+      });
+    });
+
+    const szBox = document.getElementById('pd-priv-sizes');
+    szBox.innerHTML = szs
+      .map((s) => {
+        const active = s.id === privSel.sizeId;
+        const priceBit = s.quoteOnly || !(Number(s.price) > 0) ? 'Quote' : '$' + Number(s.price);
+        return `<div data-priv-sz="${escapeHtml(s.id)}">${optBtn(
+          active,
+          `<span class="block font-semibold">${escapeHtml(s.label || s.size)}</span>
+           <span class="block text-xs mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${escapeHtml(
+             s.size || ''
+           )} · ${priceBit}</span>`
+        )}</div>`;
+      })
+      .join('');
+    szBox.querySelectorAll('[data-priv-sz]').forEach((el) => {
+      el.querySelector('button')?.addEventListener('click', () => {
+        privSel.sizeId = el.dataset.privSz;
+        renderPrivacyConfig();
+        updatePriceUI();
+      });
+    });
+
+    const allowPc =
+      pc.enabled !== false &&
+      (privSel.materialId !== 'corten' || pc.allowOnCorten !== false) &&
+      colours.length > 0;
+    const finBox = document.getElementById('pd-priv-finish');
+    const finishes = [{ id: 'raw', label: 'Raw / uncoated', sub: 'Natural finish' }];
+    if (allowPc) {
+      finishes.push({
+        id: 'powdercoat',
+        label: pc.label || 'Powder coated (Dulux)',
+        sub: '+$' + (Number(pc.price) || 0),
+      });
+    } else if (privSel.finish === 'powdercoat') {
+      privSel.finish = 'raw';
+    }
+    finBox.innerHTML = finishes
+      .map((f) => {
+        const active = f.id === privSel.finish;
+        return `<div data-priv-fin="${escapeHtml(f.id)}">${optBtn(
+          active,
+          `<span class="block font-semibold">${escapeHtml(f.label)}</span>
+           <span class="block text-xs mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${escapeHtml(
+             f.sub
+           )}</span>`
+        )}</div>`;
+      })
+      .join('');
+    finBox.querySelectorAll('[data-priv-fin]').forEach((el) => {
+      el.querySelector('button')?.addEventListener('click', () => {
+        privSel.finish = el.dataset.privFin;
+        renderPrivacyConfig();
+        updatePriceUI();
+      });
+    });
+
+    const wrap = document.getElementById('pd-priv-colour-wrap');
+    const sel = document.getElementById('pd-priv-colour');
+    const note = document.getElementById('pd-priv-pc-note');
+    if (privSel.finish === 'powdercoat' && allowPc) {
+      wrap.classList.remove('hidden');
+      if (!colours.find((c) => c.id === privSel.colourId) && colours[0]) {
+        privSel.colourId = colours[0].id;
+      }
+      sel.innerHTML = colours
+        .map(
+          (c) =>
+            `<option value="${escapeHtml(c.id)}" ${c.id === privSel.colourId ? 'selected' : ''}>${escapeHtml(
+              c.label
+            )}</option>`
+        )
+        .join('');
+      if (note) note.textContent = pc.note || 'Dulux powdercoat colour range.';
+    } else {
+      wrap.classList.add('hidden');
+      privSel.colourId = '';
+    }
+  }
+
   function renderSizes() {
     const box = document.getElementById('pd-sizes');
+    if (!box) return;
     const quote = isQuoteOnly();
     box.innerHTML = sizes.map((s, i) => {
       const unit = Number(s.price) || 0;
@@ -288,7 +521,7 @@ tailwind.config = {
     });
   }
 
-  function showProduct(p) {
+  async function showProduct(p) {
     product = p;
     // House numbers use their own builder
     if (typeof isHouseNumberProduct === 'function' && isHouseNumberProduct(p)) {
@@ -296,11 +529,42 @@ tailwind.config = {
       return;
     }
 
-    sizes = typeof getProductSizes === 'function' ? getProductSizes(p) : [];
-    if (!sizes.length) {
-      sizes = [{ id: 'default', label: 'Standard', size: p.size || 'Custom', price: Number(p.price) || 0 }];
+    privacyMode = typeof isPrivacyProduct === 'function' ? isPrivacyProduct(p) : (p.category === 'privacy');
+    document.getElementById('pd-standard-config')?.classList.toggle('hidden', privacyMode);
+    document.getElementById('pd-privacy-config')?.classList.toggle('hidden', !privacyMode);
+
+    const kicker = document.getElementById('pd-kicker');
+    if (kicker) {
+      kicker.textContent = privacyMode
+        ? 'Privacy screen · configure material & size'
+        : '3 mm Corten steel';
     }
-    selectedIdx = 0;
+
+    if (privacyMode) {
+      privacyCfg =
+        typeof loadPrivacySettings === 'function'
+          ? await loadPrivacySettings()
+          : null;
+      if (privacyCfg) {
+        privSel.materialId = privacyCfg.defaultMaterial || 'corten';
+        privSel.thicknessId = privacyCfg.defaultThickness || '3';
+        privSel.finish = privacyCfg.defaultFinish === 'powdercoat' ? 'powdercoat' : 'raw';
+        const en =
+          typeof enabledPrivacyList === 'function'
+            ? enabledPrivacyList
+            : (a) => (a || []).filter((x) => x && x.enabled !== false);
+        const firstSz = en(privacyCfg.sizes)[0];
+        privSel.sizeId = firstSz?.id || '';
+      }
+      renderPrivacyConfig();
+    } else {
+      sizes = typeof getProductSizes === 'function' ? getProductSizes(p) : [];
+      if (!sizes.length) {
+        sizes = [{ id: 'default', label: 'Standard', size: p.size || 'Custom', price: Number(p.price) || 0 }];
+      }
+      selectedIdx = 0;
+      renderSizes();
+    }
 
     document.title = p.name + ' | Corten Living';
     document.getElementById('pd-name').textContent = p.name;
@@ -314,7 +578,6 @@ tailwind.config = {
     }
 
     renderGallery(p);
-    renderSizes();
     updatePriceUI();
 
     document.getElementById('product-view').classList.remove('hidden');
@@ -323,11 +586,69 @@ tailwind.config = {
 
   document.getElementById('pd-qty')?.addEventListener('input', updatePriceUI);
   document.getElementById('pd-qty')?.addEventListener('change', updatePriceUI);
+  document.getElementById('pd-priv-colour')?.addEventListener('change', (e) => {
+    privSel.colourId = e.target.value;
+    updatePriceUI();
+  });
 
   document.getElementById('pd-add-cart')?.addEventListener('click', () => {
     if (!product) return;
+
+    if (privacyMode) {
+      const calc = getPrivCalc();
+      if (!calc) return;
+      if (calc.quoteOnly || !(calc.unit > 0)) {
+        const q = new URLSearchParams({
+          product: product.name || product.id || '',
+          note: [
+            product.id || '',
+            calc.material?.label,
+            calc.thickness?.label,
+            calc.size?.size,
+            privSel.finish === 'powdercoat' ? 'Powdercoat' : 'Raw',
+          ]
+            .filter(Boolean)
+            .join(' · '),
+        });
+        window.location.href = '/quote?' + q.toString();
+        return;
+      }
+      const qty = Math.max(1, Math.min(50, parseInt(document.getElementById('pd-qty').value, 10) || 1));
+      const summary =
+        typeof privacySelectionSummary === 'function'
+          ? privacySelectionSummary(privacyCfg, privSel, calc)
+          : '';
+      const col = (privacyCfg?.powdercoat?.colours || []).find((c) => c.id === privSel.colourId);
+      const item = {
+        id: (product.id || 'item') + '-' + Date.now(),
+        productId: product.id,
+        type: product.name,
+        category: 'privacy',
+        chars: calc.size?.label || 'Panel',
+        size: calc.size?.size || '',
+        mount: summary,
+        material: calc.material?.label || '',
+        thickness: calc.thickness?.label || '',
+        finish: privSel.finish === 'powdercoat' ? 'Powdercoat' : 'Raw',
+        colour: privSel.finish === 'powdercoat' ? (col?.label || '') : '',
+        price: calc.unit,
+        qty,
+        privacyConfig: { ...privSel, unit: calc.unit },
+      };
+      const cart = typeof getCart === 'function' ? getCart() : [];
+      cart.push(item);
+      if (typeof setCart === 'function') setCart(cart);
+      else {
+        localStorage.setItem('cortenCart', JSON.stringify(cart));
+        if (typeof updateCartCount === 'function') updateCartCount();
+      }
+      const fb = document.getElementById('pd-cart-feedback');
+      fb.classList.remove('hidden');
+      setTimeout(() => fb.classList.add('hidden'), 4000);
+      return;
+    }
+
     const s = selectedSize();
-    // Quote-only panels (e.g. privacy screens) → custom quote with product name
     if (isQuoteOnly() && !(Number(s?.price) > 0)) {
       const q = new URLSearchParams({
         product: product.name || product.id || '',
@@ -377,7 +698,7 @@ tailwind.config = {
       document.getElementById('product-missing').classList.remove('hidden');
       return;
     }
-    showProduct(p);
+    await showProduct(p);
   })();
 })();
 </script>

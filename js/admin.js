@@ -1133,6 +1133,7 @@ function switchTab(tab) {
  btn.classList.toggle('border-transparent', !on);
  });
  if (tab === 'promo') loadPromoCodes();
+ if (tab === 'privacy') loadPrivacyAdmin();
 }
 
 /* —— Shipping admin —— */
@@ -1497,6 +1498,244 @@ async function deactivatePromo(id) {
  }
 }
 
+/* —— Privacy screen pricing admin —— */
+let privacyDraft = null;
+
+function slugColourId(label) {
+ return String(label || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '')
+  .slice(0, 40) || 'colour-' + Date.now().toString(36);
+}
+
+async function loadPrivacyAdmin() {
+ try {
+  const { res, data } = await api('/api/privacy-settings', { headers: {} });
+  if (res.ok && data?.config) {
+   privacyDraft = data.config;
+  } else if (typeof defaultPrivacyConfig === 'function') {
+   privacyDraft = defaultPrivacyConfig();
+  } else {
+   privacyDraft = { materials: [], thicknesses: [], sizes: [], powdercoat: { colours: [], price: 0, enabled: true } };
+  }
+ } catch {
+  privacyDraft = typeof defaultPrivacyConfig === 'function' ? defaultPrivacyConfig() : {};
+ }
+ fillPrivacyAdminForm(privacyDraft);
+}
+
+function fillPrivacyAdminForm(cfg) {
+ const c = cfg || {};
+ const pc = c.powdercoat || {};
+ const en = document.getElementById('priv-pc-enabled');
+ if (en) en.checked = pc.enabled !== false;
+ const ac = document.getElementById('priv-pc-corten');
+ if (ac) ac.checked = pc.allowOnCorten !== false;
+ const pr = document.getElementById('priv-pc-price');
+ if (pr) pr.value = pc.price != null ? pc.price : 85;
+
+ // Materials
+ const matBox = document.getElementById('priv-materials-body');
+ if (matBox) {
+  matBox.innerHTML = (c.materials || [])
+   .map(
+    (m, i) => `
+ <div class="flex flex-wrap items-center gap-2 border border-gray-800 rounded-sm px-3 py-2 bg-metal-950/50" data-priv-mat="${i}">
+ <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
+ <input type="checkbox" data-mat-on ${m.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
+ On
+ </label>
+ <input type="text" data-mat-label value="${escapeHtml(m.label || '')}" class="flex-1 min-w-[7rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ <span class="text-xs text-gray-500">+$</span>
+ <input type="number" data-mat-adder step="1" value="${Number(m.adder) || 0}" class="w-20 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ <span class="text-[10px] text-gray-600 font-mono">${escapeHtml(m.id || '')}</span>
+ </div>`
+   )
+   .join('');
+ }
+
+ // Thickness
+ const thBox = document.getElementById('priv-thickness-body');
+ if (thBox) {
+  thBox.innerHTML = (c.thicknesses || [])
+   .map(
+    (t, i) => `
+ <div class="flex flex-wrap items-center gap-2 border border-gray-800 rounded-sm px-3 py-2 bg-metal-950/50" data-priv-th="${i}">
+ <label class="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
+ <input type="checkbox" data-th-on ${t.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
+ On
+ </label>
+ <input type="text" data-th-label value="${escapeHtml(t.label || '')}" class="flex-1 min-w-[6rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ <span class="text-xs text-gray-500">+$</span>
+ <input type="number" data-th-adder step="1" value="${Number(t.adder) || 0}" class="w-20 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1.5 text-white text-sm">
+ </div>`
+   )
+   .join('');
+ }
+
+ // Sizes
+ const szBody = document.getElementById('priv-sizes-body');
+ if (szBody) {
+  szBody.innerHTML = (c.sizes || [])
+   .map(
+    (s, i) => `
+ <tr data-priv-sz="${i}" class="border-t border-gray-800">
+ <td class="py-1.5 pr-2"><input type="text" data-sz-label value="${escapeHtml(s.label || '')}" class="w-full min-w-[5rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
+ <td class="py-1.5 pr-2"><input type="text" data-sz-size value="${escapeHtml(s.size || '')}" class="w-full min-w-[8rem] bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
+ <td class="py-1.5 pr-2"><input type="number" data-sz-price step="1" min="0" value="${Number(s.price) || 0}" class="w-24 bg-metal-900 border border-gray-700 rounded-sm px-2 py-1 text-white text-sm"></td>
+ <td class="py-1.5 pr-2 text-center"><input type="checkbox" data-sz-on ${s.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600"></td>
+ <td class="py-1.5 pr-2 text-center"><input type="checkbox" data-sz-quote ${s.quoteOnly ? 'checked' : ''} class="rounded border-gray-600 text-corten-600" title="Quote only (no fixed price)"></td>
+ <td class="py-1.5"><button type="button" data-sz-del="${i}" class="text-xs text-gray-500 hover:text-red-400">Remove</button></td>
+ </tr>`
+   )
+   .join('');
+  szBody.querySelectorAll('[data-sz-del]').forEach((btn) => {
+   btn.addEventListener('click', () => {
+    const i = parseInt(btn.dataset.szDel, 10);
+    privacyDraft = collectPrivacyConfig();
+    privacyDraft.sizes.splice(i, 1);
+    fillPrivacyAdminForm(privacyDraft);
+   });
+  });
+ }
+
+ // Colours
+ const colBox = document.getElementById('priv-colours-body');
+ if (colBox) {
+  colBox.innerHTML = (pc.colours || [])
+   .map(
+    (col, i) => `
+ <label class="flex items-center gap-2 text-sm text-gray-300 border border-gray-800 rounded-sm px-2 py-1.5 bg-metal-950/40">
+ <input type="checkbox" data-col-on data-col-i="${i}" ${col.enabled !== false ? 'checked' : ''} class="rounded border-gray-600 text-corten-600">
+ <span class="truncate">${escapeHtml(col.label || col.id)}</span>
+ </label>`
+   )
+   .join('');
+ }
+}
+
+function collectPrivacyConfig() {
+ const base =
+  privacyDraft && typeof privacyDraft === 'object'
+   ? JSON.parse(JSON.stringify(privacyDraft))
+   : typeof defaultPrivacyConfig === 'function'
+     ? defaultPrivacyConfig()
+     : {};
+
+ const materials = [];
+ document.querySelectorAll('[data-priv-mat]').forEach((row, i) => {
+  const prev = (base.materials || [])[i] || {};
+  materials.push({
+   id: prev.id || slugColourId(row.querySelector('[data-mat-label]')?.value),
+   label: row.querySelector('[data-mat-label]')?.value.trim() || prev.label || 'Material',
+   enabled: !!row.querySelector('[data-mat-on]')?.checked,
+   adder: Number(row.querySelector('[data-mat-adder]')?.value) || 0,
+  });
+ });
+
+ const thicknesses = [];
+ document.querySelectorAll('[data-priv-th]').forEach((row, i) => {
+  const prev = (base.thicknesses || [])[i] || {};
+  thicknesses.push({
+   id: prev.id || String(prev.mm || i),
+   label: row.querySelector('[data-th-label]')?.value.trim() || prev.label || 'Thickness',
+   mm: prev.mm != null ? prev.mm : Number(String(prev.id).replace(/[^\d.]/g, '')) || 0,
+   enabled: !!row.querySelector('[data-th-on]')?.checked,
+   adder: Number(row.querySelector('[data-th-adder]')?.value) || 0,
+  });
+ });
+
+ const sizes = [];
+ document.querySelectorAll('[data-priv-sz]').forEach((row, i) => {
+  const prev = (base.sizes || [])[i] || {};
+  sizes.push({
+   id: prev.id || 'sz-' + i + '-' + Date.now().toString(36),
+   label: row.querySelector('[data-sz-label]')?.value.trim() || 'Size',
+   size: row.querySelector('[data-sz-size]')?.value.trim() || '',
+   price: Number(row.querySelector('[data-sz-price]')?.value) || 0,
+   enabled: !!row.querySelector('[data-sz-on]')?.checked,
+   quoteOnly: !!row.querySelector('[data-sz-quote]')?.checked,
+  });
+ });
+
+ const colours = (base.powdercoat?.colours || []).map((col, i) => {
+  const cb = document.querySelector(`[data-col-on][data-col-i="${i}"]`);
+  return {
+   ...col,
+   enabled: cb ? !!cb.checked : col.enabled !== false,
+  };
+ });
+
+ return {
+  ...base,
+  materials,
+  thicknesses,
+  sizes,
+  powdercoat: {
+   ...(base.powdercoat || {}),
+   enabled: !!document.getElementById('priv-pc-enabled')?.checked,
+   allowOnCorten: !!document.getElementById('priv-pc-corten')?.checked,
+   price: Number(document.getElementById('priv-pc-price')?.value) || 0,
+   label: base.powdercoat?.label || 'Powder coated (Dulux)',
+   colours,
+  },
+ };
+}
+
+async function savePrivacyLive() {
+ const msg = document.getElementById('priv-save-msg');
+ const cfg = collectPrivacyConfig();
+ if (msg) msg.textContent = 'Saving…';
+ try {
+  const { res, data } = await api('/api/privacy-settings', {
+   method: 'PUT',
+   body: JSON.stringify({ config: cfg }),
+  });
+  if (!res.ok) throw new Error(data?.error || 'Save failed');
+  privacyDraft = data.config || cfg;
+  if (msg) msg.textContent = 'Saved live — privacy panel configurator will use these prices.';
+  toast('Privacy pricing saved live');
+ } catch (e) {
+  if (msg) msg.textContent = '';
+  toast(String(e.message || e), true);
+ }
+}
+
+function addPrivacySizeRow() {
+ privacyDraft = collectPrivacyConfig();
+ if (!Array.isArray(privacyDraft.sizes)) privacyDraft.sizes = [];
+ privacyDraft.sizes.push({
+  id: 'sz-' + Date.now().toString(36),
+  label: 'New size',
+  size: '1800 × 900 mm',
+  price: 0,
+  enabled: true,
+  quoteOnly: false,
+ });
+ fillPrivacyAdminForm(privacyDraft);
+}
+
+function addPrivacyColour() {
+ const input = document.getElementById('priv-colour-new');
+ const label = (input?.value || '').trim();
+ if (!label) {
+  toast('Enter a colour name', true);
+  return;
+ }
+ privacyDraft = collectPrivacyConfig();
+ if (!privacyDraft.powdercoat) privacyDraft.powdercoat = { colours: [] };
+ if (!Array.isArray(privacyDraft.powdercoat.colours)) privacyDraft.powdercoat.colours = [];
+ const id = slugColourId(label);
+ if (privacyDraft.powdercoat.colours.some((c) => c.id === id || c.label === label)) {
+  toast('That colour is already listed', true);
+  return;
+ }
+ privacyDraft.powdercoat.colours.push({ id, label, enabled: true });
+ if (input) input.value = '';
+ fillPrivacyAdminForm(privacyDraft);
+}
+
 async function bootAdmin() {
  await refreshCloudStatus();
  await loadCatalogue();
@@ -1504,6 +1743,7 @@ async function bootAdmin() {
  const prices = await loadHnPrices();
  renderHnPricing(prices);
  await loadShippingAdmin();
+ await loadPrivacyAdmin();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1712,4 +1952,14 @@ document.addEventListener('DOMContentLoaded', async () => {
  document.getElementById('btn-refresh-promo')?.addEventListener('click', () => loadPromoCodes());
  document.getElementById('promo-type')?.addEventListener('change', updatePromoValueLabel);
  updatePromoValueLabel();
+
+ document.getElementById('btn-save-privacy')?.addEventListener('click', () => savePrivacyLive());
+ document.getElementById('btn-priv-add-size')?.addEventListener('click', () => addPrivacySizeRow());
+ document.getElementById('btn-priv-add-colour')?.addEventListener('click', () => addPrivacyColour());
+ document.getElementById('priv-colour-new')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+   e.preventDefault();
+   addPrivacyColour();
+  }
+ });
 });
