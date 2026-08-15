@@ -47,6 +47,30 @@ tailwind.config = {
     background: linear-gradient(135deg, rgba(183,65,14,0.45), rgba(213,111,61,0.25));
     box-shadow: 0 0 0 1px rgba(229,122,72,0.35), 0 8px 24px -8px rgba(183,65,14,0.6);
   }
+  /* Finish picker — solid selected tile like product option grids */
+  .pd-finish-btn {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.85rem 1rem;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: transparent;
+    color: #e8e4df;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  }
+  .pd-finish-btn:hover {
+    border-color: rgba(255,255,255,0.55);
+    transform: translateY(-1px);
+  }
+  .pd-finish-btn.is-active {
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(229,122,72,0.45);
+  }
   .pd-price {
     background: linear-gradient(135deg, rgba(183,65,14,0.35), rgba(26,18,14,0.95));
     border: 1px solid rgba(229, 122, 72, 0.55);
@@ -141,8 +165,13 @@ tailwind.config = {
             <!-- Privacy screens: full configurator -->
             <div id="pd-privacy-config" class="hidden space-y-5">
               <div>
-                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Material</p>
-                <div id="pd-priv-materials" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                <p class="text-sm font-semibold text-white mb-3 tracking-wide">Choose your finish</p>
+                <div id="pd-priv-finish" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                <div id="pd-priv-colour-wrap" class="mt-4 hidden">
+                  <label class="block text-sm font-semibold text-white mb-2" for="pd-priv-colour">Powdercoat colour</label>
+                  <select id="pd-priv-colour" class="w-full bg-[#120e0c] border border-white/25 rounded-sm px-3 py-3 text-white text-sm focus:border-corten-400 outline-none"></select>
+                  <p class="text-[11px] text-gray-500 mt-1.5" id="pd-priv-pc-note">Dulux powdercoat colours</p>
+                </div>
               </div>
               <div>
                 <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Thickness</p>
@@ -151,15 +180,6 @@ tailwind.config = {
               <div>
                 <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Panel size</p>
                 <div id="pd-priv-sizes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-              </div>
-              <div>
-                <p class="text-xs font-semibold text-gray-200 mb-2 uppercase tracking-wide">Finish</p>
-                <div id="pd-priv-finish" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-                <div id="pd-priv-colour-wrap" class="mt-3 hidden">
-                  <label class="block text-xs text-gray-400 mb-1.5" for="pd-priv-colour">Dulux powdercoat colour</label>
-                  <select id="pd-priv-colour" class="w-full bg-[#120e0c] border border-corten-500/40 rounded-sm px-3 py-2.5 text-white text-sm focus:border-corten-400 outline-none"></select>
-                  <p class="text-[11px] text-gray-500 mt-1.5" id="pd-priv-pc-note"></p>
-                </div>
               </div>
               <p class="text-xs text-gray-400" id="pd-priv-breakdown"></p>
             </div>
@@ -317,49 +337,125 @@ tailwind.config = {
     }">${html}</button>`;
   }
 
+  /** Finish preset id: material + finish, e.g. corten-raw, aluminium-powdercoat */
+  function privFinishKey() {
+    return (privSel.materialId || 'corten') + '-' + (privSel.finish || 'raw');
+  }
+
+  function buildFinishPresets(cfg) {
+    const en =
+      typeof enabledPrivacyList === 'function'
+        ? enabledPrivacyList
+        : (a) => (a || []).filter((x) => x && x.enabled !== false);
+    const mats = en(cfg.materials);
+    const pc = cfg.powdercoat || {};
+    const colours = en(pc.colours || []);
+    const hasCorten = mats.some((m) => m.id === 'corten');
+    const hasAli = mats.some((m) => m.id === 'aluminium');
+    const pcOn = pc.enabled !== false && colours.length > 0;
+    const list = [];
+    if (hasCorten) {
+      list.push({
+        key: 'corten-raw',
+        materialId: 'corten',
+        finish: 'raw',
+        label: 'Corten Steel',
+      });
+    }
+    if (hasAli) {
+      list.push({
+        key: 'aluminium-raw',
+        materialId: 'aluminium',
+        finish: 'raw',
+        label: 'Aluminium',
+      });
+      if (pcOn) {
+        list.push({
+          key: 'aluminium-powdercoat',
+          materialId: 'aluminium',
+          finish: 'powdercoat',
+          label: 'Powder Coated Aluminium',
+        });
+      }
+    }
+    if (hasCorten && pcOn && pc.allowOnCorten !== false) {
+      list.push({
+        key: 'corten-powdercoat',
+        materialId: 'corten',
+        finish: 'powdercoat',
+        label: 'Powder Coated Corten',
+      });
+    }
+    return list;
+  }
+
   function renderPrivacyConfig() {
     if (!privacyCfg) return;
-    const en = typeof enabledPrivacyList === 'function' ? enabledPrivacyList : (a) => (a || []).filter((x) => x.enabled !== false);
-    const mats = en(privacyCfg.materials);
+    const en =
+      typeof enabledPrivacyList === 'function'
+        ? enabledPrivacyList
+        : (a) => (a || []).filter((x) => x.enabled !== false);
     const ths = en(privacyCfg.thicknesses);
     const szs = en(privacyCfg.sizes);
     const pc = privacyCfg.powdercoat || {};
     const colours = en(pc.colours || []);
+    const finishes = buildFinishPresets(privacyCfg);
 
-    if (!mats.find((m) => m.id === privSel.materialId) && mats[0]) privSel.materialId = mats[0].id;
     if (!ths.find((t) => t.id === privSel.thicknessId) && ths[0]) privSel.thicknessId = ths[0].id;
     if (!szs.find((s) => s.id === privSel.sizeId) && szs[0]) privSel.sizeId = szs[0].id;
 
-    const matBox = document.getElementById('pd-priv-materials');
-    matBox.innerHTML = mats
-      .map((m) => {
-        const active = m.id === privSel.materialId;
-        const add = Number(m.adder) || 0;
-        return `<div data-priv-mat="${escapeHtml(m.id)}">${optBtn(
-          active,
-          `<span class="block font-semibold">${escapeHtml(m.label)}</span>
-           <span class="block text-xs mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${
-             add > 0 ? '+$' + add : add < 0 ? '-$' + Math.abs(add) : 'Base material'
-           }</span>`
-        )}</div>`;
+    // Ensure current material/finish maps to a valid preset
+    let key = privFinishKey();
+    if (!finishes.find((f) => f.key === key) && finishes[0]) {
+      privSel.materialId = finishes[0].materialId;
+      privSel.finish = finishes[0].finish;
+      key = finishes[0].key;
+    }
+
+    // —— Choose your finish (solid tiles + colour dropdown) ——
+    const finBox = document.getElementById('pd-priv-finish');
+    finBox.innerHTML = finishes
+      .map((f) => {
+        const active = f.key === key;
+        return `<button type="button" data-priv-fin-key="${escapeHtml(f.key)}"
+          class="pd-finish-btn ${active ? 'is-active' : ''}">${escapeHtml(f.label)}</button>`;
       })
       .join('');
-    matBox.querySelectorAll('[data-priv-mat]').forEach((el) => {
-      el.querySelector('button')?.addEventListener('click', () => {
-        privSel.materialId = el.dataset.privMat;
-        // If powdercoat not allowed on corten, force raw
-        if (
-          privSel.materialId === 'corten' &&
-          pc.allowOnCorten === false &&
-          privSel.finish === 'powdercoat'
-        ) {
-          privSel.finish = 'raw';
-        }
+    finBox.querySelectorAll('[data-priv-fin-key]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const f = finishes.find((x) => x.key === btn.dataset.privFinKey);
+        if (!f) return;
+        privSel.materialId = f.materialId;
+        privSel.finish = f.finish;
+        if (f.finish !== 'powdercoat') privSel.colourId = '';
         renderPrivacyConfig();
         updatePriceUI();
       });
     });
 
+    const wrap = document.getElementById('pd-priv-colour-wrap');
+    const sel = document.getElementById('pd-priv-colour');
+    const note = document.getElementById('pd-priv-pc-note');
+    if (privSel.finish === 'powdercoat' && colours.length) {
+      wrap.classList.remove('hidden');
+      if (!colours.find((c) => c.id === privSel.colourId) && colours[0]) {
+        privSel.colourId = colours[0].id;
+      }
+      sel.innerHTML = colours
+        .map(
+          (c) =>
+            `<option value="${escapeHtml(c.id)}" ${c.id === privSel.colourId ? 'selected' : ''}>${escapeHtml(
+              c.label
+            )}</option>`
+        )
+        .join('');
+      if (note) note.textContent = pc.note || 'Dulux powdercoat colours (Ebony, Grey Friars, FlaxPod, etc.)';
+    } else {
+      wrap.classList.add('hidden');
+      privSel.colourId = '';
+    }
+
+    // —— Thickness ——
     const thBox = document.getElementById('pd-priv-thickness');
     thBox.innerHTML = ths
       .map((t) => {
@@ -382,6 +478,7 @@ tailwind.config = {
       });
     });
 
+    // —— Panel size ——
     const szBox = document.getElementById('pd-priv-sizes');
     szBox.innerHTML = szs
       .map((s) => {
@@ -403,63 +500,6 @@ tailwind.config = {
         updatePriceUI();
       });
     });
-
-    const allowPc =
-      pc.enabled !== false &&
-      (privSel.materialId !== 'corten' || pc.allowOnCorten !== false) &&
-      colours.length > 0;
-    const finBox = document.getElementById('pd-priv-finish');
-    const finishes = [{ id: 'raw', label: 'Raw / uncoated', sub: 'Natural finish' }];
-    if (allowPc) {
-      finishes.push({
-        id: 'powdercoat',
-        label: pc.label || 'Powder coated (Dulux)',
-        sub: '+$' + (Number(pc.price) || 0),
-      });
-    } else if (privSel.finish === 'powdercoat') {
-      privSel.finish = 'raw';
-    }
-    finBox.innerHTML = finishes
-      .map((f) => {
-        const active = f.id === privSel.finish;
-        return `<div data-priv-fin="${escapeHtml(f.id)}">${optBtn(
-          active,
-          `<span class="block font-semibold">${escapeHtml(f.label)}</span>
-           <span class="block text-xs mt-0.5 ${active ? 'text-corten-200' : 'text-gray-400'}">${escapeHtml(
-             f.sub
-           )}</span>`
-        )}</div>`;
-      })
-      .join('');
-    finBox.querySelectorAll('[data-priv-fin]').forEach((el) => {
-      el.querySelector('button')?.addEventListener('click', () => {
-        privSel.finish = el.dataset.privFin;
-        renderPrivacyConfig();
-        updatePriceUI();
-      });
-    });
-
-    const wrap = document.getElementById('pd-priv-colour-wrap');
-    const sel = document.getElementById('pd-priv-colour');
-    const note = document.getElementById('pd-priv-pc-note');
-    if (privSel.finish === 'powdercoat' && allowPc) {
-      wrap.classList.remove('hidden');
-      if (!colours.find((c) => c.id === privSel.colourId) && colours[0]) {
-        privSel.colourId = colours[0].id;
-      }
-      sel.innerHTML = colours
-        .map(
-          (c) =>
-            `<option value="${escapeHtml(c.id)}" ${c.id === privSel.colourId ? 'selected' : ''}>${escapeHtml(
-              c.label
-            )}</option>`
-        )
-        .join('');
-      if (note) note.textContent = pc.note || 'Dulux powdercoat colour range.';
-    } else {
-      wrap.classList.add('hidden');
-      privSel.colourId = '';
-    }
   }
 
   function renderSizes() {
