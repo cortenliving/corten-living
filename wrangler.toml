@@ -12,3 +12,4 @@ pages_build_output_dir = "."
 
 # Set in dashboard (Production + Preview):
 # ADMIN_PASSWORD = your secret admin password
+# SITE_PASSWORD  = optional preview password (falls back to CortenSoon2026)

@@ -30,6 +30,9 @@
 /contact
   Cache-Control: public, max-age=0, must-revalidate
 
+/coming-soon
+  Cache-Control: public, max-age=0, must-revalidate
+
 /house-numbers
   Cache-Control: public, max-age=0, must-revalidate
 

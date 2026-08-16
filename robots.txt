@@ -1,10 +1,3 @@
-# https://corten-living.pages.dev/robots.txt
+# Site is in preview / coming soon — do not index
 User-agent: *
-Allow: /
-
-# Keep admin / APIs out of search indexes
-Disallow: /admin
-Disallow: /admin-quotes
-Disallow: /api/
-
-Sitemap: https://corten-living.pages.dev/sitemap.xml
+Disallow: /

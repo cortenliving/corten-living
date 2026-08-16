@@ -2,7 +2,9 @@
 
 Profile-cut 3 mm Corten steel garden sculptures, house numbers and custom pieces. Made in Gisborne, New Zealand.
 
-Live site: [corten-living.pages.dev](https://corten-living.pages.dev/)
+Live site: [corten-living.pages.dev](https://corten-living.pages.dev/) — **coming soon / password gated** until launch.
+
+Public visitors see `/coming-soon`. Preview password: `CortenSoon2026` (or Cloudflare secret `SITE_PASSWORD`, or `ADMIN_PASSWORD`). After unlock, a 30-day cookie lets you browse the real shop.
 
 ## Admin (live catalogue — no Cloudflare KV)
 

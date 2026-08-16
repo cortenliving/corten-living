@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Coming Soon | Corten Living</title>
+<meta name="description" content="Corten Living is almost ready. Premium 3 mm Corten steel, made in Gisborne, New Zealand." />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#b7410e" />
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        corten: {400:'#e57a48',500:'#d56f3d',600:'#b7410e',700:'#9c340b',800:'#7e2d0a',900:'#67260c',950:'#381106'},
+        metal: {850:'#141414',900:'#0a0a0a',950:'#050505'}
+      },
+      fontFamily: {sans:['Inter','system-ui','sans-serif'], display:['Oswald','Inter','sans-serif']}
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/site.css">
+<style>
+  body.soon {
+    background: #120e0c;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(213, 111, 61, 0.32), transparent 55%),
+      radial-gradient(circle at 90% 80%, rgba(183, 65, 14, 0.14), transparent 40%),
+      linear-gradient(180deg, #241c16 0%, #120e0c 45%, #0a0807 100%);
+  }
+  .soon-card {
+    background: linear-gradient(165deg, #2e221b 0%, #1a1410 100%);
+    border: 1px solid rgba(229, 122, 72, 0.38);
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+  .soon-input:focus {
+    border-color: #e57a48;
+    box-shadow: 0 0 0 3px rgba(229, 122, 72, 0.18);
+    outline: none;
+  }
+</style>
+</head>
+<body class="soon font-sans text-gray-200 antialiased min-h-screen flex flex-col">
+
+<main class="flex-1 flex items-center justify-center px-4 py-16">
+  <div class="soon-card w-full max-w-lg rounded-sm p-8 sm:p-10 text-center">
+    <img src="/images/logo.svg" alt="" class="w-16 h-16 mx-auto" width="64" height="64">
+    <p class="mt-5 text-xs uppercase tracking-[0.28em] text-corten-400 font-semibold">Gisborne, New Zealand</p>
+    <h1 class="mt-3 font-display text-4xl sm:text-5xl font-bold text-white tracking-tight">
+      CORTEN <span class="text-corten-500">LIVING</span>
+    </h1>
+    <p class="mt-4 font-display text-xl sm:text-2xl text-corten-300 tracking-wide">Coming soon</p>
+    <p class="mt-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+      Profile-cut 3&nbsp;mm Corten steel house numbers, privacy screens and custom pieces. We’re finishing the shop — check back shortly.
+    </p>
+
+    <form id="unlock-form" class="mt-8 text-left space-y-3">
+      <label class="block text-[11px] uppercase tracking-widest text-gray-400 font-semibold" for="site-password">Preview access</label>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input id="site-password" name="password" type="password" autocomplete="current-password"
+          placeholder="Password"
+          class="soon-input flex-1 bg-[#120e0c] border border-white/20 rounded-sm px-3 py-3 text-white text-sm">
+        <button type="submit" class="px-5 py-3 corten-gradient text-white text-sm font-semibold rounded-sm tracking-wide hover:opacity-90 transition shrink-0">
+          Enter site
+        </button>
+      </div>
+      <p id="unlock-err" class="hidden text-sm text-red-400">Wrong password — try again.</p>
+    </form>
+
+    <div class="mt-8 pt-6 border-t border-white/10 text-sm text-gray-400 space-y-1">
+      <p><a href="tel:0273838178" class="hover:text-corten-400 transition">027 383 8178</a></p>
+      <p><a href="mailto:cortenliving@gmail.com" class="hover:text-corten-400 transition">cortenliving@gmail.com</a></p>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  const form = document.getElementById('unlock-form');
+  const err = document.getElementById('unlock-err');
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || '/';
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.classList.add('hidden');
+    const password = document.getElementById('site-password').value;
+    try {
+      const res = await fetch('/api/site-unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        err.classList.remove('hidden');
+        return;
+      }
+      const dest = next.startsWith('/') ? next : '/';
+      location.href = dest;
+    } catch (_) {
+      err.textContent = 'Could not reach the server. Try again.';
+      err.classList.remove('hidden');
+    }
+  });
+})();
+</script>
+</body>
+</html>
